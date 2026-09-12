@@ -3,6 +3,7 @@ import json
 import sqlite3
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -86,3 +87,50 @@ def test_existing_state_commands_preserve_identity_and_work_normally(network, tm
         assert db.execute("SELECT value FROM metadata WHERE key='network_id'").fetchone()[0] == service.network_id
         assert db.execute("SELECT revoked FROM contributors WHERE id=?", (root,)).fetchone()[0] == 1
         assert db.execute("SELECT disposition FROM evidence_campaigns WHERE job_id=?", (job,)).fetchone()[0] == "cancelled"
+
+
+def test_unknown_revocation_cli_fails_without_logging_or_disclosing_identifier(network):
+    service, _ = network
+    service.invite()
+    with service.store.connect() as db:
+        before = {table: [tuple(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid")]
+                  for table in ("contributors", "events")}
+    result = subprocess.run([sys.executable, "-m", "daia.cli", "--db", service.store.path,
+                             "revoke", "unknown-root-private-canary"], capture_output=True, text=True, timeout=20)
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "Contributor not found" in result.stderr
+    assert "Traceback" not in result.stderr and "unknown-root-private-canary" not in result.stderr
+    assert service.store.path not in result.stderr
+    with service.store.connect() as db:
+        for table, rows in before.items():
+            assert [tuple(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid")] == rows
+
+
+@pytest.mark.parametrize("expired", [False, True])
+def test_concurrent_revocation_is_idempotent_and_preserves_signed_history(network, contributor, expired):
+    from conftest import submit
+    service, now = network
+    service.seed()
+    who = contributor()
+    root, agent = who[0]["root_id"], who[1]
+    lease = service.request_work(root, agent)
+    submit(service, who, lease)
+    if expired:
+        now[0] = who[0]["expires"]
+    with service.store.connect() as db:
+        history = {table: [tuple(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid")]
+                   for table in ("assignments", "results", "jobs", "events")}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        assert list(pool.map(lambda _: service.revoke(root), range(8))) == [None] * 8
+    with service.store.connect() as db:
+        assert db.execute("SELECT revoked,assigned FROM contributors WHERE id=?", (root,)).fetchone()[:] == (1, 1)
+        for table in ("assignments", "results", "jobs"):
+            assert [tuple(row) for row in db.execute(f"SELECT * FROM {table} ORDER BY rowid")] == history[table]
+        events = [tuple(row) for row in db.execute("SELECT * FROM events ORDER BY rowid")]
+        assert events[:-1] == history["events"]
+        assert json.loads(events[-1][1])["kind"] == "contributor_revoked"
+    with pytest.raises(Denied):
+        service.authenticate(who[0]["token"])
+    with pytest.raises(Denied):
+        service.request_work(root, agent)

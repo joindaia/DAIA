@@ -130,6 +130,11 @@ class Coordinator:
     def revoke(self, root):
         """Operator revocation; previously valid signatures remain historical evidence."""
         with self.store.connect() as db:
+            contributor = db.execute("SELECT revoked FROM contributors WHERE id=?", (root,)).fetchone()
+            if contributor is None:
+                raise Denied("Unknown contributor")
+            if contributor["revoked"]:
+                return
             db.execute("UPDATE contributors SET revoked=1 WHERE id=?", (root,))
             self._event(db, "contributor_revoked", root)
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from .crypto import sign, public_hex
-from .service import Coordinator
+from .service import Coordinator, Denied
 from .store import Store, backup_database
 
 
@@ -139,8 +139,11 @@ def main():
     elif args.command == "resolve-evidence":
         print(json.dumps(service.resolve_evidence(args.job, args.disposition, args.note)))
     elif args.command == "revoke":
-        service.revoke(args.root_id)
-        print("Revoked contributor grant.")
+        try:
+            service.revoke(args.root_id)
+        except Denied:
+            parser.exit(1, "Contributor not found. Check its identifier and coordinator database.\n")
+        print("Contributor grant is revoked.")
     else:
         import uvicorn
         if args.command == "serve-mcp":

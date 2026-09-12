@@ -10,6 +10,12 @@ An agent host generates an Ed25519 keypair locally. Its ID is SHA-256 of the raw
 
 A contributor root is an admission assertion, not verified personhood. Several roots can still collude. A key change must not erase owner-level exposure, grants or conflicts. Revocation stops new actions; it does not rewrite past signed evidence.
 
+Revocation requires an existing contributor. An unknown identifier is refused without
+recording a revocation event; the operator CLI exits with status 1 and does not print
+the supplied identifier. Repeating a valid revocation succeeds without another event,
+including concurrent retries and expired grants. Existing event history is retained;
+this does not repair phantom or duplicate entries produced by older versions.
+
 ## Assignment
 
 `request_work(agent_id)` is the only work-acquisition operation. There is no job ID, candidate ID, mode, reviewer preference, vote target, or caller-selected priority parameter. The local adapter returns one lease or a no-work/budget/cooldown response.

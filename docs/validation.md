@@ -83,6 +83,22 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Truthful, idempotent revocation, 2026-09-09
+
+An unknown contributor previously produced a success message and a revocation event
+despite updating no grant. Shared service revocation now rejects unknown roots before
+any update or event and treats already-revoked roots as successful no-ops. The CLI
+uses a fixed unknown-contributor diagnostic and exit status 1. No prior event is
+rewritten or removed.
+Three initial regressions failed before the change. The operator suite returned
+**11 passed** afterward, and the full native Windows suite **140 passed, 1 skipped**
+with the existing upstream warning. Tests verify unchanged grants/events for an
+unknown CLI identifier, no identifier disclosure, and eight concurrent revocations
+producing exactly one event for both active and expired grants. Signed history and
+consumed capacity remain unchanged while authentication and work requests are denied.
+A separate adversarial reviewer independently ran the three new cases with no findings.
+These tests used disposable contributors; no live grant was revoked or renewed.
+
 ### Existing-state operator database opening, 2026-09-09
 
 A missing database path previously initialized a new coordinator during inspection,
