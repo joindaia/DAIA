@@ -11,6 +11,8 @@ import os
 from tempfile import TemporaryDirectory
 import time
 
+from .crypto import digest, strict_json
+
 
 def backup_database(source, destination):
     """Publish a checked SQLite snapshot without replacing any existing destination."""
@@ -45,6 +47,16 @@ def backup_database(source, destination):
                 raise ValueError("Snapshot failed SQLite integrity check")
             if snapshot.execute("PRAGMA foreign_key_check").fetchone() is not None:
                 raise ValueError("Snapshot failed foreign-key check")
+            try:
+                previous = "0" * 64
+                for document, link, event_hash in snapshot.execute(
+                        "SELECT event_json,previous_hash,event_hash FROM events ORDER BY sequence"):
+                    if (link != previous
+                            or event_hash != digest({"previous": previous, "event": strict_json(document)})):
+                        raise ValueError()
+                    previous = event_hash
+            except (ValueError, TypeError, RecursionError, sqlite3.DatabaseError):
+                raise ValueError("Snapshot failed audit-log check") from None
         with temporary.open("r+b") as finished:
             os.fsync(finished.fileno())
         # Atomic no-replace publication; fail closed on filesystems without hard links.

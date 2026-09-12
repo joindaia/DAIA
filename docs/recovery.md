@@ -9,8 +9,15 @@ The operator CLI can take a consistent snapshot while the local coordinator runs
 Use a new filename each time. The command opens an existing source read-only and uses
 SQLite's backup API, including committed write-ahead-log contents. It never creates a
 missing source database. The copy is staged privately, closed, reopened for SQLite
-integrity and foreign-key checks, flushed, then published without replacing an existing
+integrity, foreign-key and audit-log hash checks, flushed, then published without replacing an existing
 file. Busy copying times out after about ten seconds; retry when writes settle.
+
+The audit check streams events in order, verifies the zero-hash origin, each previous
+link and each canonical event digest. Malformed event JSON or inconsistent hashes
+reject the snapshot with a fixed error message; the source is never repaired. This
+checks internal consistency only. A coherent rewrite, removal of the end of the log,
+or a state change that was never logged cannot be detected without additional trusted
+evidence. Passing this check does not establish complete history or safe rollback.
 
 Snapshot creation is operator-only, absent from HTTP and MCP. No restore endpoint,
 daemon, storage service or automatic retention policy is added. Hard-link publication

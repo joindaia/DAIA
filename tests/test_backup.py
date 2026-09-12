@@ -107,6 +107,33 @@ def test_backup_rejects_missing_corrupt_and_racing_destinations(network, tmp_pat
     assert not list(target.parent.glob(".daia-backup-*"))
 
 
+@pytest.mark.parametrize("corruption", ["payload", "link", "hash", "invalid_json"])
+def test_backup_rejects_inconsistent_audit_log_without_repairing_source(network, tmp_path, corruption):
+    service, _ = network
+    service.seed(35)
+    with service.store.connect() as db:
+        first = db.execute("SELECT MIN(sequence) FROM events").fetchone()[0]
+        assert first is not None
+        column, value = {
+            "payload": ("event_json", "{}"),
+            "link": ("previous_hash", "f" * 64),
+            "hash": ("event_hash", "f" * 64),
+            "invalid_json": ("event_json", "private-event-invalid-json"),
+        }[corruption]
+        db.execute(f"UPDATE events SET {column}=? WHERE sequence=?", (value, first))
+        before = [tuple(row) for row in db.execute("SELECT * FROM events ORDER BY sequence")]
+        assert db.execute("PRAGMA integrity_check").fetchall()[0][0] == "ok"
+        assert db.execute("PRAGMA foreign_key_check").fetchone() is None
+    target = tmp_path / "private" / "invalid-audit.sqlite3"
+    with pytest.raises(ValueError, match="Snapshot failed audit-log check") as error:
+        backup_database(service.store.path, target)
+    assert "private-event" not in str(error.value)
+    assert not target.exists()
+    assert not list(target.parent.glob(".daia-backup-*"))
+    with service.store.connect() as db:
+        assert [tuple(row) for row in db.execute("SELECT * FROM events ORDER BY sequence")] == before
+
+
 def test_busy_snapshot_times_out_without_publishing(network, tmp_path, monkeypatch):
     import daia.store as store
     service, _ = network

@@ -83,6 +83,22 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Snapshot audit-log consistency, 2026-09-09
+
+The operator backup command now checks existing audit-event links and canonical
+digests on the closed private snapshot before no-overwrite publication. Four regression
+cases altered an event payload, previous link, event hash or JSON syntax while SQLite
+integrity and foreign-key checks still passed. They published under the prior code;
+the new check rejects each without repairing the source, publishing a destination or
+leaving staging files. The existing clean live-WAL/process-loss snapshot still passes.
+The focused backup suite returned **8 passed**. This verifies internal consistency,
+not coherent-rewrite resistance, detection of suffix deletion or unlogged changes,
+independent witnessing, or safe restoration of old state.
+The full native Windows suite returned **115 passed, 1 skipped**, with the existing
+upstream deprecation warning. Independent adversarial review repeated the eight backup
+checks and found no blocker. A fresh private pilot snapshot passed the new audit check;
+the live database was neither restored nor replaced. No campaign, grant or policy changed.
+
 ### Bounded Windows state replacement retries, 2026-09-09
 
 A disposable local reproduction held the state file open for reading and observed
