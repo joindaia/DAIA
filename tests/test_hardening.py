@@ -107,3 +107,13 @@ def test_abandoned_producer_cannot_review_successor(network, contributor, abando
     # Changing keys under the same root must not erase producer exposure either.
     replacement = contributor(root=first[0]["root_id"])
     assert c.request_work(replacement[0]["root_id"], replacement[1]) == {"status": "no_eligible_work"}
+
+
+def test_dependabot_public_trailer_exemption_is_commit_only():
+    trailer = 'Signed-off-by: dependabot[bot] <support' + '@github.com>'
+    assert guard.scan_text(trailer) == {'non-placeholder-email'}
+    assert guard.scan_text(trailer, commit_metadata=True) == set()
+    assert guard.scan_text(trailer, (trailer,), commit_metadata=True) == {'private-literal'}
+    assert 'non-placeholder-email' in guard.scan_text(trailer + ' extra', commit_metadata=True)
+    other = 'private-person' + '@not-public.invalid'
+    assert 'non-placeholder-email' in guard.scan_text(trailer + '\n' + other, commit_metadata=True)

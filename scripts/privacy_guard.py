@@ -32,9 +32,15 @@ def email_allowed(value: str) -> bool:
             or value.lower() == 'noreply@github.com')
 
 
-def scan_text(text: str, private_literals: tuple[str, ...] = ()) -> set[str]:
+def scan_text(text: str, private_literals: tuple[str, ...] = (), *, commit_metadata=False) -> set[str]:
     found = set()
-    if any(not email_allowed(m.group()) for m in EMAIL.finditer(text)):
+    # Only the exact public Dependabot sign-off in commit metadata is exempt.
+    # File contents, private literals and secret patterns still scan the original text.
+    email_text = text
+    if commit_metadata:
+        trailer = 'Signed-off-by: dependabot[bot] <support' + '@github.com>'
+        email_text = '\n'.join(line for line in text.splitlines() if line != trailer)
+    if any(not email_allowed(m.group()) for m in EMAIL.finditer(email_text)):
         found.add('non-placeholder-email')
     if any(pattern.search(text) for pattern in SECRET_PATTERNS):
         found.add('secret-format')
@@ -85,7 +91,7 @@ def run(history: bool) -> int:
         commits = refs
         for commit in refs:
             text = git('show', '-s', '--format=%an%n%ae%n%cn%n%ce%n%B', commit).decode('utf-8', errors='replace')
-            problems.extend((commit, reason) for reason in scan_text(text, literals))
+            problems.extend((commit, reason) for reason in scan_text(text, literals, commit_metadata=True))
         for line in git('rev-list', '--objects', '--all').decode('utf-8', errors='replace').splitlines():
             oid, _, name = line.partition(' ')
             if name and (private_path(name) or scan_text(name, literals)):
