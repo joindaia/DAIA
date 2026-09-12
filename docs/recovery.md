@@ -112,3 +112,28 @@ administrative access until this complete exercise succeeds.
 Status: database process-loss recovery and source/runtime startup rejection have
 separate evidence above and in the security milestone. A complete clean-host restore,
 verified pull updater and provider-console recovery exercise remain incomplete.
+
+## Off-host capture exercise
+
+A checked snapshot of the running, admission-closed VPS database has been captured
+through the existing authenticated administrative channel and stored in a private
+operator recovery directory outside Git. The existing local pilot was captured
+separately. Each snapshot was copied again through the backup validator, and every
+table in the separate copy matched its captured source. This proves preservation
+of captured database state; it does not reconcile later writes or establish a
+complete failover. Neither copy was activated as a coordinator.
+
+The same private recovery package includes admission policy, gateway configuration,
+release manifests, the minimum release sequence, and the client CA and revocation
+list. The captured release public key matched the independently held local signing
+authority; both manifest signatures and expiry/sequence bounds passed. The client
+CA matched the local authority and its revocation list passed signature and expiry
+checks. Admission remained empty and the existing services stayed active.
+
+This capture does not include server private keys, release/runtime artifact bytes,
+or a complete independently hosted encrypted backup. Manifest signature checks do
+not establish that recoverable artifact bytes exist. A new-host rebuild, freshness
+reconciliation, pending receipt replay across that rebuild and provider-console
+recovery still need to pass before the administrative SSH path can be removed.
+The private capture report records exact snapshot hashes and table counts; none of
+the snapshots, identities, local paths or security configuration belongs in Git.
