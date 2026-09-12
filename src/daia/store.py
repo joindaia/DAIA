@@ -4,10 +4,51 @@ The store intentionally uses BEGIN IMMEDIATE for every operation. It is a local
 prototype, not a multi-region coordinator. See docs/postgres.md for the production
 transaction model. Never put this database on a shared network filesystem.
 """
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from pathlib import Path
 import sqlite3
 import os
+from tempfile import TemporaryDirectory
+import time
+
+
+def backup_database(source, destination):
+    """Publish a checked SQLite snapshot without replacing any existing destination."""
+    source, destination = Path(source).absolute(), Path(destination).absolute()
+    if source.is_symlink() or not source.is_file():
+        raise ValueError("Backup source must be an existing regular database file")
+    if os.name == "posix" and source.stat().st_mode & 0o077:
+        raise ValueError("Backup source must have private filesystem permissions")
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError("Backup destination already exists")
+    destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if os.name == "posix" and destination.parent.stat().st_mode & 0o077:
+        raise ValueError("Backup directory must have private filesystem permissions")
+    # A private same-filesystem staging directory keeps incomplete snapshots unpublished.
+    with TemporaryDirectory(prefix=".daia-backup-", dir=destination.parent) as staging:
+        temporary = Path(staging) / "snapshot.sqlite3"
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
+        deadline = time.monotonic() + 10
+
+        def progress(status, remaining, total):
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Database snapshot timed out; try again when writes settle")
+
+        # Never use Store.connect here: its write transaction would block backup.
+        with closing(sqlite3.connect(source.as_uri() + "?mode=ro", uri=True, timeout=0)) as origin:
+            origin.execute("PRAGMA query_only=ON")
+            with closing(sqlite3.connect(temporary)) as snapshot:
+                origin.backup(snapshot, pages=128, progress=progress, sleep=0.05)
+        with closing(sqlite3.connect(temporary.as_uri() + "?mode=ro", uri=True)) as snapshot:
+            if snapshot.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
+                raise ValueError("Snapshot failed SQLite integrity check")
+            if snapshot.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                raise ValueError("Snapshot failed foreign-key check")
+        with temporary.open("r+b") as finished:
+            os.fsync(finished.fileno())
+        # Atomic no-replace publication; fail closed on filesystems without hard links.
+        os.link(temporary, destination)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);

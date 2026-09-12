@@ -92,3 +92,14 @@ below. Model labels and reasoning settings are configuration, not a measured ran
 
 At each step, the gate is actual evidence of useful work and safe stopping. A busy
 queue, several model opinions, or a passing transport test alone cannot satisfy it.
+
+## Independent continuation
+
+The user clarified that waiting for worker activation must not reduce continued
+development to monitoring. Worker-dependent evidence gates still apply, but independent
+recovery and failure-handling work may proceed on the review branch. The first such
+increment is the [private snapshot and recovery exercise](recovery.md), using SQLite's
+existing backup API. No new service, automatic restore or live policy change was needed.
+The protocol adversarial participant reviewed the actual diff, required the distinction
+between pre-snapshot stale leases and post-snapshot rollback, and reported no blocking
+finding after independently running the 98-pass suite (one platform-specific skip).

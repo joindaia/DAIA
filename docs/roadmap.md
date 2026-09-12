@@ -10,6 +10,12 @@ are implemented. See [hourly workers](hourly-workers.md) and
 The immediate acceptance gate is a real scheduled two-worker evidence cycle and a
 human-confirmed useful outcome. General human consultation is host-native; durable
 waiting/resumption and isolated contributed-code execution remain planned.
+Worker-dependent acceptance gates do not block independent local engineering. While
+the pilot awaits contributors or human disposition, continue bounded recovery,
+failure-handling and documentation work on the review branch without creating more
+campaigns or changing live policy. [Private snapshots](recovery.md) now have a
+synthetic WAL/process-loss recovery exercise; real restore and reconciliation remain
+maintainer operations.
 
 ## 0. Safe bootstrap — reference implementation
 

@@ -40,5 +40,5 @@ def test_owner_is_from_token(client, contributor, network):
 def test_admin_endpoints_absent(client):
     for endpoint in ("/v1/invite", "/v1/deploy", "/v1/jobs/create", "/v1/policy/update", "/docs",
                      "/v1/evidence/admit", "/v1/evidence/inspect", "/v1/evidence/resolve",
-                     "/v1/renew-consent"):
+                     "/v1/renew-consent", "/v1/backup", "/v1/restore"):
         assert client.get(endpoint).status_code == 404

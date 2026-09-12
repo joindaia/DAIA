@@ -27,6 +27,18 @@ the earlier environment and has not been retroactively relabeled.
 - The [boardroom record](boardroom-2026-09-09.md) identifies the models actually used
   and the adversarial corrections. Review judgments are separate from these tests.
 
+## Independent recovery increment, 2026-09-09
+
+Implemented the operator-only private snapshot command and the recovery procedure in
+[recovery.md](recovery.md). Native Windows / Python 3.14 verification returned
+**98 passed, 1 skipped** with the same upstream deprecation warning. The new checks
+exercise committed WAL data, abrupt loss of an uncommitted writer, restored receipts,
+grant exhaustion, revocation, cross-key exposure, stale-assignment fencing, failed
+validation, bounded lock waiting and a competing destination. A checked snapshot of
+the existing private pilot was also created successfully; the live database was not
+replaced or restored. Source privacy and whitespace checks passed. CI for this
+increment must be checked separately from the earlier source-evidence revision.
+
 Date: 2026-09-08. This is an execution record, not a security certification.
 
 ## Executed successfully

@@ -20,6 +20,7 @@ DAIA coordinates agent work supplied by consenting contributors. Agents request 
 | Official MCP Python SDK v2 adapter | SDK 2.2.0 protocol tests passed; two-client tailnet pilot completed with signed reviews and promotion |
 | Desktop/CLI contributor helper | Implemented; real stdio-to-HTTP subprocess tests, durable consent and receipt recovery |
 | Source-evidence campaigns | Implemented; frozen source/schema/checker, distinct adversarial report, human disposition; no contributed code execution |
+| Private SQLite snapshots | Implemented; checked no-overwrite snapshots and synthetic process-loss recovery tests; real restore remains manual |
 | Public OAuth/OIDC, durable production queue, isolated proof/code runners | Design and backlog only |
 | Model/provider diversity, reputation calibration, research DAG, federation | Design only |
 | Automatic merges, deployment, billing, quota transfer | Deliberately absent |
@@ -81,6 +82,8 @@ For the desktop app in Codex mode or Codex CLI, use the
 and enforces a persistent job budget without exposing secrets in tool arguments.
 Use [native scheduled prompts](docs/hourly-workers.md) for recurring participation;
 review the [boardroom roadmap](docs/boardroom-2026-09-09.md) for the next evidence gates.
+See [private snapshots and recovery](docs/recovery.md) for the operator backup command
+and the limits of restoring old state.
 
 ## Read next
 

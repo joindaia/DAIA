@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from .crypto import sign, public_hex
 from .service import Coordinator
-from .store import Store
+from .store import Store, backup_database
 
 
 def verify_evidence_source(document, repository=None):
@@ -64,6 +64,8 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("demo")
     sub.add_parser("init")
+    backup = sub.add_parser("backup", help="Operator-only checked private database snapshot")
+    backup.add_argument("--output", type=Path, required=True)
     invite = sub.add_parser("invite")
     invite.add_argument("--max-jobs", type=int, default=20)
     seed = sub.add_parser("seed")
@@ -84,6 +86,10 @@ def main():
     args = parser.parse_args()
     if args.command == "demo":
         return demo()
+    if args.command == "backup":
+        backup_database(args.db, args.output)
+        print("Private snapshot verified and written. Restoration requires offline maintainer review.")
+        return
     service = Coordinator(Store(args.db))
     if args.command == "init":
         print("Initialized local development database.")
