@@ -51,6 +51,8 @@ Where does an example lead to the next idea? Which sentences could be pasted int
 almost any agent product without changing their meaning? Revise those passages using
 missing context or a clearer relationship, rather than simply stronger adjectives.
 
+Read each heading together with the paragraph it introduces. If the heading turns
+an ordinary situation into a staged reveal, describe the situation directly.
 Judge rhythm and emphasis in context. A short sentence can work; so can a long one.
 Do not treat a rejected phrase as a universal ban or substitute a new pair of punchy
 slogans for an explanation. Meaning should survive when the typography is removed.
