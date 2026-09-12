@@ -23,12 +23,12 @@ from daia.store import Store
 
 
 @contextmanager
-def running_server(app):
+def running_server(app, **tls):
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]
         server = uvicorn.Server(uvicorn.Config(
-            app, log_level="critical", access_log=False, timeout_graceful_shutdown=2))
+            app, log_level="critical", access_log=False, timeout_graceful_shutdown=2, **tls))
         thread = threading.Thread(target=server.run, kwargs={"sockets": [listener]}, daemon=True)
         thread.start()
         try:
@@ -37,7 +37,7 @@ def running_server(app):
                 if not thread.is_alive() or time.monotonic() > deadline:
                     raise RuntimeError("MCP test server did not start")
                 time.sleep(0.01)
-            yield f"http://127.0.0.1:{port}/mcp"
+            yield f"{'https' if tls else 'http'}://127.0.0.1:{port}/mcp"
         finally:
             server.should_exit = True
             thread.join(timeout=10)
@@ -273,3 +273,82 @@ def test_closed_admission_does_not_replace_grant_validation(network, contributor
                                            "Accept": "application/json, text/event-stream"},
                               json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
         assert response.status_code == 401
+
+
+def test_contributor_mutual_tls_real_mcp(tmp_path):
+    import datetime
+    import ipaddress
+    import ssl
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+    from daia.contributor import Contributor
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ca_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    ca_name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Test CA")])
+
+    def certificate(name, key, ca=False, client=False):
+        builder = (x509.CertificateBuilder()
+                   .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, name)]))
+                   .issuer_name(ca_name).public_key(key.public_key())
+                   .serial_number(x509.random_serial_number())
+                   .not_valid_before(now - datetime.timedelta(minutes=1))
+                   .not_valid_after(now + datetime.timedelta(days=1))
+                   .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True))
+        if not ca:
+            builder = builder.add_extension(x509.ExtendedKeyUsage([
+                ExtendedKeyUsageOID.CLIENT_AUTH if client else ExtendedKeyUsageOID.SERVER_AUTH]), False)
+            if not client:
+                builder = builder.add_extension(x509.SubjectAlternativeName([
+                    x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]), False)
+        return builder.sign(ca_key, hashes.SHA256()).public_bytes(serialization.Encoding.PEM)
+
+    ca_path = tmp_path / "ca.pem"
+    ca_path.write_bytes(certificate("Test CA", ca_key, ca=True))
+    for name in ["server", "client"]:
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        (tmp_path / (name + ".pem")).write_bytes(certificate(name, key, client=name == "client"))
+        (tmp_path / (name + ".key")).write_bytes(key.private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+
+    service = Coordinator(Store(str(tmp_path / "tls.sqlite3")))
+    grant = service.invite()
+    # Explicit mutable set is copied at startup; register before building closed server.
+    identity = {**grant, "network_id": service.network_id, "url": "https://127.0.0.1:8000/mcp",
+                "tls": {"ca_file": "ca.pem", "certificate": "client.pem", "private_key": "client.key"}}
+    invite = tmp_path / "invite.json"
+    invite.write_text(json.dumps(identity))
+    host = Contributor(invite)
+    challenge = service.challenge(grant["root_id"], public_hex(host.key))
+    service.register(grant["root_id"], challenge["challenge_id"], sign(host.key, challenge))
+    with running_server(build_mcp_app(service, allowed_agents={host.agent}),
+                        ssl_certfile=str(tmp_path / "server.pem"),
+                        ssl_keyfile=str(tmp_path / "server.key"),
+                        ssl_ca_certs=str(ca_path), ssl_cert_reqs=ssl.CERT_REQUIRED) as url:
+        # Ephemeral port selection does not change any persisted identity or consent.
+        host.identity["url"] = url
+        result = asyncio.run(host.remote("contribution_status", agent_id=host.agent))
+        assert isinstance(result, dict)
+        assert host.state["used"] == 0
+        # Trusting the server alone is insufficient: the server requires the client key.
+        host.tls_context = ssl.create_default_context(cafile=str(ca_path))
+        with pytest.raises(ValueError, match="Coordinator unavailable"):
+            asyncio.run(host.remote("contribution_status", agent_id=host.agent))
+        # A client certificate cannot bypass server trust verification either.
+        host.tls_context = ssl.create_default_context()
+        host.tls_context.load_cert_chain(str(tmp_path / "client.pem"), str(tmp_path / "client.key"))
+        with pytest.raises(ValueError, match="Coordinator unavailable"):
+            asyncio.run(host.remote("contribution_status", agent_id=host.agent))
+
+
+@pytest.mark.parametrize("tls", [None, {}, {"ca_file": "private-canary.pem", "certificate": "x", "private_key": "y"}])
+def test_contributor_tls_config_failure_precedes_state_creation(tmp_path, tls):
+    from daia.contributor import Contributor
+    invite = tmp_path / "invite.json"
+    invite.write_text(json.dumps({"url": "https://127.0.0.1:8000/mcp", "tls": tls}))
+    with pytest.raises(ValueError) as error:
+        Contributor(invite)
+    assert "private-canary" not in str(error.value)
+    assert not invite.with_suffix(".contributor.json").exists()

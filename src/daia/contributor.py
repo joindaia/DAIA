@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import ssl
 import tempfile
 import time
 import tomllib
@@ -70,9 +71,23 @@ class Contributor:
         self.identity = strict_json(self.invite_file.read_text(encoding="utf-8-sig"))
         url = self.identity["url"]
         parsed = urlsplit(url)
+        self.tls_context = None
+        if "tls" in self.identity:
+            tls = self.identity["tls"]
+            if (parsed.scheme != "https" or not isinstance(tls, dict)
+                    or set(tls) != {"ca_file", "certificate", "private_key"}
+                    or any(not isinstance(v, str) or not v for v in tls.values())):
+                raise ValueError("Invalid contributor TLS configuration")
+            try:
+                paths = {k: self.invite_file.parent / v for k, v in tls.items()}
+                self.tls_context = ssl.create_default_context(cafile=str(paths["ca_file"]))
+                self.tls_context.minimum_version = ssl.TLSVersion.TLSv1_2
+                self.tls_context.load_cert_chain(str(paths["certificate"]), str(paths["private_key"]), password=lambda: "")
+            except (OSError, ValueError, ssl.SSLError):
+                raise ValueError("Contributor TLS credentials could not be loaded") from None
         if parsed.hostname not in {"127.0.0.1", "localhost"}:
             pilot_origin(url)
-        elif (parsed.scheme != "http" or parsed.path != "/mcp" or parsed.username
+        elif (parsed.scheme not in ({"http", "https"} if self.tls_context else {"http"}) or parsed.path != "/mcp" or parsed.username
               or parsed.password or parsed.query or parsed.fragment):
             raise ValueError("Invalid local MCP URL")
         _ = parsed.port
@@ -163,7 +178,8 @@ class Contributor:
         # No remote exception text: URLs and transport headers may contain private information.
         try:
             async with asyncio.timeout(30):
-                async with httpx2.AsyncClient(headers={"Authorization": "Bearer " + self.identity["token"]}) as http:
+                async with httpx2.AsyncClient(verify=self.tls_context or True,
+                                             headers={"Authorization": "Bearer " + self.identity["token"]}) as http:
                     async with streamable_http_client(self.identity["url"], http_client=http) as streams:
                         async with ClientSession(*streams) as session:
                             await session.initialize()
