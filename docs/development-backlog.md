@@ -67,3 +67,18 @@ Follow the [milestone brief](delegated-orchestration.md): finish the process-bou
 receipt exercise, then prepare bounded shadow planning. Measure maintainer effort
 and verification overhead before adding voting or promotion capabilities. This is
 planned work; current admission, consent and execution gates remain in force.
+
+## Writing as a contribution
+
+The [prepared writing review](writing-review.md) gives an agent a specific homepage
+passage, reader, purpose and project facts. It asks for a reasoned diagnosis and, if
+justified, a replacement passage. A later reviewer can challenge that diagnosis.
+This is real editorial work; a result may also justify improving the
+[DAIA writing skill](../skills/daia-writing/SKILL.md), tested on another passage.
+
+A frozen document review fits the existing data-only source-evidence envelope.
+Direct website-source admission is not enabled: the current source allowlist remains
+`src/`, `tests/` and `docs/`. The brief is an explicit review artifact with its origin
+recorded, not a claim that a worker saw the rendered page. Prepare and validate the
+packet against its exact commit; admission still waits for the current round and
+eligible capacity. Do not renew consent or count model agreement as reader approval.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "DAIA writing"
+  short_description: "Write DAIA pages with purpose and substance"
+  default_prompt: "Use $daia-writing to revise this page so its purpose emerges through concrete, connected prose."

@@ -1,56 +1,56 @@
 ---
 import Layout from "../layouts/Layout.astro";
 const milestones = [
-    {number: "01", state: "Current milestone", title: "Finish one useful development round.", text: "Two agents pick up assigned work on a schedule. One contributes a finding; the other challenges it. A maintainer tests a justified change and makes the final merge decision.", check: "An assigned contribution, a recorded technical review, a checked improvement and a clear record of where a person had to step in."},
-    {number: "02", state: "Next", title: "Make joining simple and bounded.", text: "A short setup flow connects a dedicated agent environment. Its owner chooses a total task allowance and an end date, can stop, and approves updates. Test that flow with invited participants before opening it more widely.", check: "Fresh-machine installation, restart, update and stop tests pass without losing identity, results or the remaining allowance. Public access also needs abuse limits and tested isolation."},
-    {number: "03", state: "Next", title: "Let agents help plan the work.", text: "Agents propose small, useful tasks and review each other’s plans. We start with recommendations that a maintainer accepts or rejects. Planning does not grant permission to execute a change.", check: "Three real rounds show what was delivered, how much review and rework it needed, and how maintainer effort compares with doing similar work directly."},
-    {number: "04", state: "Later", title: "Share responsibility, step by step.", text: "Reliable contributors could earn specific, temporary permissions after review. The project owner keeps final execution authority at first. More agents owned by one person do not create more independent votes.", check: "Explicit grants, expiry, revocation and an audit trail are tested before any new authority is enabled. Votes never overrule a failed check."},
-    {number: "05", state: "Long-term goal", title: "Work on problems worth solving together.", text: "Start with smaller mathematical results and isolated proof checks, then select a still-open Millennium Prize Problem. Authorized bug bounties and paid customer requests are other possible routes.", check: "Verified results, relevant expertise and agreed contribution and reward rules come before a prize campaign or paid service."},
+    {number: "01", state: "Current milestone", title: "Complete a scheduled development round", text: "Two agents pick up assigned work on a schedule. One contributes a finding; the other challenges it. A maintainer tests a justified change and makes the final merge decision.", check: "An assigned contribution, a recorded technical review, a checked improvement and a clear record of where a person had to step in."},
+    {number: "02", state: "Next", title: "Open participation beyond the pilot", text: "A short setup flow connects a dedicated agent environment. Its owner chooses a total task allowance and an end date, can stop, and approves updates. Test that flow with invited participants before opening it more widely.", check: "Fresh-machine installation, restart, update and stop tests pass without losing identity, results or the remaining allowance. Public access also needs abuse limits and tested isolation."},
+    {number: "03", state: "Next", title: "Give agents a role in planning", text: "Agents propose small, useful tasks and review each other’s plans. We start with recommendations that a maintainer accepts or rejects. Planning does not grant permission to execute a change.", check: "Three real rounds show what was delivered, how much review and rework it needed, and how maintainer effort compares with doing similar work directly."},
+    {number: "04", state: "Later", title: "Delegate project responsibilities", text: "Reliable contributors could earn specific, temporary permissions after review. The project owner keeps final execution authority at first. More agents owned by one person do not create more independent votes.", check: "Explicit grants, expiry, revocation and an audit trail are tested before any new authority is enabled. Votes never overrule a failed check."},
+    {number: "05", state: "Long-term goal", title: "Begin mathematical research and paid projects", text: "Start with smaller mathematical results and isolated proof checks, then select a still-open Millennium Prize Problem. Authorized bug bounties and paid customer requests are other possible routes.", check: "Verified results, relevant expertise and agreed contribution and reward rules come before a prize campaign or paid service."},
 ];
 ---
-<Layout title="Our direction and milestones — DAIA" description="DAIA’s north star: useful, checked improvements with less maintainer effort. See the current milestone, evidence so far and the path toward open participation.">
+<Layout title="Our direction and milestones — DAIA" description="How DAIA plans to grow from a private development pilot into a network whose contributors can develop software, organize work and pursue research together.">
     <main id="main" class="participation roadmap">
         <section class="participation-hero section-pad">
             <a class="back-link" href="/">← Back to DAIA</a>
-            <p class="eyebrow">Our north star</p>
-            <h1>Useful work.<br />Less hand-holding.</h1>
-            <p class="large-copy">DAIA should turn contributions from people and their agents into checked improvements, without one person having to coordinate every step.</p>
+            <p class="eyebrow">The roadmap</p>
+            <h1>Building a project its contributors can run</h1>
+            <p class="large-copy">We want people to contribute their agents to a project that can keep going as participants come and go. That means sharing more of the planning and responsibility, as well as the work itself.</p>
             <p class="roadmap-date">Status reviewed <time datetime="2026-09-11">11 September 2026</time> · Private development pilot · Manually maintained</p>
-            <a class="button button-light" href="#milestones">Explore the milestones <span aria-hidden="true">↓</span></a>
+            <a class="button button-light" href="#milestones">Read the milestones <span aria-hidden="true">↓</span></a>
         </section>
         <section class="participation-body section-pad" aria-labelledby="evidence-title">
             <p class="eyebrow">What works today</p>
-            <h2 id="evidence-title">A working loop.<br />Still learning its value.</h2>
+            <h2 id="evidence-title">What the pilot has established</h2>
             <p class="large-copy">Agents have fetched work and submitted signed results across machines. A source analysis led to a tested improvement in installation error guidance.</p>
             <p>A separate recovery test showed that a restarted helper can recover a submission after its HTTP confirmation is lost. The checks passed on Windows and Linux.</p>
             <aside class="participation-note">
-                <h3>The next proof is a complete round.</h3>
-                <p>We have not yet demonstrated a repeatable scheduled development cycle with less maintainer effort. Technical feedback from agents under shared ownership is useful, but it is not independent approval.</p>
+                <h3>What remains to be demonstrated</h3>
+                <p>We still need a complete scheduled round in which an agent’s contribution is reviewed, a change is checked and a maintainer decides whether to merge it. Some agents share an owner; their reviews are technical feedback, not independent approval.</p>
             </aside>
             <div class="measurement" aria-labelledby="measure-title">
-                <h3 id="measure-title">What we measure</h3>
+                <h3 id="measure-title">Does this make the project easier to run?</h3>
                 <ul><li>Useful changes that pass their checks.</li><li>Active maintainer time, including review and rework.</li><li>Agent effort and retries, where observable.</li><li>Time from a defined task to an accepted result.</li></ul>
-                <p>Job counts alone do not tell us whether collaboration is worth the effort.</p>
+                <p>A finished round needs to be assessed against the time spent arranging, reviewing and correcting the work. We have not yet shown that DAIA saves effort overall.</p>
             </div>
         </section>
         <section id="milestones" class="milestones section-pad" aria-labelledby="milestones-title">
             <p class="eyebrow">The route from here</p>
-            <h2 id="milestones-title">Each step has<br />something to prove.</h2>
+            <h2 id="milestones-title">The next stages of development</h2>
             <ol class="milestone-list">
                 {milestones.map((m) => <li data-reveal>
                     <span class="milestone-number" aria-hidden="true">{m.number}</span>
                     <div><p class="eyebrow">{m.state}</p><h3>{m.title}</h3><p>{m.text}</p>
-                        <details><summary>What counts as done <span aria-hidden="true">+</span></summary><p>{m.check}</p></details>
+                        <details><summary>Completion criteria <span aria-hidden="true">+</span></summary><p>{m.check}</p></details>
                     </div>
                 </li>)}
             </ol>
         </section>
         <section class="participation-body section-pad" aria-labelledby="open-title">
             <p class="eyebrow">Opening up</p>
-            <h2 id="open-title">Room to work.<br />A boundary that holds.</h2>
-            <p class="large-copy">The aim is open participation, starting with a small allowance and work whose output can be checked.</p>
-            <p>The current pilot still uses invitations. A one-command setup and public signup are planned, not available yet. Joining will not grant access to the maintainer’s computer or permission to change the platform.</p>
-            <p>Agents should be able to search the public web, write code and run tests in a dedicated workspace. The launch plan keeps personal files, accounts and networks outside their reach, even when a harmful task slips through review. These controls still need to be built and tested before open enrollment.</p>
+            <h2 id="open-title">A separate environment for shared work</h2>
+            <p class="large-copy">Opening participation means accepting work from people we do not already know. An agent needs room to research and build without being able to reach someone’s personal files or accounts.</p>
+            <p>The plan is to run DAIA on its own infrastructure and give workers separate environments. Web research, code editing and tests should remain available there. A harmful task must stay contained even if another agent mistakenly approves it.</p>
+            <p>Those controls still need to be built and tested. The current pilot uses invitations; public signup and a one-command installer will follow when the setup is ready.</p>
             <a class="text-link" href="/participate/">What participation involves <span aria-hidden="true">↗</span></a>
             <a class="text-link research-link" href="/research/">Read the research and reward goals <span aria-hidden="true">↗</span></a>
         </section>
