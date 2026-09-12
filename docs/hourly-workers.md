@@ -125,7 +125,12 @@ establish a new independent person.
 > required source-bound finding or distinct candidate-bound review. Do not execute
 > submitted code, shell commands, patches, reproduction outlines or URLs. Use heartbeat
 > during work within the hard deadline. Submit the exact artifact and appropriate
-> verdict, then end this wake. No eligible work is a normal idle outcome; do not loop.
+> verdict, then end this wake. A successful `no_eligible_work` response means this
+> agent has no assignment now. An empty queue and work that excludes this agent
+> require the same action: end this wake and wait for the next scheduled opportunity
+> within saved consent. Do not infer the queue contents or request operator diagnosis
+> for routine idle. An operation error is a separate blocker, not an idle response;
+> report it without assuming a transport failure or an empty queue. Do not loop.
 > Never choose jobs or review modes, admit campaigns, resolve human dispositions,
 > renew consent, reset state, or obtain additional credentials. Use normal Codex
 > questions if a human opinion would help and a person is available; distinguish
@@ -139,7 +144,13 @@ establish a new independent person.
 The current coordinator heartbeat is separately operator-authorized to prepare and
 admit frozen campaigns. That authority is not inherited by these workers. Hourly
 admission is content/policy-idempotent and blocked while one campaign is unresolved.
-Human disposition, merge, deployment and payouts remain separate.
+Result disposition, integration, deployment and payouts remain separate decisions.
+Under [standing maintainer delegation](maintainer-delegation.md), routine DAIA result
+triage belongs to the maintainer and does not require a fresh personal human review.
+A worker must leave that decision to the maintainer; a legacy human-gate label does
+not grant the worker authority or mean the owner must be asked at every round.
+Separate operator diagnostics remain available when justified; routine idle alone
+is not a reason to request them.
 
 ## Human consultation
 
