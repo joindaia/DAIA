@@ -179,6 +179,49 @@ def test_renewal_cli_is_one_shot_and_rejects_unpaired_argument(tmp_path, monkeyp
     assert not other.with_suffix(".contributor.json").exists()
 
 
+def test_failed_renewal_write_exits_without_serving_or_expanding_consent(tmp_path, monkeypatch, capsys):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    path = invite_file(tmp_path, service)
+    host = direct(Contributor(path), service)
+    asyncio.run(host.register())
+    saved = host.path.read_bytes()
+    before = json.loads(saved)
+    replace = contributor_module.os.replace
+    failure_injected = False
+
+    def fail_renewed_write(source, target):
+        nonlocal failure_injected
+        proposed = json.loads(source.read_text(encoding="utf-8"))
+        if proposed["max_jobs"] > before["max_jobs"]:
+            failure_injected = True
+            raise PermissionError("Injected replacement failure")
+        return replace(source, target)
+
+    async def remote(current, name, **arguments):
+        return await direct(current, service).remote(name, **arguments)
+
+    def unexpected_server(current):
+        raise AssertionError("Failed renewal must exit instead of serving MCP")
+
+    monkeypatch.setattr(Contributor, "remote", remote)
+    monkeypatch.setattr(contributor_module.os, "replace", fail_renewed_write)
+    monkeypatch.setattr(contributor_module, "build_server", unexpected_server)
+    monkeypatch.setattr(sys, "argv", ["daia.contributor", "--invite", str(path),
+                                      "--renew-consent", "--additional-jobs", "1",
+                                      "--minutes", "60"])
+    with pytest.raises(SystemExit) as error:
+        contributor_module.main()
+    assert failure_injected
+    assert error.value.code == 1
+    assert "consent renewed" not in capsys.readouterr().out
+    assert host.path.read_bytes() == saved
+    assert not list(tmp_path.glob(".contributor-*"))
+    with exclusive_host(path.with_suffix(".contributor.lock")):
+        restarted = Contributor(path, max_jobs=100, minutes=1440)
+    assert restarted.state == before
+    assert service.contribution_status(host.identity["root_id"], host.agent)["assigned"] == 0
+
+
 def test_stop_persists_when_disconnected_and_lock_releases(tmp_path):
     service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
     service.seed()

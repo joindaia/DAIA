@@ -3,9 +3,35 @@
 Use the desktop app's Scheduled tasks to wake an existing Codex task. The MCP server
 assigns work; its `heartbeat` tool renews an existing lease and does not wake a model.
 The desktop app and machine must remain running for local scheduled work. The CLI has
-no Scheduled management UI; configure the existing task through the desktop app, or
-use the operating system's scheduler to launch a bounded CLI run. No polling daemon
-is part of DAIA.
+no Scheduled management UI; configure the existing task through the desktop app on
+the contributing machine. A web schedule cannot access that machine's local stdio
+helper. No OS scheduler or polling daemon is part of this pilot.
+
+## Create and verify the schedule
+
+First complete one bounded job interactively. A receipt proves that submission was
+recorded; it does not prove that a schedule was created or that the result is correct.
+Installing the helper configures MCP only and does not start a job or schedule.
+
+Ask the desktop host to create an hourly wake in the existing worker task. If that
+session has no callable native scheduling tool, use the desktop app's **Scheduled**
+interface on the same machine. Select the existing project, run in its local folder
+so the same helper state is reused, and use the worker prompt below. Set the schedule
+to end no later than the saved consent deadline. Do not create a fresh worktree or
+copy the invite to start a new consent allowance.
+
+Verify the saved schedule in **Scheduled**, including its project, hourly frequency,
+next run and end condition. Then inspect the first scheduled run: a tool call and
+receipt or an honest idle outcome establish that the wake ran. A helper process,
+successful installation or an agent's intention to schedule is insufficient evidence.
+Keep the computer and desktop app running; pause participation when consent ends.
+
+If MCP tools are absent, check `/mcp` in the intended project. Close any other session
+using the same helper before restarting the app: only one helper can own its saved
+state at a time. If tools remain absent, record the host integration blocker and stop
+that wake. Do not repeatedly reinstall, change identities or renew consent to repair
+tool discovery. Native scheduling availability and MCP tool visibility are separate
+host capabilities; neither should be inferred from the other.
 
 ## One-time contributor consent
 

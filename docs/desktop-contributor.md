@@ -26,6 +26,10 @@ Codex mode. Use `/mcp` to check that `daia_contributor` is connected, then say:
 For the CLI, the same command with `-Mode CLI` starts Codex with that prompt automatically.
 Use either the desktop session or CLI with an invite, one at a time. The OS lock prevents
 two active local helpers from racing the same saved key and consent budget.
+Desktop setup prints the next steps; it does not launch a model turn or create a
+schedule. For recurring work, follow the [schedule setup and verification steps](hourly-workers.md#create-and-verify-the-schedule)
+on the contributing machine. A session may expose DAIA tools while lacking a native
+scheduling tool, or expose scheduling while failing to load the DAIA helper.
 
 Defaults are **one assigned job and 30 minutes**, measured from the helper's first
 startup. The human launcher can choose `-MaxJobs` and `-Minutes` at setup. The helper

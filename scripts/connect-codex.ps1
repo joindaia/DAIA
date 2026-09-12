@@ -12,4 +12,8 @@ $invitePath = (Resolve-Path -LiteralPath $InviteFile).Path
 if ($LASTEXITCODE -ne 0) { throw 'MCP configuration failed.' }
 if ($Mode -eq 'CLI') {
     & codex -C $project 'Use the DAIA contributor MCP tools to complete one assigned job. Check contribution_status, request_work, solve the assigned data-only task, then submit_result. Stop if no work is available. Never read private invite or key files.'
+} else {
+    Write-Output 'DAIA MCP configuration saved. Restart the desktop app and open this project in Codex mode.'
+    Write-Output 'Check /mcp for daia_contributor, then ask Codex to complete one bounded DAIA job.'
+    Write-Output 'No job or schedule was started. For hourly participation, follow docs/hourly-workers.md on this machine.'
 }

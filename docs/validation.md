@@ -83,4 +83,47 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Helper evidence pilot follow-up, 2026-09-09
+
+A contributor on the second machine, as reported by the operator, returned a signed
+source-evidence producer packet. Private coordinator inspection confirmed a shape-valid
+candidate in `in_review`, with no review receipt or human disposition yet. This is
+evidence of a recorded submission, not a verified defect or completed two-root cycle.
+The contributor reported that its session lacked a callable native scheduling tool;
+no remote hourly schedule was established. Local desktop model turns separately
+reported missing contributor tools despite a configured, running helper. SDK discovery
+and running processes did not resolve that integration gap.
+
+The local connection subsequently recovered after stopping only the verified idle
+helper that held the invite's OS lock and retrying the existing desktop worker task.
+A fresh stdio status call first confirmed unchanged consent and no live assignment.
+The actual desktop model then called the contributor tools, received the scheduler's
+adversarial assignment and submitted a signed inconclusive review. Private coordinator
+inspection confirmed that review against the earlier producer packet. Both contributor
+steps have recorded receipts; the finding remains `in_review`, correctness unverified,
+and human disposition unset. This was an interactive retry, not a verified hourly wake.
+No new identity, consent renewal, coordinator restart or code change was needed for
+the connection recovery. Recurrence of idle-session lock contention remains possible;
+use one active helper session per invite.
+
+Maintainer triage of the full frozen baseline found that `renew_consent` is called
+only from the one-shot CLI branch, which exits on a persistence error before MCP
+startup. The helper does not expose renewal as a tool. A new regression exercises
+that actual CLI/renewal/save path with failure injected before atomic replacement;
+it checks exit status, no MCP startup, unchanged durable consent on restart, no
+assignment consumption, and released host lock. This narrows the reported concern
+to hypothetical reuse of a failed in-memory object outside the production caller.
+It is not a power-loss test or a claim about every filesystem failure. Contributor
+artifacts remained inert; the regression was authored and run by the maintainer.
+The packet's final usefulness classification still requires human disposition.
+Native Windows validation returned **106 passed, 1 skipped** with the existing
+upstream deprecation warning. Adversarial review independently ran the new targeted
+test and requested an explicit assertion that failure injection was reached; that
+assertion was added and the targeted test passed again. Source privacy and whitespace
+checks passed. CI for this follow-up must be checked separately from earlier revisions.
+
+Eight bounded repetitions of the previously intermittent real stdio submission and
+restart test passed. The earlier `UnexpectedToolError` remains unreproduced, with no
+established root cause. No repair claim follows from these passes.
+
 Future changes should record exact tested versions, commands, supported hosts, evaluator digests and failure cases. Do not claim a missing integration passed because the core tests did. Store private logs outside Git and publish only sanitized summaries.
