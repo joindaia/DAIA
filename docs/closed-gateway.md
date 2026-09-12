@@ -273,3 +273,19 @@ This validates the configured per-IP limit for active requests, not twenty machi
 or a measured service capacity. Participants sharing a public IP also share this
 limit. Request-rate bursts, distributed floods, incomplete pre-header connections
 and continuous slow uploads are not covered by this check.
+
+### Request bursts
+
+The same real proxy exercise sends eighty sequential authenticated initialization
+requests over one client connection. Responses must be HTTP 200 or 429, at least
+one request must be rate-limited, and the burst must finish within ten seconds.
+After five seconds without new requests, initialization must succeed again. One
+request is active at a time, keeping this check separate from concurrent streams.
+The isolated VPS test passed in 37.64s with the configured five-requests-per-second
+rate and twenty-request burst allowance. Removing only the request limiter made
+the negative control fail because no request returned 429. The test does not
+calibrate the exact rate or distinguish nearby rate/burst settings.
+
+These bounded tests exercise configured rejection and recovery. They are not a
+throughput benchmark or protection against distributed traffic. Slow continuous
+uploads and pre-header connection pressure remain separate deployment concerns.

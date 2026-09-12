@@ -192,6 +192,19 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
                     break
                 assert status == 429 and time.monotonic() < deadline
                 time.sleep(0.25)
+        # Sequential requests keep concurrency at one: overflow here must be
+        # the request-rate limit rather than the active-stream ceiling.
+        with transport() as burst:
+            statuses = []
+            deadline = time.monotonic() + 10
+            for _ in range(80):
+                status = burst.post("/mcp", json=init, headers=headers).status_code
+                assert status in {200, 429} and time.monotonic() < deadline
+                statuses.append(status)
+            assert 429 in statuses
+            # The configured burst drains in four seconds at five requests/s.
+            time.sleep(5)
+            assert burst.post("/mcp", json=init, headers=headers).status_code == 200
         with transport() as active:
             with active.stream("GET", "/mcp", headers=session_headers, timeout=8) as stream:
                 assert stream.status_code == 200
