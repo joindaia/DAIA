@@ -1,5 +1,6 @@
 """Optional real Nginx/Unix-socket TLS exercise; no public ports or real identities."""
 import datetime
+import asyncio
 from contextlib import ExitStack
 import json
 import os
@@ -25,7 +26,7 @@ if os.environ.get("DAIA_REQUIRE_NGINX") == "1" and not shutil.which("nginx"):
 pytestmark = pytest.mark.skipif(os.name != "posix" or not shutil.which("nginx"), reason="Requires installed Nginx on POSIX")
 
 
-def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
+def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatch):
     import ipaddress
     from daia.crypto import sign
     service, _ = network
@@ -205,8 +206,68 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
             # The configured burst drains in four seconds at five requests/s.
             time.sleep(5)
             assert burst.post("/mcp", json=init, headers=headers).status_code == 200
+        # Run the real helper through the canonical public URL and closed proxy.
+        # Only TCP routing maps the reserved example hostname to our loopback port;
+        # URL validation, HTTP Host, TLS SNI/certificate checks and MCP stay intact.
+        # Reopen only the disposable backend against a checked snapshot. The
+        # source keeps its original DB, so migration cannot pass by sharing state.
+        from daia.store import backup_database
+        restored_db = tmp_path / "restored.sqlite3"
+        backend.terminate()
+        backend.wait(timeout=10)
+        backup_database(service.store.path, restored_db)
+        backend = subprocess.Popen([sys.executable, "-m", "daia.gateway", "--db", str(restored_db),
+                                    "--config", str(policy), "--socket", str(sock)], env=env,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        deadline = time.monotonic() + 10
+        while not sock.exists():
+            assert backend.poll() is None and time.monotonic() < deadline
+            time.sleep(0.05)
+        import httpcore2
+        from daia.contributor import Contributor
+        from daia.mcp_server import build_mcp_app
+        from test_mcp import running_server
+        connect_tcp = httpcore2.AnyIOBackend.connect_tcp
+        gateway_port = port
+        async def local_gateway(backend, host, port, *args, **kwargs):
+            if host == "mcp.example.org" and port == 443:
+                host, port = "127.0.0.1", gateway_port
+            return await connect_tcp(backend, host, port, *args, **kwargs)
+        with running_server(build_mcp_app(service)) as source_url:
+            invite = tmp_path / "migration-invite.json"
+            invite.write_text(json.dumps({**grant, "network_id": service.network_id, "url": source_url}))
+            helper = Contributor(invite, clock=service.clock)
+            helper.state.update(key=signing_key.private_bytes_raw().hex(), registered=True,
+                                used=1, pending=dict(args))
+            helper.save()
+            helper = Contributor(invite, clock=service.clock)
+            assert helper.agent == aid
+            original = json.loads(helper.path.read_text())
+            destination = {"url": "https://mcp.example.org/mcp", "tls": {
+                "ca_file": "client-ca.pem", "certificate": "client.pem", "private_key": "client.key"}}
+            with monkeypatch.context() as route:
+                route.setenv("NO_PROXY", "mcp.example.org,127.0.0.1,localhost")
+                route.setattr(httpcore2.AnyIOBackend, "connect_tcp", local_gateway)
+                asyncio.run(helper.migrate_endpoint(destination, tmp_path))
+                helper = Contributor(invite, clock=service.clock)
+                assert helper.transport["url"] == destination["url"]
+                recovered = asyncio.run(helper.perform("submit_result", artifact=args["artifact"], verdict=args["verdict"]))
+                assert recovered["status"] == "already_recorded"
+                assert helper.state["used"] == original["used"]
+                assert helper.state["deadline"] == original["deadline"]
+                # Switchback is a separate operator action; let the preceding
+                # SDK sessions drain their request-rate burst first.
+                time.sleep(5)
+                asyncio.run(helper.migrate_endpoint(rollback=True))
+                assert helper.transport is None and helper.state["pending"] is None
+                assert helper.state["key"] == original["key"]
         with transport() as active:
-            with active.stream("GET", "/mcp", headers=session_headers, timeout=8) as stream:
+            # Process restart invalidates MCP sessions; durable receipts survive.
+            initialized = active.post("/mcp", json=init, headers=headers)
+            assert initialized.status_code == 200
+            fresh_headers = {**session_headers, "Mcp-Session-Id": initialized.headers["mcp-session-id"]}
+            assert active.post("/mcp", json={"jsonrpc": "2.0", "method": "notifications/initialized"}, headers=fresh_headers).status_code == 202
+            with active.stream("GET", "/mcp", headers=fresh_headers, timeout=8) as stream:
                 assert stream.status_code == 200
                 crl(revoke=True)
                 reload_started = time.monotonic()

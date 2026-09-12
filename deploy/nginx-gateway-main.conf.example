@@ -11,5 +11,8 @@ http {
     access_log off;
     client_body_temp_path /run/daia-proxy/body;
     proxy_temp_path /run/daia-proxy/proxy;
+    fastcgi_temp_path /run/daia-proxy/fastcgi;
+    uwsgi_temp_path /run/daia-proxy/uwsgi;
+    scgi_temp_path /run/daia-proxy/scgi;
     include /etc/daia/gateway/site.conf;
 }

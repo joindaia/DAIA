@@ -84,3 +84,18 @@ simulating loss of its confirmation, migrates the unchanged helper state to the
 restored coordinator and recovers `already_recorded` after local consent expiry.
 It verifies unchanged usage/deadline and refuses a new claim. This is local restored
 state evidence; it does not replace the combined public-gateway or off-host test.
+
+The combined local Nginx regression now passes against a separately restored
+coordinator database: the disposable backend stops, a checked snapshot is created,
+and the backend restarts against that copy while the source retains its original
+file. The actual helper migrates through the canonical public URL, restarts,
+recovers the signed receipt and switches back with unchanged key, usage and deadline.
+Only TCP routing for the reserved example hostname is redirected to loopback; URL,
+Host, TLS SNI and certificate validation remain enabled. The exercise passed in
+42.13s on the local extracted Nginx runtime. Switchback is separated by five seconds
+to drain preceding SDK requests from the rate limiter. Backend restart requires a
+new MCP session; stored receipts survive independently of session IDs.
+
+This is an isolated same-host rehearsal with synthetic credentials and state.
+Off-host transfer, real-agent coordination and failure recovery remain unverified;
+no public route or live coordinator was changed.
