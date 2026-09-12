@@ -296,7 +296,12 @@ def test_contributor_mutual_tls_real_mcp(tmp_path):
                    .serial_number(x509.random_serial_number())
                    .not_valid_before(now - datetime.timedelta(minutes=1))
                    .not_valid_after(now + datetime.timedelta(days=1))
-                   .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True))
+                   .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True)
+                   .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), False)
+                   .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key.public_key()), False)
+                   .add_extension(x509.KeyUsage(digital_signature=True, content_commitment=False,
+                       key_encipherment=not ca, data_encipherment=False, key_agreement=False,
+                       key_cert_sign=ca, crl_sign=ca, encipher_only=False, decipher_only=False), True))
         if not ca:
             builder = builder.add_extension(x509.ExtendedKeyUsage([
                 ExtendedKeyUsageOID.CLIENT_AUTH if client else ExtendedKeyUsageOID.SERVER_AUTH]), False)
@@ -315,23 +320,30 @@ def test_contributor_mutual_tls_real_mcp(tmp_path):
 
     service = Coordinator(Store(str(tmp_path / "tls.sqlite3")))
     grant = service.invite()
-    # Explicit mutable set is copied at startup; register before building closed server.
-    identity = {**grant, "network_id": service.network_id, "url": "https://127.0.0.1:8000/mcp",
-                "tls": {"ca_file": "ca.pem", "certificate": "client.pem", "private_key": "client.key"}}
-    invite = tmp_path / "invite.json"
-    invite.write_text(json.dumps(identity))
-    host = Contributor(invite)
-    challenge = service.challenge(grant["root_id"], public_hex(host.key))
-    service.register(grant["root_id"], challenge["challenge_id"], sign(host.key, challenge))
-    with running_server(build_mcp_app(service, allowed_agents={host.agent}),
+    with running_server(build_mcp_app(service),
                         ssl_certfile=str(tmp_path / "server.pem"),
                         ssl_keyfile=str(tmp_path / "server.key"),
                         ssl_ca_certs=str(ca_path), ssl_cert_reqs=ssl.CERT_REQUIRED) as url:
-        # Ephemeral port selection does not change any persisted identity or consent.
-        host.identity["url"] = url
+        identity = {**grant, "network_id": service.network_id, "url": url,
+                    "tls": {"ca_file": "ca.pem", "certificate": "client.pem", "private_key": "client.key"}}
+        invite = tmp_path / "invite.json"
+        invite.write_text(json.dumps(identity))
+        host = Contributor(invite)
+        host.tls_context.verify_flags |= ssl.VERIFY_X509_STRICT
+        asyncio.run(host.register())
+        host.save()
+        previous = dict(host.state)
+        host = Contributor(invite)
+        assert host.state == previous
+        host.tls_context.verify_flags |= ssl.VERIFY_X509_STRICT
         result = asyncio.run(host.remote("contribution_status", agent_id=host.agent))
         assert isinstance(result, dict)
         assert host.state["used"] == 0
+        # A trusted signer does not make the wrong server hostname acceptable.
+        host.identity["url"] = url.replace("127.0.0.1", "localhost")
+        with pytest.raises(ValueError, match="Coordinator unavailable"):
+            asyncio.run(host.remote("contribution_status", agent_id=host.agent))
+        host.identity["url"] = url
         # Trusting the server alone is insufficient: the server requires the client key.
         host.tls_context = ssl.create_default_context(cafile=str(ca_path))
         with pytest.raises(ValueError, match="Coordinator unavailable"):
