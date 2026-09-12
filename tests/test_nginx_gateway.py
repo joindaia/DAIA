@@ -29,7 +29,8 @@ pytestmark = pytest.mark.skipif(os.name != "posix" or not shutil.which("nginx"),
 def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatch):
     import ipaddress
     from daia.crypto import sign
-    service, _ = network
+    service, clock = network
+    clock[0] = int(time.time())  # Real gateway and helper share wall-clock lease bounds.
     grant, aid, signing_key = contributor()
     service.seed()
     root = Path(__file__).resolve().parents[1]
@@ -68,6 +69,7 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
     crl()
     runtime = tmp_path / "run"
     runtime.mkdir(mode=0o750)
+    runtime.chmod(0o750)  # Match gateway ownership policy even under operator umask 077.
     policy = tmp_path / "policy.json"
     policy.write_text(json.dumps({"resource": "https://mcp.example.org/mcp", "allowed_agents": [aid],
                                   "certificate_agents": {client_cert.fingerprint(hashes.SHA256()).hex(): aid}}))
@@ -236,7 +238,7 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
         with running_server(build_mcp_app(service, maintenance=True)) as source_url:
             invite = tmp_path / "migration-invite.json"
             invite.write_text(json.dumps({**grant, "network_id": service.network_id, "url": source_url}))
-            helper = Contributor(invite, clock=service.clock)
+            helper = Contributor(invite, max_jobs=2, clock=service.clock)
             helper.state.update(key=signing_key.private_bytes_raw().hex(), registered=True,
                                 used=1, pending=dict(args))
             helper.save()
@@ -279,6 +281,44 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
                 asyncio.run(helper.migrate_endpoint(rollback=True))
                 assert helper.transport is None and helper.state["pending"] is None
                 assert helper.state["key"] == original["key"]
+                time.sleep(5)
+                asyncio.run(helper.migrate_endpoint(destination, tmp_path))
+                # A migrated helper cannot execute new unsigned work. Issue a
+                # separate operator approval after the refused claim, then resume
+                # the exact reserved lease without another budget charge.
+                from daia.service import Coordinator
+                from daia.store import Store
+                from daia.job_authorization import authorize_job
+                from daia.crypto import public_hex
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+                restored = Coordinator(Store(str(restored_db)))
+                restored.seed(35)
+                approval_key = Ed25519PrivateKey.generate()
+                authority = {'public_key': public_hex(approval_key),
+                             'capabilities': ['read_input'], 'jobs': {}}
+                helper = Contributor(invite, clock=time.time, job_authority=authority)
+                time.sleep(5)
+                with pytest.raises(ValueError, match='Job authorization refused'):
+                    asyncio.run(helper.perform('request_work'))
+                reserved = helper.state['lease']
+                assert reserved is not None and helper.state['used'] == 2
+                authority['jobs'][reserved['job_id']] = authorize_job(
+                    reserved, key=approval_key, agent_id=aid, capabilities=['read_input'],
+                    expires=reserved['hard_deadline'] + 60, now=int(time.time()))
+                helper = Contributor(invite, clock=time.time, job_authority=authority)
+                time.sleep(5)
+                assert asyncio.run(helper.perform('request_work')) == reserved
+                assert helper.state['used'] == 2
+                time.sleep(5)
+                assert asyncio.run(helper.perform('release_work'))['release'] == 'confirmed'
+                assert helper.state['lease'] is None and helper.state['used'] == 2
+                # New destination work makes the old snapshot stale. Switchback
+                # must now fail without changing helper identity or consent.
+                before_refused_rollback = helper.path.read_bytes()
+                time.sleep(5)
+                with pytest.raises(ValueError, match='Coordinator state differs'):
+                    asyncio.run(helper.migrate_endpoint(rollback=True))
+                assert helper.path.read_bytes() == before_refused_rollback
         with transport() as active:
             # Process restart invalidates MCP sessions; durable receipts survive.
             initialized = active.post("/mcp", json=init, headers=headers)

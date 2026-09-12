@@ -550,7 +550,8 @@ def test_release_does_not_follow_a_changed_assignment(tmp_path):
         assert new["assignment_id"] != old["assignment_id"]
         host = direct(Contributor(path, clock=clock), service)
         result = await host.perform("heartbeat")
-        assert result["release"] == "assignment_changed" and result["lease"] == new
+        assert result["release"] == "assignment_changed" and result["lease"] is None
+        assert host.state["used"] == 1
         assert service.contribution_status(host.identity["root_id"], host.agent)["lease"] == new
         assert (await host.perform("stop_contributing"))["status"] == "stopped"
         assert service.contribution_status(host.identity["root_id"], host.agent)["lease"] is None

@@ -17,6 +17,13 @@ Authorized bug bounties and customer job requests are possible paid routes along
 the research goal, after the platform can deliver and verify bounded work. Start with
 a sample contract and shadow cost record; see [paid-work scope](paid-work.md).
 
+## Active security milestone
+
+The authorized [compromised-coordinator milestone](compromised-coordinator-milestone.md)
+adds signed releases, a startup integrity gate, independently authorized jobs and
+local worker isolation to the closed HTTPS cutover. These controls are being
+implemented; public cohort admission remains empty until their deployment gates pass.
+
 ## Immediate product sequence
 
 This ordered sequence governs the next work. The longer-term architecture sections

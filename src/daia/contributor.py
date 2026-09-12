@@ -1,6 +1,7 @@
 """Bounded, local stdio MCP host. Secrets stay in the host, never tool arguments."""
 import argparse
 import asyncio
+import copy
 from contextlib import contextmanager
 import errno
 import json
@@ -18,6 +19,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from .crypto import fingerprint, public_hex, sign, strict_json
 from .mcp_server import pilot_origin, public_origin
 from .signer import validate_envelope
+from .job_authorization import verify_job, load_job_authority
 
 INSTRUCTIONS = (
     "Use contribution_status, then request_work when the user asks to contribute. "
@@ -83,9 +85,10 @@ def closed_transport(config, directory):
 
 
 class Contributor:
-    def __init__(self, invite_file, max_jobs=1, minutes=30, clock=time.time, *, save_on_load=True):
+    def __init__(self, invite_file, max_jobs=1, minutes=30, clock=time.time, *, save_on_load=True, job_authority=None):
         if type(max_jobs) is not int or not 1 <= max_jobs <= 10000 or not 1 <= minutes <= 1440:
             raise ValueError("Use 1..10000 jobs and 1..1440 minutes")
+        self.job_authority = copy.deepcopy(job_authority)
         self.invite_file = Path(invite_file).resolve()
         self.identity = strict_json(self.invite_file.read_text(encoding="utf-8-sig"))
         url = self.identity["url"]
@@ -270,10 +273,26 @@ class Contributor:
             self.state["registered"] = True
             self.save()
 
-    async def recover(self):
+    async def recover(self, *, cleanup=False):
         await self.register()
         status = await self.remote("contribution_status", agent_id=self.agent)
-        self.state["lease"] = status["lease"]
+        lease, previous = status["lease"], self.state["lease"]
+        same_assignment = (isinstance(lease, dict) and isinstance(previous, dict)
+                           and all(lease.get(k) == previous.get(k) and lease.get(k)
+                                   for k in ("assignment_id", "nonce"))
+                           and all(lease.get(k) == previous.get(k) for k in
+                                   ("job_id", "network_id", "mode", "target_id",
+                                    "context_hash", "policy_hash", "hard_deadline")))
+        if lease and not same_assignment and not self.state["claiming"]:
+            if cleanup:
+                return status  # Cleanup may inspect IDs, never adopt unreserved work.
+            if self.state["pending"]:
+                # Receipt replay needs no new work. Ignore unsolicited assignments
+                # without replacing the saved evidence needed for that replay.
+                status = {**status, "lease": None}
+                return status
+            raise ValueError("Recovered assignment has no local consent reservation")
+        self.state["lease"] = lease
         # A lost claim consumes its reserved slot even if it never reached the server.
         self.state["claiming"] = False
         self.save()
@@ -320,8 +339,8 @@ class Contributor:
         """Finish saved refusal once; failed cleanup must not resume the assignment."""
         outcome = "confirmed"
         try:
-            await self.recover()
-            lease, intent = self.state["lease"], self.state["releasing"]
+            status = await self.recover(cleanup=True)
+            lease, intent = status["lease"], self.state["releasing"]
             if lease and intent["assignment_id"] is None:
                 intent["assignment_id"] = lease["assignment_id"]  # Recover a lost claim first.
                 self.save()
@@ -333,13 +352,109 @@ class Contributor:
                 self.state["lease"] = None
             elif lease:
                 outcome = "assignment_changed"  # Never apply an old refusal to different work.
+                self.state["lease"] = None  # Nor expose that unreserved work for execution.
             self.state["releasing"] = None
             self.save()
         except ValueError:
             return {**self.status(), "release": "unconfirmed; lease will expire"}
         return {**self.status(), "release": outcome}
 
+    def check_job_authorization(self, lease):
+        if self.job_authority is None and self.transport is None:
+            return  # Legacy private pilot; public transport never inherits this exception.
+        try:
+            policy = self.job_authority
+            if not isinstance(policy, dict) or set(policy) != {'public_key', 'capabilities', 'jobs'}:
+                raise ValueError()
+            verify_job(lease, policy['jobs'][lease['job_id']], public_key=policy['public_key'],
+                       agent_id=self.agent, network_id=self.identity['network_id'],
+                       allowed_capabilities=policy['capabilities'], now=int(self.clock()))
+        except (KeyError, TypeError, ValueError):
+            raise ValueError('Job authorization refused') from None
+
+    def model_response(self, value):
+        """Project coordinator responses onto bounded, non-instruction fields."""
+        statuses = {'ready', 'working', 'stopped', 'expired', 'release_pending',
+                    'submission_pending', 'budget_exhausted', 'other_agent_has_lease',
+                    'budget_or_cooldown', 'no_eligible_work', 'already_recorded',
+                    'in_review', 'rejected', 'disputed', 'ready_for_maintainer',
+                    'pilot_ready_for_maintainer', 'promoted'}
+        numbers = {'jobs_used', 'max_jobs', 'deadline', 'expires', 'assigned', 'cooldown_until'}
+        try:
+            if not isinstance(value, dict):
+                raise ValueError()
+            clean = {}
+            for field, item in value.items():
+                if field == 'lease':
+                    if item is not None:
+                        self.check_job_authorization(item)
+                    clean[field] = copy.deepcopy(item)
+                elif field in {'grant', 'receipt'}:
+                    clean[field] = None if item is None else self.model_response(item)
+                elif field in numbers:
+                    if type(item) is not int or not 0 <= item <= 2**53 - 1:
+                        raise ValueError()
+                    clean[field] = item
+                elif field in {'release_pending', 'other_agent_has_lease'}:
+                    if type(item) is not bool:
+                        raise ValueError()
+                    clean[field] = item
+                elif field == 'status':
+                    if not isinstance(item, str) or item not in statuses:
+                        raise ValueError()
+                    clean[field] = item
+                elif field in {'network_id', 'root_id', 'agent_id'}:
+                    expected = self.agent if field == 'agent_id' else self.identity[field]
+                    if item != expected:
+                        raise ValueError()
+                    clean[field] = expected
+                elif field in {'receipt_hash', 'result_id'}:
+                    size = 64  # Both IDs are SHA-256 digests in service.submit.
+                    if (not isinstance(item, str) or len(item) != size
+                            or any(c not in '0123456789abcdef' for c in item)):
+                        raise ValueError()
+                    clean[field] = item
+                elif field == 'release':
+                    if item not in {'confirmed', 'assignment_changed', 'unconfirmed; lease will expire'}:
+                        raise ValueError()
+                    clean[field] = item
+                elif field == 'work_authorization':
+                    if item != 'refused':
+                        raise ValueError()
+                    clean[field] = item
+                elif field == 'pending_submission':
+                    # Only locally saved output, never arbitrary coordinator text.
+                    pending = self.state['pending']
+                    clean[field] = ({k: pending[k] for k in ('artifact', 'verdict')}
+                                    if pending else None)
+                # Unknown fields never reach the model.
+            return clean
+        except (KeyError, TypeError, ValueError, RecursionError):
+            raise ValueError('Coordinator response refused') from None
+
     async def perform(self, operation, *, artifact=None, verdict=None):
+        result = await self._perform(operation, artifact=artifact, verdict=verdict)
+        if self.job_authority is None and self.transport is None:
+            return result
+        if operation == 'request_work' and isinstance(result, dict) and 'assignment_id' in result:
+            self.check_job_authorization(result)
+            return result
+        # Status/release responses must not leak unapproved job context. Do not
+        # mutate saved leases or pending receipts: those remain needed for cleanup.
+        result = copy.deepcopy(result)
+        containers = [result]
+        if isinstance(result, dict) and isinstance(result.get('grant'), dict):
+            containers.append(result['grant'])
+        for container in containers:
+            if isinstance(container, dict) and container.get('lease') is not None:
+                try:
+                    self.check_job_authorization(container['lease'])
+                except ValueError:
+                    container['lease'] = None
+                    container['work_authorization'] = 'refused'
+        return self.model_response(result)
+
+    async def _perform(self, operation, *, artifact=None, verdict=None):
         async with self.lock:
             if operation in {"stop_contributing", "release_work"}:
                 if operation == "stop_contributing":
@@ -362,6 +477,10 @@ class Contributor:
                 return self.status()
             if expired and operation == "submit_result" and not self.state["pending"]:
                 return self.status()
+            if (operation == 'request_work' and self.transport is not None
+                    and self.job_authority is None
+                    and (self.state['lease'] or self.state['used'] < self.state['max_jobs'])):
+                raise ValueError('Public work requires local job authorization')
             grant = await self.recover()
             if operation == "contribution_status":
                 return {**self.status(), "grant": grant}
@@ -393,9 +512,16 @@ class Contributor:
                 lease = self.state["lease"]
                 if lease is None:
                     raise ValueError("No live lease; request work first")
+                if operation in {"heartbeat", "submit_result"}:
+                    self.check_job_authorization(lease)
                 arguments = dict(agent_id=self.agent, assignment_id=lease["assignment_id"])
                 if operation == "heartbeat":
                     result = await self.remote("heartbeat", **arguments)
+                    if self.transport is not None or self.job_authority is not None:
+                        result = self.model_response(result)
+                        if (set(result) != {'expires'} or
+                                not int(self.clock()) < result['expires'] <= lease['hard_deadline']):
+                            raise ValueError('Coordinator response refused')
                     lease["expires"] = result["expires"]
                     self.save()
                     return result
@@ -411,6 +537,14 @@ class Contributor:
                 self.state["pending"] = pending
                 self.save()
             receipt = await self.remote("submit_result", **pending)
+            if self.transport is not None or self.job_authority is not None:
+                receipt = self.model_response(receipt)
+                if (set(receipt) not in ({'status', 'receipt_hash'},
+                                        {'status', 'receipt_hash', 'result_id'})
+                        or receipt['status'] not in {'already_recorded', 'in_review',
+                            'rejected', 'disputed', 'ready_for_maintainer',
+                            'pilot_ready_for_maintainer', 'promoted'}):
+                    raise ValueError('Coordinator response refused')
             self.state.update(receipt=receipt, pending=None, lease=None)
             self.save()
             return receipt
@@ -462,6 +596,7 @@ def build_server(host):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--invite", type=Path, required=True)
+    parser.add_argument("--job-authority", type=Path, help="Operator-owned local job approval policy")
     parser.add_argument("--max-jobs", type=int, default=1)
     parser.add_argument("--minutes", type=int, default=30)
     operation = parser.add_mutually_exclusive_group()
@@ -484,13 +619,15 @@ def main():
     try:
         invite = args.invite.resolve()
         if args.configure:
-            configure(args.project, invite, args.max_jobs, args.minutes)
+            configure(args.project, invite, args.max_jobs, args.minutes, job_authority=args.job_authority)
             return
+        authority = load_job_authority(args.job_authority) if args.job_authority else None
         with exclusive_host(invite.with_suffix(".contributor.lock")):
             if (args.accept_grant or args.migrate_endpoint or args.switch_back_endpoint) and not invite.with_suffix(".contributor.json").is_file():
                 raise ValueError("Existing contributor identity required")
             host = Contributor(invite, args.max_jobs, args.minutes,
-                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint))
+                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint),
+                               job_authority=authority)
             if args.migrate_endpoint or args.switch_back_endpoint:
                 config = strict_json(args.migrate_endpoint.read_text(encoding="utf-8")) if args.migrate_endpoint else None
                 directory = args.migrate_endpoint.resolve().parent if args.migrate_endpoint else None
@@ -521,16 +658,20 @@ def main():
         raise SystemExit(1) from None
 
 
-def configure(project, invite, max_jobs=1, minutes=30):
+def configure(project, invite, max_jobs=1, minutes=30, *, job_authority=None):
     """Append one native Codex MCP entry, preserving all existing host settings."""
     if not invite.is_file() or not 1 <= max_jobs <= 10000 or not 1 <= minutes <= 1440:
         raise ValueError("Check the invite and consent bounds")
+    if job_authority is not None:
+        load_job_authority(job_authority)
     directory = Path(project).resolve() / ".codex"
     directory.mkdir(mode=0o700, exist_ok=True)
     path = directory / "config.toml"
     text = path.read_text(encoding="utf-8") if path.exists() else ""
     entry = {"command": sys.executable, "args": ["-m", "daia.contributor", "--invite", str(invite),
               "--max-jobs", str(max_jobs), "--minutes", str(minutes)], "enabled": True}
+    if job_authority is not None:
+        entry["args"] += ["--job-authority", str(Path(job_authority).absolute())]
     current = tomllib.loads(text).get("mcp_servers", {}).get("daia_contributor")
     if current == entry:
         print("DAIA MCP configuration already installed. Restart the app to reconnect.")

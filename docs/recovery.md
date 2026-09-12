@@ -75,3 +75,40 @@ maintainer authority before allowing work again. Never run the original and rest
 copies as simultaneous coordinators of the same network. If the missing history cannot
 be reconciled, keep the restored copy offline. There is deliberately no automatic
 live-database swap or claim that restoring a snapshot resets consent safely.
+
+## Replaceable VPS: recovery gate before closing administrative SSH
+
+The deployment target is a replaceable host. GitHub holds reviewed DAIA releases
+and durable project work; each research project may have its own repository for
+proofs, source, tests, issues and recorded unsuccessful approaches. A merged commit
+is not deployment authorization. A future pull updater must verify an explicitly
+approved immutable release against independently installed trust metadata.
+
+A database snapshot alone is insufficient for a host rebuild:
+
+| Durable state | Recovery source and boundary |
+|---|---|
+| Coordinator identity, grants, leases, receipts, exposure and decisions | Checked private database snapshot plus reconciliation of changes after capture |
+| Project source, proofs and reviewable results | Project repositories, pinned commits and artifact digests; never credentials |
+| Results too large for Git or the database | Separate backed-up artifact storage when introduced; references alone cannot restore bytes |
+| Admission policy, service configuration and approved release/runtime | Private configuration backup and reproducible, verified release artifacts |
+| Trust roots, minimum release sequence, certificate revocations and expiry | Independently retained current security state; never restore an older trust policy merely because an old database is valid |
+| Service keys and recovery credentials | Restricted encrypted backup, separately accessible from the failed host; signing authority stays outside the coordinator |
+
+Temporary worker directories are disposable only after required output has been
+persisted and its receipt reconciled. Unsubmitted work can be retried after its
+lease expires. A result must not be reported as durably integrated merely because
+it exists in a worker's scratch directory. Current bounded text artifacts live in
+the database; large artifact storage and repository integration are not implemented.
+
+Before removing routine SSH access, perform a disposable clean-host restore with
+admission closed. Verify source and runtime signatures, the current minimum release
+sequence and revocations, database identity and reconciled receipts, preserved grant
+consumption, and rejection of stale assignments and revoked clients. Test an exact
+pending receipt retry without charging another job. Confirm that only one restored
+coordinator can accept work and that provider-console recovery is available. Keep
+administrative access until this complete exercise succeeds.
+
+Status: database process-loss recovery and source/runtime startup rejection have
+separate evidence above and in the security milestone. A complete clean-host restore,
+verified pull updater and provider-console recovery exercise remain incomplete.
