@@ -165,3 +165,26 @@ and exact pending replay after expiry. A real stdio-to-HTTP exercise uses synthe
 credentials and independently signed job authorization to submit one result through
 the restricted interface. It explicitly loads the current source in its child
 process instead of relying on an unrelated editable installation.
+
+## Explicit socket transport primitive
+
+The Linux execution primitive accepts an optional trusted-launcher argument:
+`--assignment-socket /private/helper/assignment.sock`. It exposes only that socket
+at `/run/daia-assignment.sock`, without mounting its containing directory or sharing
+the host network namespace. The source must be a canonical Unix socket owned by
+the launcher user, inaccessible to group/others, in a private directory owned by
+that user. The trusted launcher must keep the socket and its parent under exclusive
+control throughout execution.
+
+Socket metadata does not identify the service behind it. Only a dedicated
+assignment-helper endpoint may be supplied; never an SSH agent, container-control
+socket, generic proxy or other host service. The argument is not a worker-selectable
+MCP operation. A read-only socket mount permits protocol communication; it does not
+make the remote service's operations read-only.
+
+A real namespace test exchanged bounded synthetic messages through this one socket
+while an adjacent synthetic signing secret remained unavailable and workspace
+writing still worked. Existing network/environment isolation tests also passed.
+This establishes a transport primitive, not the complete helper relay: bounded MCP
+framing, backpressure, disconnect cleanup, the real restricted MCP exchange and the
+full job-consuming agent session still require integration and verification.

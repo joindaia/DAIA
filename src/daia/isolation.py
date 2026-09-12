@@ -17,7 +17,7 @@ import sys
 EXCLUDED = {'.git', '.private', '.runtime', '.codex', '.env', '.ssh'}
 
 
-def sandbox_command(snapshot, command):
+def sandbox_command(snapshot, command, *, assignment_socket=None):
     source = Path(snapshot).absolute()
     if (sys.platform != 'linux' or not Path('/usr/bin/bwrap').is_file()
             or not source.is_dir() or source.resolve() != source
@@ -32,6 +32,18 @@ def sandbox_command(snapshot, command):
                 or not (stat.S_ISREG(mode) or stat.S_ISDIR(mode))
                 or (stat.S_ISREG(mode) and info.st_nlink != 1)):
             raise ValueError('Input must be a clean snapshot of regular files')
+    channel = []
+    if assignment_socket is not None:
+        endpoint = Path(assignment_socket).absolute()
+        info = endpoint.lstat()
+        if (endpoint.resolve() != endpoint or not stat.S_ISSOCK(info.st_mode)
+                or info.st_uid != os.geteuid() or info.st_mode & 0o077
+                or endpoint.parent.stat().st_uid != os.geteuid()
+                or endpoint.parent.stat().st_mode & 0o077):
+            raise ValueError('Assignment socket must be private and operator-owned')
+        # Only a dedicated assignment helper may be supplied by the trusted launcher.
+        # Socket ownership cannot distinguish that helper from another host service.
+        channel = ['--dir', '/run', '--ro-bind', str(endpoint), '/run/daia-assignment.sock']
     return [
         '/usr/bin/bwrap', '--unshare-all', '--unshare-user', '--disable-userns',
         '--assert-userns-disabled', '--die-with-parent', '--new-session',
@@ -44,13 +56,14 @@ def sandbox_command(snapshot, command):
         '--ro-bind', str(source), '/input', '--chdir', '/work',
         '--setenv', 'HOME', '/home/worker',
         '--setenv', 'PATH', '/usr/bin:/bin',
-        '--setenv', 'LANG', 'C.UTF-8', '--', *command,
+        '--setenv', 'LANG', 'C.UTF-8', *channel, '--', *command,
     ]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', required=True, type=Path)
+    parser.add_argument('--assignment-socket', type=Path, help='Trusted launcher only: dedicated assignment helper socket')
     parser.add_argument('--timeout', type=int, default=300, help='Wall-clock limit, 1-3600 seconds')
     parser.add_argument('command', nargs=argparse.REMAINDER)
     args = parser.parse_args()
@@ -60,7 +73,7 @@ def main():
     if command[:1] == ['--']:
         command = command[1:]
     try:
-        argv = sandbox_command(args.input, command)
+        argv = sandbox_command(args.input, command, assignment_socket=args.assignment_socket)
     except (ValueError, OSError) as error:
         parser.exit(1, str(error) + '\n')
     # Bound combined output before forwarding it. The caller must still treat

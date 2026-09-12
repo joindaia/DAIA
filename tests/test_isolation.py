@@ -106,3 +106,59 @@ def test_cli_bounds_combined_output(tmp_path):
     assert result.returncode == 125
     assert b'output limit' in result.stderr
     assert len(result.stdout) + len(result.stderr) <= 1024 * 1024 + 100
+
+
+@pytest.mark.skipif(os.environ.get('DAIA_RUN_ISOLATION_TESTS') != '1',
+                    reason='Explicit real namespace integration test')
+def test_only_explicit_assignment_socket_is_reachable(tmp_path):
+    import socket
+    snapshot = tmp_path / 'input'; snapshot.mkdir()
+    private = tmp_path / 'helper'; private.mkdir(mode=0o700)
+    secret = private / 'signing-canary'; secret.write_text('synthetic secret')
+    endpoint = private / 'assignment.sock'
+    with socket.socket(socket.AF_UNIX) as listener:
+        listener.bind(str(endpoint)); endpoint.chmod(0o600)
+        listener.listen(1); listener.settimeout(5)
+        program = '''import pathlib,socket
+assert not pathlib.Path(CANARY).exists()
+assert not pathlib.Path('/run/signing-canary').exists()
+s=socket.socket(socket.AF_UNIX);s.settimeout(3)
+s.connect('/run/daia-assignment.sock');s.sendall(b'bounded request')
+assert s.recv(100)==b'bounded response'
+pathlib.Path('/work/result').write_text('useful task output')
+print('explicit channel works without helper files')
+'''.replace('CANARY', repr(str(secret)))
+        process = subprocess.Popen(
+            sandbox_command(snapshot, ['/usr/bin/python3', '-c', program], assignment_socket=endpoint),
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env={'PATH': '/usr/bin:/bin'}, close_fds=True,
+        )
+        try:
+            connection, _ = listener.accept()
+            with connection:
+                connection.settimeout(3)
+                assert connection.recv(100) == b'bounded request'
+                connection.sendall(b'bounded response')
+            stdout, stderr = process.communicate(timeout=5)
+            assert process.returncode == 0, stderr
+            assert stdout.strip() == b'explicit channel works without helper files'
+        finally:
+            if process.poll() is None: process.kill()
+            process.communicate(timeout=5)
+
+
+def test_assignment_socket_rejects_regular_files_and_public_permissions(tmp_path):
+    import socket
+    snapshot = tmp_path / 'input'; snapshot.mkdir()
+    private = tmp_path / 'helper'; private.mkdir(mode=0o700)
+    regular = private / 'regular'; regular.touch(mode=0o600)
+    with pytest.raises(ValueError):
+        sandbox_command(snapshot, ['/bin/true'], assignment_socket=regular)
+    endpoint = private / 'assignment.sock'
+    with socket.socket(socket.AF_UNIX) as listener:
+        listener.bind(str(endpoint)); endpoint.chmod(0o666)
+        with pytest.raises(ValueError):
+            sandbox_command(snapshot, ['/bin/true'], assignment_socket=endpoint)
+        endpoint.chmod(0o600); private.chmod(0o755)
+        with pytest.raises(ValueError):
+            sandbox_command(snapshot, ['/bin/true'], assignment_socket=endpoint)
