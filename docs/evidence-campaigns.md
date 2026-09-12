@@ -54,11 +54,20 @@ Write the packet privately for human inspection:
 This includes the exact context, candidate and reviews, with no contributor identities.
 The output file is exclusive: choose another filename rather than overwrite evidence.
 A human can record `useful`, `duplicate`, `unclear`, `rejected` or `cancelled` with an
-explanation through the operator-only `resolve-evidence` command. `useful` requires
-the assigned review first. Resolution records are immutable and retries idempotent;
+explanation through the operator-only `resolve-evidence` command. In the implemented
+v1 gate, `useful` requires `ready_for_maintainer`: a supporting assigned review, not
+merely a completed review. An inconclusive or failing review does not satisfy it.
+Resolution records are immutable and retries idempotent;
 closing a campaign cancels queued/leased work and fences old assignments. Historical
 receipts and exposure remain. This local operator boundary is not a cryptographic
 proof that a human typed the command.
+
+Human-perceived utility and the review's conclusion can differ. The existing note
+can preserve useful regression coverage while a human explicitly closes triage as
+`unclear`; the result and signed review remain unchanged. Do not substitute that
+terminal classification for a user's requested `useful` disposition without their
+approval. See the [triage proposal](evidence-triage-proposal.md) for the concrete
+mapping and its reporting limits. This does not change the v1 gate.
 
 The first success measure is one human-confirmed useful packet at bounded effort,
 followed by an independently checked, manually merged improvement. Shape-valid packets,

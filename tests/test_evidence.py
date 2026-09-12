@@ -81,6 +81,48 @@ def test_admission_idempotency_and_backlog_cap_are_transactional(network):
     assert all(r["status"] == "campaign_unresolved" for r in results)
 
 
+@pytest.mark.parametrize("verdict,assessment,state", [
+    ("inconclusive", "unclear", "in_review"),
+    ("fail", "concerns", "disputed"),
+])
+def test_human_utility_note_does_not_override_review(network, contributor, verdict, assessment, state):
+    service, _ = network
+    job = service.admit_evidence(document())["job_id"]
+    producer, reviewer = contributor(), contributor()
+    lease = service.request_work(producer[0]["root_id"], producer[1])
+    submit(service, producer, lease, packet(lease))
+    review = service.request_work(reviewer[0]["root_id"], reviewer[1])
+    artifact = packet(review, assessment=assessment)
+    root, agent, key = reviewer[0]["root_id"], reviewer[1], reviewer[2]
+    signature = sign(key, service.envelope(root, agent, review["assignment_id"], artifact, verdict))
+    receipt = service.submit(root, agent, review["assignment_id"], artifact, verdict, signature)
+    assert receipt["status"] == state
+    before = service.inspect_evidence()[0]
+    note = "Useful for regression coverage; the proposed defect remains unconfirmed."
+    with pytest.raises(Denied, match="review first"):
+        service.resolve_evidence(job, "useful", note)
+    assert service.inspect_evidence()[0] == before
+    assert service.admit_evidence(document("Another question"))["status"] == "campaign_unresolved"
+
+    # An explicit operator decision can close triage without changing the review.
+    assert service.resolve_evidence(job, "unclear", note)["status"] == "resolved"
+    assert service.resolve_evidence(job, "unclear", note)["status"] == "already_resolved"
+    after = service.inspect_evidence()[0]
+    assert after["disposition"] == "unclear"
+    assert after["disposition_note"] == note
+    assert after["result"] == before["result"]
+    assert after["reviews"] == before["reviews"]
+    assert after["context"] == before["context"]
+    assert after["result"]["correctness_verified"] is False
+    replay = service.submit(root, agent, review["assignment_id"], artifact, verdict, signature)
+    assert replay == {"receipt_hash": receipt["receipt_hash"], "status": "already_recorded"}
+    assert service.metrics()["promoted"] == 0
+    with pytest.raises(Denied, match="overwritten"):
+        service.resolve_evidence(job, "useful", note)
+    assert service.admit_evidence(document())["status"] == "already_admitted"
+    assert service.admit_evidence(document("Another question"))["status"] == "admitted"
+
+
 def test_cancelled_campaign_fences_old_lease_and_preserves_exposure(network, contributor):
     service, _ = network
     job = service.admit_evidence(document())["job_id"]

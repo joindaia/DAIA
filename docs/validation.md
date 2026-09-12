@@ -83,6 +83,20 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Human utility and unchanged triage gate, 2026-09-09
+
+The [triage proposal](evidence-triage-proposal.md) preserves the existing positive-review
+requirement for `useful`. New synthetic inconclusive/fail review cases verify that
+human utility notes do not override that gate, and that an explicitly authorized
+`unclear` closure retains the result, signed review, frozen context and exact receipt
+replay. Closure retries remain idempotent and later reclassification is denied.
+The evidence suite returned **9 passed**; a separate adversarial reviewer independently
+ran both new cases and requested a clarification of admission versus consent checks.
+The full native suite returned **117 passed, 1 skipped**, with the existing upstream
+deprecation warning. The live campaign remains unresolved: the maintainer's positive
+utility judgment is recorded privately, but approval of the proposed terminal label
+has not been received. No source policy, checker, grant or live disposition changed.
+
 ### Snapshot audit-log consistency, 2026-09-09
 
 The operator backup command now checks existing audit-event links and canonical
