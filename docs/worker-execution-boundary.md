@@ -188,3 +188,12 @@ writing still worked. Existing network/environment isolation tests also passed.
 This establishes a transport primitive, not the complete helper relay: bounded MCP
 framing, backpressure, disconnect cleanup, the real restricted MCP exchange and the
 full job-consuming agent session still require integration and verification.
+
+The subsequent real MCP integration test (`tests/test_isolated_mcp.py`, opted in
+with `DAIA_RUN_ISOLATION_TESTS=1`) connected a process inside the namespace to the
+restricted helper outside it. The client initialized MCP, listed exactly two tools,
+was refused new work, heartbeated and submitted a synthetic signed assignment.
+The helper invite and saved signing state were inaccessible inside the namespace;
+identity, consumed budget and consent deadline were unchanged after submission.
+The test relay is for known small fixture messages only. It is not the production
+bounded relay, nor a full Codex/Claude session or research-access acceptance test.
