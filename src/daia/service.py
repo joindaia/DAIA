@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import secrets
 import time
+from pathlib import PurePosixPath
 from uuid import uuid4
 from .crypto import canonical, digest, digest_bytes, fingerprint, verify
 from .policy import Policy, evaluate
 from .store import Store
-from .verifier import check_factorization
+from .verifier import (check_factorization, check_evidence_packet, EVIDENCE_SCHEMAS,
+                       EVIDENCE_SCHEMA_HASHES, EVIDENCE_CHECKER_HASH)
 
 class Denied(ValueError):
     """Invalid, expired, unauthorized, or inconsistent operation."""
@@ -144,14 +146,104 @@ class Coordinator:
             self._event(db, "job_admitted", jid)
             return jid
 
-    def _job(self, db, mode, target, number, policy):
+    def admit_evidence(self, document):
+        """OPERATOR ONLY: one unresolved, immutable, data-only source-analysis campaign."""
+        if not isinstance(document, dict) or set(document) != {"objective", "baseline_commit", "source"}:
+            raise Denied("Expected objective, baseline_commit and one frozen source excerpt")
+        source = document["source"]
+        if (not isinstance(document["objective"], str) or not 1 <= len(document["objective"].strip()) <= 1000
+                or not isinstance(document["baseline_commit"], str) or len(document["baseline_commit"]) != 40
+                or any(c not in "0123456789abcdef" for c in document["baseline_commit"])
+                or not isinstance(source, dict) or set(source) != {"path", "start_line", "text"}
+                or not isinstance(source["path"], str) or not 1 <= len(source["path"]) <= 200
+                or type(source["start_line"]) is not int or not 1 <= source["start_line"] <= 1000000
+                or not isinstance(source["text"], str) or not 1 <= len(source["text"]) <= 6000):
+            raise Denied("Invalid bounded source-analysis context")
+        path = PurePosixPath(source["path"])
+        if (not path.parts or path.is_absolute() or any(p in {"..", "."} or p.startswith(".") for p in path.parts)
+                or "\\" in source["path"] or ":" in source["path"]
+                or path.parts[0] not in {"src", "tests", "docs"}):
+            raise Denied("Expected a repository-relative source path")
+        try:
+            source_bytes = source["text"].encode("utf-8")
+            json.dumps(document, ensure_ascii=False).encode("utf-8")
+        except UnicodeError:
+            raise Denied("Context must be valid UTF-8") from None
+        context = dict(document, source={**source, "sha256": digest_bytes(source_bytes)},
+                       workload="source-evidence-v1", data_only=True, mode="produce",
+                       evidence_check="structure-and-source-binding-only",
+                       human_disposition_required=True,
+                       source_provenance="operator-supplied-frozen-excerpt",
+                       schemas=EVIDENCE_SCHEMAS, schema_hashes=EVIDENCE_SCHEMA_HASHES,
+                       checker_hash=EVIDENCE_CHECKER_HASH)
+        if len(json.dumps(context, ensure_ascii=False).encode("utf-8")) > 10000:
+            raise Denied("Context exceeds the source-analysis limit")
+        # This NEW policy collects evidence; it cannot promote a correctness or payout claim.
+        policy = Policy("source-evidence-v1", ("adversarial",), 1, True)
+        admission = digest({"context_hash": digest_bytes(json.dumps(context, ensure_ascii=False,
+                           sort_keys=True, separators=(",", ":")).encode()), "policy_hash": policy.hash})
+        with self.store.connect() as db:
+            existing = db.execute("SELECT job_id FROM evidence_campaigns WHERE context_hash=?", (admission,)).fetchone()
+            if existing:
+                return {"status": "already_admitted", "job_id": existing["job_id"]}
+            if db.execute("SELECT 1 FROM evidence_campaigns WHERE disposition IS NULL").fetchone():
+                return {"status": "campaign_unresolved"}
+            job = self._job(db, "produce", None, 0, policy, context=context)
+            db.execute("INSERT INTO evidence_campaigns(context_hash,job_id) VALUES(?,?)", (admission, job))
+            self._event(db, "evidence_campaign_admitted", job)
+            return {"status": "admitted", "job_id": job}
+
+    def inspect_evidence(self):
+        """OPERATOR ONLY: private source/evidence inspection, without contributor identities."""
+        with self.store.connect() as db:
+            self._expire(db)
+            campaigns = []
+            for row in db.execute("SELECT c.*,j.context_json,j.state AS job_state FROM evidence_campaigns c JOIN jobs j ON c.job_id=j.id"):
+                result = db.execute("SELECT id,artifact,state,machine_check FROM results WHERE job_id=?", (row["job_id"],)).fetchone()
+                reviews = [] if result is None else [dict(r) for r in db.execute(
+                    "SELECT mode,verdict,evidence FROM reviews WHERE result_id=?", (result["id"],))]
+                campaigns.append({"job_id": row["job_id"], "job_state": row["job_state"],
+                    "context": json.loads(row["context_json"]), "disposition": row["disposition"],
+                    "disposition_note": row["disposition_note"],
+                    "result": None if result is None else {"artifact": result["artifact"],
+                        "state": result["state"], "shape_valid": bool(result["machine_check"]),
+                        "correctness_verified": False}, "reviews": reviews})
+            return campaigns
+
+    def resolve_evidence(self, job, disposition, note):
+        """HUMAN OPERATOR ONLY: disposition is evidence triage, never merge or payout authority."""
+        if disposition not in {"useful", "duplicate", "unclear", "rejected", "cancelled"} or not isinstance(note, str) or not 1 <= len(note.strip()) <= 2000:
+            raise Denied("Provide a bounded human disposition and explanation")
+        with self.store.connect() as db:
+            campaign = db.execute("SELECT * FROM evidence_campaigns WHERE job_id=?", (job,)).fetchone()
+            if campaign is None:
+                raise Denied("Unknown evidence campaign")
+            if campaign["disposition"] is not None:
+                if campaign["disposition"] == disposition and campaign["disposition_note"] == note:
+                    return {"status": "already_resolved"}
+                raise Denied("A recorded disposition cannot be overwritten")
+            result = db.execute("SELECT id,state FROM results WHERE job_id=?", (job,)).fetchone()
+            if disposition == "useful" and (result is None or result["state"] != "ready_for_maintainer"):
+                raise Denied("Useful disposition requires the assigned review first")
+            db.execute("UPDATE evidence_campaigns SET disposition=?,disposition_note=?,resolved_at=? WHERE job_id=?",
+                       (disposition, note, self.now(), job))
+            jobs = [job] + ([] if result is None else [r[0] for r in db.execute("SELECT id FROM jobs WHERE target_id=?", (result["id"],))])
+            for jid in jobs:
+                db.execute("UPDATE assignments SET state='cancelled' WHERE job_id=? AND state='leased'", (jid,))
+                db.execute("UPDATE jobs SET state='cancelled' WHERE id=? AND state IN ('queued','leased')", (jid,))
+            self._event(db, "evidence_campaign_resolved", job)
+            return {"status": "resolved", "disposition": disposition}
+
+    def _job(self, db, mode, target, number, policy, context=None):
         jid = new_id()
-        context = {"workload": "factorization-demo-v1", "number": number, "mode": mode,
+        context = dict(context, mode=mode) if context else {"workload": "factorization-demo-v1", "number": number, "mode": mode,
                    "objective": "Find or verify a nontrivial integer factorization; submit JSON factors.",
                    "data_only": True}
         if mode == "adversarial":
             result = db.execute("SELECT artifact FROM results WHERE id=?", (target,)).fetchone()
             context["candidate_artifact"] = result[0]
+            if context.get("workload") == "source-evidence-v1":
+                context["candidate_digest"] = digest_bytes(result[0].encode("utf-8"))
         # Reproduction receives premises only, not the candidate's artifact or verdicts.
         chash = digest_bytes(json.dumps(context, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode())
         db.execute("INSERT INTO jobs(id,mode,target_id,number,policy_json,policy_hash,context_json,context_hash) VALUES(?,?,?,?,?,?,?,?)",
@@ -274,17 +366,23 @@ class Coordinator:
                 if verdict != "candidate":
                     raise Denied("Producer must submit a candidate")
                 result_id = digest({"job_id": j["id"], "artifact_hash": env["artifact_hash"], "policy_hash": policy.hash})
-                checked = check_factorization(j["number"], artifact)
+                context = json.loads(j["context_json"])
+                evidence_only = context.get("workload") == "source-evidence-v1"
+                checked = check_evidence_packet(context, artifact) if evidence_only else check_factorization(j["number"], artifact)
                 state = "in_review" if checked else "rejected"
                 db.execute("INSERT INTO results VALUES(?,?,?,?,?,?,?,?,?)",
                            (result_id, j["id"], root, artifact, env["artifact_hash"], canonical(env).decode(), signature, int(checked), state))
                 if checked:
                     for mode in policy.modes:
-                        self._job(db, mode, result_id, j["number"], policy)
+                        self._job(db, mode, result_id, j["number"], policy,
+                                  context=context if evidence_only else None)
             else:
                 result_id = j["target_id"]
                 if verdict == "candidate":
                     raise Denied("Reviewer cannot submit a producer candidate")
+                context = json.loads(j["context_json"])
+                if context.get("workload") == "source-evidence-v1" and not check_evidence_packet(context, artifact, verdict):
+                    raise Denied("Review must be a source-bound evidence packet, including for uncertainty or disagreement")
                 # A reproducer's PASS needs its OWN independently checked certificate.
                 if j["mode"] == "reproduce" and verdict == "pass" and not check_factorization(j["number"], artifact):
                     raise Denied("Reproduction certificate failed")

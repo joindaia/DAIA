@@ -4,6 +4,29 @@ For subsequent Windows/MCP execution and dependency-audit results, see
 [the native Windows audit](audit-2026-09-08.md). The bootstrap record below describes
 the earlier environment and has not been retroactively relabeled.
 
+## Native scheduling and source evidence, 2026-09-09
+
+- Implemented: explicit finite consent renewal on the existing key/root; idempotent,
+  single-campaign source-evidence admission; exact Git excerpt verification; separate
+  candidate-bound adversarial artifacts; frozen schemas/checker; manual disposition.
+- Tested on native Windows / Python 3.14: `python -m pytest -q` returned **94 passed,
+  1 skipped**, with one upstream Starlette/AnyIO deprecation warning. The focused
+  evidence/contributor/HTTP checks returned **23 passed**. Tests include two real
+  stdio helper processes talking to a real HTTP coordinator, without model inference.
+- `python -m daia.cli demo` passed all three assignments and reached `promoted` for
+  the existing deterministic certificate workload. PowerShell scripts parsed, and
+  the working-tree privacy scan and `git diff --check` passed.
+- The live private pilot server was restored after connection failures; authenticated
+  MCP discovery and owner-authorized bounded renewal then succeeded. Native hourly
+  coordinator and local worker schedules were configured. A configured schedule is
+  not evidence that a scheduled model cycle completed.
+- Not yet established for this increment: a real two-host helper evidence cycle,
+  human-confirmed useful findings, or CI on this increment. Remote scheduling remains
+  a host setup step. Durable waiting for human input and isolated contributed-code
+  execution are planned, not scaffolded integrations.
+- The [boardroom record](boardroom-2026-09-09.md) identifies the models actually used
+  and the adversarial corrections. Review judgments are separate from these tests.
+
 Date: 2026-09-08. This is an execution record, not a security certification.
 
 ## Executed successfully

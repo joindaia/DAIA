@@ -30,7 +30,9 @@ two active local helpers from racing the same saved key and consent budget.
 Defaults are **one assigned job and 30 minutes**, measured from the helper's first
 startup. The human launcher can choose `-MaxJobs` and `-Minutes` at setup. The helper
 persists the budget and deadline next to the invite; restarting or increasing launch
-flags cannot extend existing consent. A fresh contribution session needs a fresh invite.
+flags cannot extend existing consent. The owner can explicitly renew finite consent
+under the same live grant using the [one-shot renewal command](hourly-workers.md).
+Stopped sessions and expired/revoked original grants cannot be revived this way.
 The coordinator independently enforces its own grant limit, expiry and revocation.
 
 Status shows the remaining consent, current assignment, wait reason and last receipt.
@@ -66,9 +68,10 @@ release. The earlier two-machine pilot used the raw MCP tools; repeating that pi
 with this helper is a separate acceptance step. No desktop model turn or autonomous
 research success is established by SDK tool-discovery tests.
 
-General contributed Python or proof code is still not executable in this coordinator.
-The first governed development campaign remains tracked in issue #4 and requires its
-frozen evaluator and isolated execution before admission. The new recovery tests are
-maintainer-side regression coverage, not independent contributor reviews.
+The [source-evidence workload](evidence-campaigns.md) now gathers frozen source findings
+and a distinct adversarial packet for human triage. General contributed Python or
+proof code is still not executable. Executable development work remains tracked in
+issue #4 and requires an isolated evaluator before admission. Maintainer-side regression
+tests are not independent contributor reviews.
 
 Native host setup reference: [OpenAI desktop MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=app).

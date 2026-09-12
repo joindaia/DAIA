@@ -65,6 +65,10 @@ CREATE TABLE IF NOT EXISTS events (
  sequence INTEGER PRIMARY KEY AUTOINCREMENT,
  event_json TEXT NOT NULL, previous_hash TEXT NOT NULL, event_hash TEXT NOT NULL UNIQUE
 );
+CREATE TABLE IF NOT EXISTS evidence_campaigns (
+ context_hash TEXT PRIMARY KEY, job_id TEXT NOT NULL UNIQUE REFERENCES jobs(id),
+ disposition TEXT, disposition_note TEXT, resolved_at INTEGER
+);
 """
 
 class Store:

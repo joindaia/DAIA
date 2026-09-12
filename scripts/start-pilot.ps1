@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$TailnetUrl)
+param([Parameter(Mandatory=$true)][string]$TailnetUrl, [switch]$Wait)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repo
@@ -15,3 +15,4 @@ $process = Start-Process -FilePath $python -WorkingDirectory $repo -WindowStyle 
     -RedirectStandardError (Join-Path $runtime 'pilot.stderr.log') -PassThru
 $process.Id | Set-Content -LiteralPath (Join-Path $runtime 'pilot.pid')
 Write-Output "DAIA process started with PID $($process.Id). Listener: 127.0.0.1:8000. Verify before use."
+if ($Wait) { $process.WaitForExit() }

@@ -2,6 +2,15 @@
 
 No dates, unmeasured budgets, or research-success probabilities are promised.
 
+The [2026-09-09 heuristic boardroom](boardroom-2026-09-09.md) records the current
+multi-model discussion, adversarial corrections and ordered continuation. Native
+scheduled prompts, finite consent renewal and the bounded source-evidence workload
+are implemented. See [hourly workers](hourly-workers.md) and
+[evidence campaigns](evidence-campaigns.md) for their authority and validation limits.
+The immediate acceptance gate is a real scheduled two-worker evidence cycle and a
+human-confirmed useful outcome. General human consultation is host-native; durable
+waiting/resumption and isolated contributed-code execution remain planned.
+
 ## 0. Safe bootstrap — reference implementation
 
 Implemented: bounded certificate workload, durable local leases, grant expiry, owner conflicts,

@@ -12,14 +12,16 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
 from daia.contributor import Contributor, configure, exclusive_host
+import daia.contributor as contributor_module
 from daia.mcp_server import build_mcp_app
 from daia.service import Coordinator
 from daia.store import Store
 from test_mcp import call, running_server
 
 
-def invite_file(tmp_path, service, url="http://127.0.0.1:8000/mcp"):
-    invite = {**service.invite(max_jobs=3), "network_id": service.network_id, "url": url}
+def invite_file(tmp_path, service, url="http://127.0.0.1:8000/mcp", *, max_jobs=3, lifetime=86400):
+    invite = {**service.invite(max_jobs=max_jobs, lifetime=lifetime),
+              "network_id": service.network_id, "url": url}
     path = tmp_path / (invite["root_id"] + ".json")
     path.write_text(json.dumps(invite), encoding="utf-8")
     return path
@@ -74,6 +76,107 @@ def test_restart_lost_claim_and_receipt_keep_budget(tmp_path):
         assert (await host.perform("request_work"))["status"] == "expired"
         assert service.metrics() == {"jobs": 3, "results": 1, "promoted": 0}
     asyncio.run(exercise())
+
+
+def test_explicit_renewal_is_finite_capped_and_survives_restart(tmp_path):
+    now = [int(time.time())]
+    clock = lambda: now[0]
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")), clock=clock)
+    service.seed()
+    path = invite_file(tmp_path, service, lifetime=60)
+
+    async def exercise():
+        host = direct(Contributor(path, minutes=1, clock=clock), service)
+        lease = await host.perform("request_work")
+        preserved = {key: host.state[key] for key in (
+            "key", "identity", "used", "lease", "pending", "receipt", "stopped")}
+        renewed = await host.renew_consent(additional_jobs=10, minutes=120)
+        assert renewed["jobs_added"] == 2
+        assert renewed["max_jobs"] == 3
+        assert renewed["deadline"] == host.identity["expires"]
+        assert {key: host.state[key] for key in preserved} == preserved
+
+        # Ordinary launch flags neither expand nor erase the explicit renewal.
+        restarted = Contributor(path, max_jobs=1, minutes=1, clock=clock)
+        assert restarted.state["max_jobs"] == 3
+        assert restarted.state["deadline"] == host.identity["expires"]
+        assert restarted.state["lease"] == lease
+
+    asyncio.run(exercise())
+
+
+def test_renewal_refuses_stopped_and_revoked_grants(tmp_path):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    path = invite_file(tmp_path, service)
+
+    async def exercise():
+        host = direct(Contributor(path), service)
+        await host.perform("stop_contributing")
+        with pytest.raises(ValueError, match="Stopped or expired"):
+            await host.renew_consent(1, 60)
+
+        other_path = invite_file(tmp_path, service)
+        other = direct(Contributor(other_path), service)
+        service.revoke(other.identity["root_id"])
+        with pytest.raises(ValueError, match="Unauthorized"):
+            await other.renew_consent(1, 60)
+
+    asyncio.run(exercise())
+
+
+def test_renewal_refuses_expired_grant(tmp_path):
+    now = [int(time.time())]
+    clock = lambda: now[0]
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")), clock=clock)
+    path = invite_file(tmp_path, service, lifetime=60)
+    host = direct(Contributor(path, clock=clock), service)
+    now[0] += 60
+    with pytest.raises(ValueError, match="Stopped or expired"):
+        asyncio.run(host.renew_consent(1, 60))
+
+
+def test_explicit_renewal_reopens_expired_local_window(tmp_path):
+    now = [int(time.time())]
+    clock = lambda: now[0]
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")), clock=clock)
+    path = invite_file(tmp_path, service)
+    host = direct(Contributor(path, minutes=1, clock=clock), service)
+    now[0] += 60
+    assert host.status()["status"] == "expired"
+    renewed = asyncio.run(host.renew_consent(1, 60))
+    assert renewed["status"] == "ready"
+    assert renewed["jobs_added"] == 1
+    assert renewed["deadline"] == now[0] + 3600
+
+
+def test_renewal_cli_is_one_shot_and_rejects_unpaired_argument(tmp_path, monkeypatch, capsys):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    path = invite_file(tmp_path, service)
+    calls = []
+
+    async def renew(host, additional_jobs, minutes):
+        calls.append((additional_jobs, minutes))
+        return {"jobs_added": additional_jobs, "deadline": 123}
+
+    def unexpected_server(host):
+        raise AssertionError("renewal must not start the MCP host")
+
+    monkeypatch.setattr(Contributor, "renew_consent", renew)
+    monkeypatch.setattr(contributor_module, "build_server", unexpected_server)
+    monkeypatch.setattr(sys, "argv", ["daia.contributor", "--invite", str(path),
+                                      "--renew-consent", "--additional-jobs", "2",
+                                      "--minutes", "60"])
+    contributor_module.main()
+    assert calls == [(2, 60)]
+    assert "2 jobs added" in capsys.readouterr().out
+
+    other = invite_file(tmp_path, service)
+    monkeypatch.setattr(sys, "argv", ["daia.contributor", "--invite", str(other),
+                                      "--additional-jobs", "1"])
+    with pytest.raises(SystemExit) as error:
+        contributor_module.main()
+    assert error.value.code == 2
+    assert not other.with_suffix(".contributor.json").exists()
 
 
 def test_stop_persists_when_disconnected_and_lock_releases(tmp_path):
