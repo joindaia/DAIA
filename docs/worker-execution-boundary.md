@@ -285,3 +285,26 @@ mountless shell preflight before adding provider authentication or task data.
 
 The independent review of the restricted MCP fixture found no actionable issue;
 its scope remains the synthetic namespace exchange, not the complete microVM.
+
+### Repeatable Windows operator invocation
+
+From the repository in Windows PowerShell, launch a child PowerShell process:
+
+```powershell
+powershell.exe -NoProfile -File ./scripts/windows-sbx.ps1 version
+powershell.exe -NoProfile -File ./scripts/windows-sbx.ps1 settings get ssh.agentForwardingEnabled
+```
+
+The launcher supplies the known-working native PATH/PATHEXT and dedicated
+long-form temporary directory, and propagates the CLI exit code. It changes no
+persistent OS environment variables. It is an operator convenience, not a worker
+security boundary; never expose it to a task. A running daemon retains its launch
+environment until restarted.
+
+Once a DAIA Docker account is available, the same launcher can invoke `login`
+through Docker's native flow. That remains an account action, not permission to
+import unrelated credentials or begin real assignments.
+
+The saved script was executed through native Windows PowerShell: version returned
+v0.42.1 with exit 0, SSH forwarding returned false with exit 0, and a deliberately
+invalid CLI command returned exit 1. No VM was created during these checks.
