@@ -243,3 +243,18 @@ executed hostile workload unable to reach host secrets, private networks or
 unwanted cloud-account operations, even with positive reviews. Provider login and
 refresh behind an inference-only policy, actual external egress enforcement,
 watchdog cleanup, and independent updater authorization remain unproven.
+
+### Windows runtime installation evidence
+
+The per-user Docker Sandboxes v0.42.1 MSI was installed successfully (installer
+exit 0). Its SHA-256 matched the official release asset digest:
+`7889fb867090ab81ebbcc950d734e76976c2e7b52ab4ca359cb205b0c51e25d3`.
+Windows Authenticode reported a valid Docker Inc signature before installation.
+A direct process invocation with shell execution disabled returned
+`sbx version: v0.42.1 cc6e400a4a3ce3ce5e0b2b77b8ee352aac854c64`, exit 0.
+The shell invocation from WSL did not reliably execute the binary; use an explicit
+native process launcher and check the child exit status for subsequent probes.
+
+This supersedes the earlier missing-runtime preflight. No Docker/provider login,
+worker creation, credential import or actual assignment execution has been done.
+Installation and a working CLI are prerequisites, not isolation acceptance.
