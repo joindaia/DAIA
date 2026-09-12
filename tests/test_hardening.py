@@ -88,3 +88,22 @@ def test_private_paths_detected(path):
 
 def test_sample_env_is_allowed():
     assert not guard.private_path('.env.example')
+    for path in ('invite.contributor.json', 'invite.contributor.lock', '.contributor-temporary'):
+        assert guard.private_path(path)
+
+
+@pytest.mark.parametrize("abandon", ["release", "expire"])
+def test_abandoned_producer_cannot_review_successor(network, contributor, abandon):
+    c, now = network
+    c.seed()
+    first, successor = contributor(), contributor()
+    lease = c.request_work(first[0]["root_id"], first[1])
+    if abandon == "release":
+        c.release(first[0]["root_id"], first[1], lease["assignment_id"])
+        now[0] += 31
+    else:
+        now[0] += 301
+    submit(c, successor, c.request_work(successor[0]["root_id"], successor[1]))
+    # Changing keys under the same root must not erase producer exposure either.
+    replacement = contributor(root=first[0]["root_id"])
+    assert c.request_work(replacement[0]["root_id"], replacement[1]) == {"status": "no_eligible_work"}

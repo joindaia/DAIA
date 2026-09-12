@@ -9,11 +9,16 @@ from pathlib import Path
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from daia.crypto import public_hex, sign, strict_json
+from daia.signer import validate_envelope
 
 p = argparse.ArgumentParser()
 p.add_argument("operation", choices=["generate", "public", "sign"])
 p.add_argument("--key", type=Path, required=True, help="Private path outside version control")
 p.add_argument("--envelope", type=Path)
+p.add_argument("--identity", type=Path, help="Private invite JSON containing the expected root and network")
+p.add_argument("--lease", type=Path, help="Host-saved assignment JSON, with latest heartbeat expiry")
+p.add_argument("--artifact", type=Path, help="Exact UTF-8 artifact file; no newline normalization")
+p.add_argument("--verdict", choices=["candidate", "pass", "fail", "inconclusive"])
 a = p.parse_args()
 if a.operation == "generate":
     key = Ed25519PrivateKey.generate()
@@ -30,9 +35,10 @@ else:
     if a.operation == "public":
         print(public_hex(key))
     else:
-        if a.envelope is None:
-            raise SystemExit("--envelope is required")
+        if a.envelope is None or a.identity is None:
+            raise SystemExit("--envelope and --identity are required")
         document = strict_json(a.envelope.read_text(encoding="utf-8"))
-        if not isinstance(document, dict) or document.get("action") not in {"register", "submit"}:
-            raise SystemExit("Not a DAIA envelope")
+        validate_envelope(key, document, strict_json(a.identity.read_text(encoding="utf-8")),
+                          lease=strict_json(a.lease.read_text(encoding="utf-8")) if a.lease else None,
+                          artifact=a.artifact.read_bytes() if a.artifact else None, verdict=a.verdict)
         print(sign(key, document))

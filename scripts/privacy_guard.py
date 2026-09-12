@@ -47,6 +47,8 @@ def private_path(value: str) -> bool:
     path = Path(value)
     return (bool(set(path.parts) & PRIVATE_PARTS)
             or path.suffix.lower() in PRIVATE_SUFFIXES
+            or path.name.endswith(('.contributor.json', '.contributor.lock'))
+            or path.name.startswith('.contributor-')
             or (path.name.startswith('.env') and path.name != '.env.example'))
 
 

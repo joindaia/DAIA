@@ -22,6 +22,9 @@ build/
 *.pfx
 *.log
 *.bundle
+*.contributor.json
+*.contributor.lock
+.contributor-*
 .DS_Store
 Thumbs.db
 .vscode/

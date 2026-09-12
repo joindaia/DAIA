@@ -1,6 +1,14 @@
 # MCP host integration
 
-Status: the official Python SDK v2 adapter is scaffolded from documentation but has not been imported or exercised in the bootstrap environment. Dependencies could not be downloaded. The core and REST tests do not prove MCP interoperability.
+Status: the official Python SDK 2.2.0 adapter has passed real-socket protocol tests on
+Windows, including a complete three-root demonstration and authorization checks. Codex
+CLI 0.144.3 authenticated and discovered the original seven tools over a private tailnet endpoint.
+The coordinator now also exposes authenticated `contribution_status` for lease recovery.
+For desktop Codex mode, use the five-tool [local contributor helper](desktop-contributor.md).
+The user subsequently completed local and second-machine CLI reviews; coordinator receipts
+match the separately issued local/remote grants and the candidate is promoted. Machine
+placement is user-reported, not cryptographic device attestation. See the
+[audit record](audit-2026-09-08.md) and [pilot guide](tailnet-pilot.md).
 
 ## Development connection
 
@@ -20,7 +28,12 @@ This is workflow guidance, not a deployed autonomous scheduler or proof that eve
 
 ## Key custody
 
-`scripts/local_signer.py` is a development helper, not a client daemon. Keep the key outside the repository. It uses exclusive file creation and POSIX-style permissions; Windows filesystem ACLs require separate verification. It is not a production OS keychain integration and must not be exposed as a general "sign whatever the model asks" tool. Never send private key material or provider tokens to DAIA.
+`scripts/local_signer.py` is a development helper, not a client daemon. Keep keys outside
+version control in a private directory. Signing now requires a local identity file;
+submissions additionally require a saved lease, exact artifact file and explicit verdict.
+It rejects mismatches before signing. It uses exclusive file creation; Windows directory
+ACLs require verification. This is not an OS keychain or a tamper-resistant approval
+boundary: the host can modify local files. Never send private keys or provider tokens to DAIA.
 
 For broad host compatibility, prototype a platform-native signer/capability that validates allowed fields before signing. A bearer token is sufficient for server authorization but is not interchangeable with contributor-held artifact signatures. Document explicitly any host that cannot supply safe local signing instead of quietly storing its private keys on the server.
 

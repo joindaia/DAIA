@@ -1,4 +1,6 @@
-# Template only: optional MCP adapter is not yet runtime-tested.
+# Raw-protocol template. Prefer scripts/connect-codex.ps1 and docs/desktop-contributor.md
+# for the local helper with automatic signing, consent bounds and recovery.
+# MCP 2.2.0 protocol and Codex CLI discovery tested; see docs/tailnet-pilot.md.
 # Add this section to the host's private config; keep the token in its environment.
 # No OAuth login endpoint is implemented in the development coordinator.
 [mcp_servers.daia]

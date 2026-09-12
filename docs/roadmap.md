@@ -4,11 +4,21 @@ No dates, unmeasured budgets, or research-success probabilities are promised.
 
 ## 0. Safe bootstrap — reference implementation
 
-Implemented: bounded certificate workload, durable local leases, grant expiry, owner conflicts, signed registration/results, blinded reproduction, adversarial evidence, deterministic checks, local REST adapter and regression tests. Optional SDK adapter and Windows/Ubuntu CI are configured but not runtime-verified. Maintain the explicit tested/untested distinction in README and `docs/validation.md`.
+Implemented: bounded certificate workload, durable local leases, grant expiry, owner conflicts,
+signed registration/results, blinded reproduction, adversarial evidence, deterministic checks,
+local REST adapter and regression tests. MCP 2.2.0 protocol tests and Codex CLI discovery now
+pass on Windows. The two-client tailnet pilot subsequently completed signed reviews and
+promotion, with host placement reported by the user. New Windows/Ubuntu CI execution remains
+unverified. Maintain the tested/untested distinction in README and `docs/validation.md`.
 
 ## 1. Real agent interoperability — next engineering milestone
 
-Resolve and lock dependencies in a networked environment; run vulnerability and license review. Connect two actual supported hosts. Verify secure host-side signing, tool schemas, auth context, stop behavior, error handling, replay and renewal. Implement real OAuth/OIDC and revocable user consent without provider-token collection. Provide native Windows instructions and tests; do not require WSL for local development.
+The portable dependency lock and local vulnerability audit are complete. Two actual
+clients completed the raw-protocol pilot. The desktop/CLI signing helper now has real
+stdio-to-HTTP process tests, persistent consent, native Codex discovery and failure
+recovery checks; repeat the human two-machine pilot using this helper. License review,
+OS-bound signing, public OAuth/OIDC and production consent remain open. Native Windows
+instructions require no WSL or provider-token collection.
 
 Exit: an authorized human connects a host, completes bounded assigned work and reviews an independently checked result; revocation/stop prevents new work; no secrets appear in tools, logs or commits. Do not use a subscription-percentage control without actual supported metering.
 

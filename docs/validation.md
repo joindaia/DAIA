@@ -1,5 +1,9 @@
 # Bootstrap validation record
 
+For subsequent Windows/MCP execution and dependency-audit results, see
+[the native Windows audit](audit-2026-09-08.md). The bootstrap record below describes
+the earlier environment and has not been retroactively relabeled.
+
 Date: 2026-09-08. This is an execution record, not a security certification.
 
 ## Executed successfully

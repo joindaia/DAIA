@@ -9,15 +9,16 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .service import Coordinator, Denied
 
 class BodyLimit:
-    def __init__(self, app, maximum=16384):
+    def __init__(self, app, maximum=16384, allowed_origins=None):
         self.app, self.maximum = app, maximum
+        self.allowed_origins = {origin.encode("ascii") for origin in (
+            allowed_origins or ("http://127.0.0.1:8000", "http://localhost:8000"))}
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         origins = [value for key, value in scope.get("headers", []) if key.lower() == b"origin"]
-        allowed = {b"http://127.0.0.1:8000", b"http://localhost:8000"}
-        if origins and (len(origins) != 1 or origins[0] not in allowed):
+        if origins and (len(origins) != 1 or origins[0] not in self.allowed_origins):
             return await JSONResponse({"error": "origin_denied"}, 403)(scope, receive, send)
         parts, length = [], 0
         while True:

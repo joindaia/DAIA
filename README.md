@@ -17,7 +17,8 @@ DAIA coordinates agent work supplied by consenting contributors. Agents request 
 | Blind reproduction and adversarial verification modes | Implemented for the bounded demonstration |
 | Deterministic factorization certificate checker and promotion policy | Implemented; not a general theorem verifier |
 | Loopback REST adapter | Implemented; in-process HTTP tests |
-| Official MCP Python SDK v2 adapter | Scaffolded from current documentation; runtime interoperability NOT tested |
+| Official MCP Python SDK v2 adapter | SDK 2.2.0 protocol tests passed; two-client tailnet pilot completed with signed reviews and promotion |
+| Desktop/CLI contributor helper | Implemented; real stdio-to-HTTP subprocess tests, durable consent and receipt recovery |
 | Public OAuth/OIDC, durable production queue, isolated proof/code runners | Design and backlog only |
 | Model/provider diversity, reputation calibration, research DAG, federation | Design only |
 | Automatic merges, deployment, billing, quota transfer | Deliberately absent |
@@ -30,12 +31,16 @@ Python 3.13 and Git are recommended. No WSL, Docker, frontend build, API key, or
 
 ```powershell
 py -3.13 -m venv .venv
-.\.venv\Scripts\python -m pip install -e ".[dev]"
+.\.venv\Scripts\python -m pip install uv==0.12.11
+.\.venv\Scripts\uv sync --inexact --frozen --extra dev --extra mcp
 .\.venv\Scripts\python -m pytest -q
 .\.venv\Scripts\python -m daia.cli demo
 ```
 
-On Linux/macOS, substitute `python3` and `.venv/bin/python`. Installation requires internet access. Exact dependency resolution, a lockfile, vulnerability auditing, native Windows execution, and GitHub CI execution remain release gates; the initial build environment could not reach the package registry.
+On Linux/macOS, substitute `python3` and `.venv/bin/python`. Installation requires
+internet access. Native Windows execution and a dependency vulnerability audit now have
+[recorded results](docs/audit-2026-09-08.md). `uv.lock` pins the portable dependency graph
+and distribution hashes. License review and a fresh vulnerability audit remain release gates.
 
 The demo uses three temporary, independently admitted contributor roots and disposable keys:
 
@@ -65,7 +70,14 @@ The optional MCP entry point replaces the REST service on the same port:
 .\.venv\Scripts\python -m daia.cli serve-mcp
 ```
 
-This adapter has not been runtime-tested. See [MCP integration](docs/mcp.md) before connecting a host. Do not expose either development service through a public tunnel, reverse proxy, or port-forward.
+See [MCP integration](docs/mcp.md) before connecting a host. An explicitly configured
+[private tailnet pilot](docs/tailnet-pilot.md) supports trusted-machine experiments while
+the listener remains on loopback. Do not expose either development service publicly.
+The [Windows audit](docs/audit-2026-09-08.md) records tested operations and remaining limits.
+
+For the desktop app in Codex mode or Codex CLI, use the
+[contributor helper](docs/desktop-contributor.md). It handles registration and signing,
+and enforces a persistent job budget without exposing secrets in tool arguments.
 
 ## Read next
 

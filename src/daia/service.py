@@ -196,6 +196,11 @@ class Coordinator:
                     result = db.execute("SELECT * FROM results WHERE id=?", (subject,)).fetchone()
                     if result is None or result["root_id"] == root or result["state"] != "in_review":
                         continue
+                    # A released/expired producer has already seen the premises. Its
+                    # exposure was recorded under the producer job, not this result ID.
+                    if db.execute("SELECT 1 FROM assignments WHERE job_id=? AND root_id=?",
+                                  (result["job_id"], root)).fetchone():
+                        continue
                 eligible.append(j)
             if not eligible:
                 return {"status": "no_eligible_work"}
@@ -296,6 +301,18 @@ class Coordinator:
             db.execute("UPDATE jobs SET state='completed' WHERE id=?", (j["id"],))
             self._event(db, "submission_recorded", receipt)
             return {"receipt_hash": receipt, "result_id": result_id, "status": state}
+
+    def contribution_status(self, root, agent):
+        """Own grant and recoverable lease only; never reveals other contributors."""
+        with self.store.connect() as db:
+            self._agent(db, root, agent)
+            self._expire(db)
+            grant = self._root(db, root)
+            active = db.execute("SELECT * FROM assignments WHERE root_id=? AND state='leased'", (root,)).fetchone()
+            return {"assigned": grant["assigned"], "max_jobs": grant["max_jobs"],
+                    "expires": grant["expires"], "cooldown_until": grant["cooldown_until"],
+                    "other_agent_has_lease": bool(active and active["agent_id"] != agent),
+                    "lease": self._package(db, active) if active and active["agent_id"] == agent else None}
 
     def metrics(self):
         """Only aggregates. No identities, artifacts, prompts, signatures, or tokens."""

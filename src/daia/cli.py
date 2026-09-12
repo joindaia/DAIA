@@ -42,7 +42,8 @@ def main():
     seed = sub.add_parser("seed")
     seed.add_argument("--number", type=int, default=10403)
     sub.add_parser("serve")
-    sub.add_parser("serve-mcp")
+    mcp = sub.add_parser("serve-mcp")
+    mcp.add_argument("--tailnet-url", help="Exact private Tailscale Serve MCP URL; listener stays loopback")
     revoke = sub.add_parser("revoke")
     revoke.add_argument("root_id")
     args = parser.parse_args()
@@ -62,11 +63,11 @@ def main():
         import uvicorn
         if args.command == "serve-mcp":
             from .mcp_server import build_mcp_app
-            app = build_mcp_app(service)
+            app = build_mcp_app(service, tailnet_url=args.tailnet_url)
         else:
             from .http import create_app
             app = create_app(service)
-        # Deliberately no host override; do not expose this scaffold through a tunnel.
+        # Listener always stays loopback. Optional private Serve routing is operator-owned.
         uvicorn.run(app, host="127.0.0.1", port=8000, access_log=False, log_level="warning")
 
 if __name__ == "__main__":

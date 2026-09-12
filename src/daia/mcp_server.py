@@ -1,22 +1,42 @@
 """Optional official MCP Python SDK v2 adapter.
 
-STATUS: scaffold, not runtime-tested in the offline bootstrap environment.
-The static bearer verifier is LOCAL DEVELOPMENT ONLY. It does not implement an
+The static bearer verifier is for local development and an explicitly configured
+private tailnet pilot only. It does not implement an
 OAuth authorization server/login. Configure tokens in the host environment,
 never in tool arguments. Public deployment requires the OIDC/OAuth milestone.
 """
 from .service import Coordinator, Denied
 from .http import BodyLimit
+from urllib.parse import urlsplit
 
 
-def build_mcp_app(service: Coordinator):
+def pilot_origin(url: str) -> str:
+    """Allow one exact MagicDNS endpoint, never a wildcard or public bind."""
+    parsed = urlsplit(url)
+    if (parsed.scheme not in {"http", "https"} or not parsed.hostname
+            or not parsed.hostname.endswith(".ts.net")
+            or parsed.username or parsed.password or parsed.query or parsed.fragment
+            or parsed.path != "/mcp" or "*" in url):
+        raise ValueError("Expected an exact http(s)://host.tailnet.ts.net[:port]/mcp URL")
+    # Accessing port also rejects malformed/out-of-range ports.
+    _ = parsed.port
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None):
     from mcp.server import MCPServer
     from mcp.server.auth.provider import AccessToken, TokenVerifier
     from mcp.server.auth.settings import AuthSettings
     from mcp.server.auth.middleware.auth_context import get_access_token
     from pydantic import AnyHttpUrl
+    from mcp.server.transport_security import TransportSecuritySettings
 
-    resource = "http://127.0.0.1:8000/mcp"
+    resource = tailnet_url or "http://127.0.0.1:8000/mcp"
+    origins = ["http://127.0.0.1:8000", "http://localhost:8000"]
+    hosts = ["127.0.0.1:*", "localhost:*"]
+    if tailnet_url:
+        origins.append(pilot_origin(tailnet_url))
+        hosts.append(urlsplit(tailnet_url).netloc)
 
     class DevelopmentTokens(TokenVerifier):
         async def verify_token(self, token: str):
@@ -31,7 +51,8 @@ def build_mcp_app(service: Coordinator):
                 return None
 
     server = MCPServer("DAIA development coordinator", token_verifier=DevelopmentTokens(),
-                       auth=AuthSettings(issuer_url=AnyHttpUrl("http://127.0.0.1:8000"),
+                       log_level="WARNING",
+                       auth=AuthSettings(issuer_url=AnyHttpUrl(resource.rsplit("/", 1)[0]),
                                          resource_server_url=AnyHttpUrl(resource),
                                          required_scopes=["work:contribute"],
                                          validate_token_resource=True))
@@ -51,6 +72,11 @@ def build_mcp_app(service: Coordinator):
     async def register_agent(challenge_id: str, signature: str) -> dict:
         """Register by signing the challenge locally. Authentication binds the owner."""
         return service.register(root(), challenge_id, signature)
+
+    @server.tool()
+    async def contribution_status(agent_id: str) -> dict:
+        """Inspect your grant and recover your live lease without claiming new work."""
+        return service.contribution_status(root(), agent_id)
 
     @server.tool()
     async def request_work(agent_id: str) -> dict:
@@ -78,4 +104,8 @@ def build_mcp_app(service: Coordinator):
         return service.submit(root(), agent_id, assignment_id, artifact, verdict, signature)
 
     # Serving this app at the root preserves its built-in lifespan and /mcp route.
-    return BodyLimit(server.streamable_http_app())
+    return BodyLimit(server.streamable_http_app(
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=True, allowed_hosts=hosts, allowed_origins=origins),
+        max_request_body_size=16384,
+    ), allowed_origins=origins)
