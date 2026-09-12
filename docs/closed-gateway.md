@@ -203,3 +203,19 @@ body, idle-time, per-IP request and connection bounds. These numbers are startin
 settings, not capacity claims. Public deployment, actual CRL reload/revocation behavior,
 slow-client/load tests and helper migration remain unverified. No live Nginx config
 is changed by adding this template.
+
+### Full proxy integration exercise
+
+`tests/test_nginx_gateway.py` runs real temporary Nginx and backend processes, synthetic
+CA/client/server certificates, a disposable coordinator and a loopback port. It passed
+on the VPS: an admitted client claimed work, submitted a signed result and recovered
+the same receipt; spoofed forwarding headers were replaced, missing and unadmitted
+client certificates were refused, and oversized bodies and unexpected query strings
+were rejected. An updated CRL followed by proxy reload refused the revoked certificate
+on new TLS connections. This does not prove revocation of an already-open connection
+or active stream, nor does it exercise the stdio helper's endpoint migration.
+
+Linux CI installs Nginx and requires the integration test to run; environments without
+Nginx skip it explicitly. The test does not start a public service or modify the VPS's
+live configuration. Active-stream revocation, slow-client/concurrency stress and live
+helper migration remain separate acceptance checks.
