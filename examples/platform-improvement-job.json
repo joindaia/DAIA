@@ -1,0 +1,15 @@
+{
+  "schema": "daia.improvement-contract.draft.v1",
+  "status": "template-not-executable",
+  "project": "daia-platform",
+  "objective": "Add a regression test for a lease race without changing authority or assignment policy.",
+  "baseline_commit": null,
+  "evaluator_digest": null,
+  "baseline_measurement": null,
+  "required_before_admission": ["freeze baseline commit", "freeze evaluator", "approve consent scope"],
+  "permitted_changes": ["tests/"],
+  "forbidden_changes": [".github/workflows/", "src/daia/policy.py", "src/daia/crypto.py", "src/daia/service.py"],
+  "verification_modes": ["reproduce", "adversarial"],
+  "final_gate": "human-maintainer",
+  "deployment_authorized": false
+}

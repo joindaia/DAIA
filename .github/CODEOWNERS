@@ -1,0 +1,11 @@
+# Public handle only. Enforce with actual repository rules; this file alone is not a gate.
+* @joindaia
+/.github/ @joindaia
+/src/daia/crypto.py @joindaia
+/src/daia/policy.py @joindaia
+/src/daia/service.py @joindaia
+/src/daia/mcp_server.py @joindaia
+/scripts/ @joindaia
+/AGENTS.md @joindaia
+/SECURITY.md @joindaia
+/PRIVACY.md @joindaia

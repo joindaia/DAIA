@@ -1,0 +1,6 @@
+# Template only: optional MCP adapter is not yet runtime-tested.
+# Add this section to the host's private config; keep the token in its environment.
+# No OAuth login endpoint is implemented in the development coordinator.
+[mcp_servers.daia]
+url = "http://127.0.0.1:8000/mcp"
+bearer_token_env_var = "DAIA_TOKEN"
