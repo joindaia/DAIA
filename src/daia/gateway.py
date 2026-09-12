@@ -5,6 +5,7 @@ from pathlib import Path
 import socket
 import stat
 import sqlite3
+import signal
 
 from .crypto import strict_json
 from .mcp_server import build_mcp_app, public_origin
@@ -13,7 +14,13 @@ from .store import Store
 
 
 def configured_app(config, database):
-    with Path(config).open("rb") as source:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    with os.fdopen(os.open(config, flags), "rb") as source:
+        info = os.fstat(source.fileno())
+        if (not stat.S_ISREG(info.st_mode) or Path(config).is_symlink()
+                or (os.name == "posix" and
+                    (info.st_uid not in {0, os.geteuid()} or info.st_mode & 0o022))):
+            raise ValueError("Policy must be a trusted, non-writable regular file")
         raw = source.read(40001)
     if len(raw) > 40000:
         raise ValueError("Invalid gateway policy")
@@ -48,9 +55,11 @@ def bind_private_socket(path):
     # Bind refuses every existing socket, file or symlink. Never unlink another service.
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     previous = os.umask(0o117)
+    created = None
     try:
         listener.bind(str(path))
         info = path.lstat()
+        created = (info.st_dev, info.st_ino)
         if (not stat.S_ISSOCK(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o660
                 or info.st_uid != os.geteuid() or info.st_gid != os.getegid()):
             raise ValueError("Invalid socket permissions")
@@ -58,9 +67,40 @@ def bind_private_socket(path):
         return listener
     except Exception:
         listener.close()
+        if created is not None:
+            remove_own_socket(path, created)
         raise
     finally:
         os.umask(previous)
+
+
+def remove_own_socket(path, identity):
+    try:
+        current = Path(path).lstat()
+        if stat.S_ISSOCK(current.st_mode) and (current.st_dev, current.st_ino) == identity:
+            Path(path).unlink()
+    except FileNotFoundError:
+        pass
+
+
+def run_bound(app, listener, path):
+    import uvicorn
+    info = Path(path).lstat()
+    identity = (info.st_dev, info.st_ino)
+    try:
+        with listener:
+            server = uvicorn.Server(uvicorn.Config(app, proxy_headers=False, access_log=False, log_level="warning"))
+            # Uvicorn replays SIGTERM after graceful shutdown. Keep that replay
+            # graceful too, so our owned socket is removed before process exit.
+            previous = signal.signal(signal.SIGTERM, server.handle_exit)
+            try:
+                server.run(sockets=[listener])
+            finally:
+                signal.signal(signal.SIGTERM, previous)
+            if not server.started:
+                raise ValueError("ASGI startup failed")
+    finally:
+        remove_own_socket(path, identity)
 
 
 def main():
@@ -72,14 +112,9 @@ def main():
     try:
         app = configured_app(args.config, args.db)
         listener = bind_private_socket(args.socket)
+        run_bound(app, listener, args.socket)
     except (OSError, ValueError, TypeError, RecursionError, sqlite3.DatabaseError):
         parser.exit(1, "Closed gateway refused startup. Check policy, existing database and private socket permissions.\n")
-    import uvicorn
-    with listener:
-        # Prebound socket only. No host/port option or fallback TCP listener exists.
-        server = uvicorn.Server(uvicorn.Config(app, proxy_headers=False, access_log=False, log_level="warning"))
-        server.run(sockets=[listener])
-    # Leave the socket pathname for deliberate operator inspection/removal on restart.
 
 
 if __name__ == "__main__":

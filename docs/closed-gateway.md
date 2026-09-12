@@ -135,7 +135,9 @@ The subsequent launcher increment is `python -m daia.gateway --config POLICY.jso
 --db EXISTING.sqlite3 --socket /run/daia-gateway/mcp.sock`. This starts only the
 backend on a prebound Unix socket; it does not install or expose a TLS proxy.
 
-The policy must contain exactly `resource`, `allowed_agents` and `certificate_agents`.
+The policy must be an integrity-protected regular file: symlinks, FIFOs and
+group/world-writable POSIX files are refused before parsing; POSIX ownership must
+belong to root or the service user. The policy must contain exactly `resource`, `allowed_agents` and `certificate_agents`.
 The resource is a canonical lowercase `https://DNS-NAME/mcp` URL with implicit port
 443 and no query, fragment or user information. Public resource mode requires both
 certificate binding and closed admission; private tailnet mode cannot be combined
@@ -146,9 +148,9 @@ Prepare the socket directory as the nonroot service user with its dedicated gate
 connect group and mode 0750. The launcher requires matching effective UID/GID, rejects
 symlinked paths and untrusted writable ancestors (root-owned sticky temporary parents
 are permitted for isolated tests), and binds a new socket with mode 0660. It refuses
-any existing path rather than unlinking another process's socket. After a deliberate
-stop, the operator must verify the process is gone and remove the stale socket before
-restarting. This conservative lifecycle still needs service-manager integration.
+any existing path rather than unlinking another process's socket. Graceful shutdown removes only the exact socket inode created by this process, so
+a normal restart can bind again. After an uncatchable crash, the operator must verify
+the process is gone before removing a stale socket. Replaced paths are preserved.
 
 The database must already exist; a misspelled path cannot create fresh coordinator
 state. The gateway-to-backend hop is HTTP over the private socket, while the canonical
@@ -157,3 +159,15 @@ proxy must replace Host with the configured canonical name and must replace the
 certificate assertion after certificate verification. Group membership, proxy
 configuration, revocation, ingress limits and real helper migration remain deployment
 work. This launcher alone is not a secure public service.
+
+
+### Launcher review validation
+
+The review identified unsafe policy inputs and stale sockets after normal shutdown;
+both are addressed with descriptor-based policy checks and identity-checked cleanup.
+Regression tests verify the normal SIGTERM path, failed ASGI startup cleanup, and
+preservation of a replacement pathname. Startup failure remains nonzero.
+The suspected empty/unrelated database acceptance did not reproduce: the existing
+Coordinator constructor already queries initialized network metadata before binding.
+New subprocess tests confirm refusal without creating a socket. This is a startup
+sentinel check, not a comprehensive database integrity or migration audit.

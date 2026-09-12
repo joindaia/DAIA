@@ -87,6 +87,11 @@ def test_real_closed_launcher(network, contributor, tmp_path):
         except subprocess.TimeoutExpired:
             process.kill()
             process.communicate()
+    assert process.returncode == 0
+    assert not path.exists()
+    from daia.gateway import bind_private_socket
+    with bind_private_socket(path):
+        pass
 
 
 def test_launcher_refuses_missing_database_without_creating_it(tmp_path):
@@ -97,3 +102,64 @@ def test_launcher_refuses_missing_database_without_creating_it(tmp_path):
     with pytest.raises(ValueError, match="existing coordinator database"):
         configured_app(policy, database)
     assert not database.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX policy permissions")
+@pytest.mark.parametrize("kind", ["symlink", "writable", "fifo"])
+def test_policy_file_rejects_untrusted_inputs_before_database(tmp_path, kind):
+    from daia.gateway import configured_app
+    source = tmp_path / "source.json"
+    source.write_text("{}")
+    policy = tmp_path / "policy.json"
+    if kind == "symlink":
+        policy.symlink_to(source)
+    elif kind == "fifo":
+        os.mkfifo(policy)
+    else:
+        policy.write_text("{}")
+        policy.chmod(0o666)
+    with pytest.raises((OSError, ValueError)):
+        configured_app(policy, tmp_path / "missing.sqlite3")
+
+
+@pytest.mark.parametrize("kind", ["empty", "unrelated"])
+def test_invalid_existing_database_refuses_startup_without_socket(tmp_path, kind):
+    import sqlite3
+    database = tmp_path / "invalid.sqlite3"
+    database.touch(mode=0o600)
+    if kind == "unrelated":
+        with sqlite3.connect(database) as db:
+            db.execute("CREATE TABLE unrelated (value TEXT)")
+    policy = tmp_path / "policy.json"
+    policy.write_text(json.dumps({"resource": "https://mcp.example.org/mcp", "allowed_agents": [], "certificate_agents": {}}))
+    path = tmp_path / "never.sock"
+    result = subprocess.run([sys.executable, "-m", "daia.gateway", "--config", str(policy),
+                             "--db", str(database), "--socket", str(path)],
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode == 1
+    assert "refused startup" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not path.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Unix server lifecycle")
+def test_lifespan_failure_is_failure_and_cleans_own_socket(tmp_path):
+    from daia.gateway import bind_private_socket, run_bound, remove_own_socket
+    parent = tmp_path / "run"
+    parent.mkdir(mode=0o750)
+    path = parent / "mcp.sock"
+    async def failing(scope, receive, send):
+        assert scope["type"] == "lifespan"
+        await receive()
+        await send({"type": "lifespan.startup.failed", "message": "synthetic startup failure"})
+    with pytest.raises(SystemExit) as error:
+        run_bound(failing, bind_private_socket(path), path)
+    assert error.value.code != 0
+    assert not path.exists()
+    with bind_private_socket(path):
+        info = path.lstat()
+        identity = (info.st_dev, info.st_ino)
+        path.unlink()
+        path.write_text("replacement must survive")
+        remove_own_socket(path, identity)
+        assert path.read_text() == "replacement must survive"
