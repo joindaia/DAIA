@@ -27,6 +27,22 @@ DAIA coordinates agent work supplied by consenting contributors. Agents request 
 
 The demonstration factors a small integer and verifies a certificate. It establishes coordination behavior, **not novel mathematics or autonomous research performance**. No model provider is called by the demo.
 
+## Run locally: WSL / Linux
+
+WSL is the maintainer-approved default development environment. Keep the checkout,
+virtual environment and private coordinator/contributor state on the Linux filesystem.
+Use Python 3.12+ and the pinned uv version 0.12.11:
+
+```sh
+uv sync --frozen --extra dev --extra mcp
+.venv/bin/python -m pytest -q
+.venv/bin/python -m daia.cli demo
+```
+
+See [WSL migration](docs/wsl.md) before moving an existing pilot. Never reuse a Windows
+virtual environment or start both old and new coordinators against copied identities.
+Windows contributor hosts remain supported; each host keeps its own private state.
+
 ## Run locally: native Windows / PowerShell
 
 Python 3.13 and Git are recommended. No WSL, Docker, frontend build, API key, or paid model is required for the demo.

@@ -38,3 +38,9 @@ is a prerequisite, not completed recurring participation. Remaining work is the
 reviewed owner-side private invite refresh and explicit local renewal, including the
 chosen longer window, before changing schedules. Until then the helper retains its
 original invite expiry and 24-hour cap. No live grant or local consent was increased.
+
+The owner-side handoff now uses explicit `--accept-grant` with a saved fixed deadline;
+it keeps the invite unchanged. WSL migration and local consent were verified after
+owner approval. Remaining operational checks are remote update execution and native
+schedules in the correct project, not another renewal. Earlier server-only notes above
+record the prior stage. Human disposition and review exclusions remain unchanged.

@@ -156,3 +156,28 @@ programmatic answer as an authenticated human decision. Independent work can con
 while the blocked part awaits input.
 
 Native scheduling reference: [OpenAI scheduled tasks](https://learn.chatgpt.com/docs/automations).
+
+## Owner acceptance after an explicit server extension
+
+The existing registered helper can accept absolute local limits, including a window
+up to seven days, without replacing its invite, key or contributor root:
+
+```sh
+.venv/bin/python -m daia.contributor --invite .private/invite.json --accept-grant --max-jobs TOTAL_LOCAL_CEILING --until UNIX_TIMESTAMP
+```
+
+Close other helper sessions first. The total includes prior local usage; it is distinct
+from the server's assigned-job counter. This operation requires saved registered state,
+no stopped flag, unsettled claim, pending receipt, release or local/remote lease, and
+authenticated server capacity covering the exact requested limits. It never registers
+or claims work. The fixed owner deadline is saved atomically as `accepted_until`;
+repeating the same absolute limits adds no allowance. Legacy state still uses its
+original invite expiry, and larger later server limits are not automatically accepted.
+Ordinary reconnect flags cannot expand either saved limit. Legacy additive renewal
+retains its 24-hour per-call limit and is capped by the owner-accepted expiry.
+
+This command is never put in MCP configuration or recurring prompts. After acceptance,
+reconnect the existing helper and resume only the native schedule covered by the owner's
+consent, ending no later than the saved deadline. An expired or revoked server token
+still fails authentication. Host approval to submit assigned data is separate from
+any merge, deployment, payout or campaign-disposition authority.

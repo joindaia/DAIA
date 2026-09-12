@@ -92,10 +92,44 @@ class Contributor:
         # Persisted consent is authoritative on reconnect. Launch flags never expand it;
         # only the explicit, coordinator-checked renewal path below can do that.
         self.state.setdefault("releasing", None)
-        self.state["deadline"] = min(self.state["deadline"], self.identity["expires"])
+        self.state["deadline"] = min(self.state["deadline"], self.consent_expiry)
         self.key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(self.state["key"]))
         self.agent = fingerprint(public_hex(self.key))
         self.save()
+
+    @property
+    def consent_expiry(self):
+        # Only explicit owner acceptance can replace the original invite's local ceiling.
+        return self.state.get("accepted_until", self.identity["expires"])
+
+    async def accept_grant(self, max_jobs, until):
+        """Owner-only absolute consent for the same registered identity; no invite rewrite."""
+        now = int(self.clock())
+        if (type(max_jobs) is not int or not 1 <= max_jobs <= 10000
+                or type(until) is not int or not now < until <= now + 604800
+                or max_jobs < max(self.state["max_jobs"], self.state["used"])
+                or until < self.state["deadline"]):
+            raise ValueError("Invalid absolute consent bounds")
+        if (self.state["stopped"] or not self.state["registered"] or self.state["lease"]
+                or self.state["pending"] or self.state["claiming"] or self.state.get("releasing")):
+            raise ValueError("Consent acceptance requires an idle registered contributor")
+        grant = await self.remote("contribution_status", agent_id=self.agent)
+        if (any(type(grant.get(field)) is not int for field in ("assigned", "max_jobs", "expires"))
+                or not 0 <= grant["assigned"] <= grant["max_jobs"] <= 10000
+                or grant.get("lease") is not None or grant.get("other_agent_has_lease") is not False
+                or max_jobs - self.state["used"] > grant["max_jobs"] - grant["assigned"]
+                or until > grant["expires"]):
+            raise ValueError("Coordinator grant does not cover the requested consent")
+        changed = (self.state["max_jobs"], self.state["deadline"], self.consent_expiry) != (max_jobs, until, until)
+        if changed:
+            previous = self.state.copy()
+            self.state.update(max_jobs=max_jobs, deadline=until, accepted_until=until)
+            try:
+                self.save()
+            except Exception:
+                self.state = previous
+                raise
+        return {**self.status(), "consent_changed": changed}
 
     def save(self):
         temporary = None
@@ -166,7 +200,7 @@ class Contributor:
                 or type(minutes) is not int or not 1 <= minutes <= 1440):
             raise ValueError("Use 1..10000 additional jobs and 1..1440 minutes")
         now = int(self.clock())
-        if self.state["stopped"] or now >= self.identity["expires"]:
+        if self.state["stopped"] or now >= self.consent_expiry:
             raise ValueError("Stopped or expired contribution cannot be renewed")
         await self.register()
         grant = await self.remote("contribution_status", agent_id=self.agent)
@@ -177,7 +211,7 @@ class Contributor:
         local_remaining = max(0, self.state["max_jobs"] - self.state["used"])
         remaining = min(local_remaining + additional_jobs, remote_remaining,
                         10000 - self.state["used"])
-        deadline = min(now + minutes * 60, self.identity["expires"], grant["expires"])
+        deadline = min(now + minutes * 60, self.consent_expiry, grant["expires"])
         if remaining <= 0 or deadline <= now:
             raise ValueError("Coordinator grant has no renewable capacity")
         self.state["max_jobs"] = self.state["used"] + remaining
@@ -345,12 +379,17 @@ def main():
     parser.add_argument("--invite", type=Path, required=True)
     parser.add_argument("--max-jobs", type=int, default=1)
     parser.add_argument("--minutes", type=int, default=30)
-    parser.add_argument("--configure", action="store_true", help="Install secret-free project MCP configuration")
-    parser.add_argument("--renew-consent", action="store_true",
+    operation = parser.add_mutually_exclusive_group()
+    operation.add_argument("--configure", action="store_true", help="Install secret-free project MCP configuration")
+    operation.add_argument("--renew-consent", action="store_true",
                         help="One-shot finite renewal; never saved in MCP configuration")
+    operation.add_argument("--accept-grant", action="store_true", help="Owner-only absolute consent after server extension; requires existing identity")
+    parser.add_argument("--until", type=int, help="Absolute approved consent deadline for --accept-grant")
     parser.add_argument("--additional-jobs", type=int)
     parser.add_argument("--project", type=Path, default=Path.cwd())
     args = parser.parse_args()
+    if args.accept_grant != (args.until is not None):
+        parser.error("--accept-grant and --until must be used together")
     if args.renew_consent and args.additional_jobs is None:
         parser.error("--renew-consent requires --additional-jobs")
     if args.additional_jobs is not None and not args.renew_consent:
@@ -361,7 +400,13 @@ def main():
             configure(args.project, invite, args.max_jobs, args.minutes)
             return
         with exclusive_host(invite.with_suffix(".contributor.lock")):
+            if args.accept_grant and not invite.with_suffix(".contributor.json").is_file():
+                raise ValueError("Existing contributor identity required")
             host = Contributor(invite, args.max_jobs, args.minutes)
+            if args.accept_grant:
+                accepted = asyncio.run(host.accept_grant(args.max_jobs, args.until))
+                print(f"DAIA consent accepted: {accepted['max_jobs'] - accepted['jobs_used']} jobs remaining, deadline {accepted['deadline']}.")
+                return
             if args.renew_consent:
                 renewed = asyncio.run(host.renew_consent(args.additional_jobs, args.minutes))
                 print("DAIA consent renewed: "

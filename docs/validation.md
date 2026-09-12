@@ -1,5 +1,30 @@
 # Bootstrap validation record
 
+## WSL migration and explicit local acceptance, 2026-09-09
+
+The maintainer approved WSL as the default and a finite seven-day extension for the
+existing contributors. The Linux checkout uses Python3.12 and the frozen uv lock.
+Full suite: **197 passed, 2 skipped** (Windows file-sharing tests); focused local
+acceptance: **14 passed**. The deterministic demo passed. No general benchmark or
+provider compatibility is claimed.
+
+The old Windows coordinator/helper processes were absent before state transfer.
+Checksums matched for the database and active local invite/consent state. Linux
+private permissions were applied; inaccessible historical raw-pilot files remain
+protected in the inactive Windows backup. The old project MCP entry was disabled.
+The migrated coordinator passed authenticated discovery through the unchanged private
+Tailnet URL. A real Linux stdio helper reported ready with50remaining under the exact
+owner-approved deadline, without claiming a job. Existing keys, counters and reviews
+were retained. Native schedule resumption and remote update execution remain pending;
+transport success does not establish those outcomes.
+
+`--accept-grant` is an owner-only, one-shot operation on saved registered state. It
+checks absolute local limits against the authenticated server, stores the owner's
+fixed `accepted_until` atomically and never rewrites the invite. Repeated identical
+limits add no allowance; legacy state retains its original expiry. Stopped or
+unsettled work refuses acceptance. Recurring prompts and MCP tools cannot invoke it.
+
+
 ## Explicit server grant extension, 2026-09-09
 
 Implemented and tested on the review branch: operator-only `extend-grant` with

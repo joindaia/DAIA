@@ -4,7 +4,7 @@
 
 Read README.md, docs/architecture.md, docs/protocol.md, docs/threat-model.md and docs/roadmap.md. Report the distinction between implemented, tested, scaffolded and planned. Never invent benchmarks, tool results, successful CI, mathematical proofs or provider compatibility.
 
-Use native Python development. Do not introduce WSL, a frontend framework, a daemon, Kubernetes, a blockchain, or extra services without an approved need. Run tests with `python -m pytest -q`; the demo is `python -m daia.cli demo` after installation or with `PYTHONPATH=src`. Do not claim optional integrations were tested if dependencies were unavailable.
+Use the approved WSL/Linux Python environment for development. Retain Windows contributor compatibility. Do not introduce a frontend framework, a worker daemon, Kubernetes, a blockchain, or extra services without an approved need. Run tests with `python -m pytest -q`; the demo is `python -m daia.cli demo` after installation or with `PYTHONPATH=src`. Do not claim optional integrations were tested if dependencies were unavailable.
 
 ## Invariants
 
