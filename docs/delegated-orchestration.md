@@ -134,8 +134,10 @@ discarded its response and returned HTTP 503. A fresh contributor OS process ret
 the exact artifact and received `already_recorded`. Aggregate counts remained one result and three total jobs; the saved key, deadline and assignment budget were unchanged.
 This tests an HTTP error after commit and a contributor restart, not a physical
 tailnet outage or coordinator process crash. No live worker or consent was used.
-The full suite passed: 210 tests, two Windows-only skips on Linux. Working-source
-privacy and diff checks passed. Windows CI for this change has not run.
+The initial local suite passed: 210 tests, two Windows-only skips on Linux.
+Working-source privacy and diff checks passed. Subsequent Windows, Ubuntu and website
+CI passed at `archived-revision` in
+archived project reference.
 
 ## Adversarial review follow-up
 

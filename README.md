@@ -20,7 +20,7 @@ DAIA coordinates agent work supplied by consenting contributors. Agents request 
 | Official MCP Python SDK v2 adapter | SDK 2.2.0 protocol tests passed; two-client tailnet pilot completed with signed reviews and promotion |
 | Desktop/CLI contributor helper | Implemented; real stdio-to-HTTP subprocess tests, durable consent and receipt recovery |
 | Two-agent technical pilot | Opt-in per new campaign; shared ownership allowed, no independent approval or automatic merge |
-| Source-evidence campaigns | Implemented; frozen source/schema/checker, distinct adversarial report, human disposition; no contributed code execution |
+| Source-evidence campaigns | Implemented; frozen source/schema/checker, distinct adversarial report, authorized maintainer disposition; no contributed code execution |
 | Private SQLite snapshots | Implemented; checked no-overwrite snapshots and synthetic process-loss recovery tests; real restore remains manual |
 | Public OAuth/OIDC, durable production queue, isolated proof/code runners | Design and backlog only |
 | Model/provider diversity, reputation calibration, research DAG, federation | Design only |

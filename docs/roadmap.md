@@ -24,7 +24,7 @@ below are dependencies and options, not a requirement to build every subsystem f
 
 | Milestone | Evidence required | Current status |
 |---|---|---|
-| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, human triage and one checked, manually merged improvement | As of 11 September: pilot-eligibility analysis and supporting technical review submitted; round closed as useful source analysis, with no defect established. Writing round admitted. A checked and merged improvement from a complete scheduled cycle is still unestablished |
+| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, attributed maintainer triage and one checked, integrated improvement | As of 11 September: pilot-eligibility analysis and supporting technical review submitted; round closed as useful source analysis, with no defect established. Writing round admitted. A checked and merged improvement from a complete scheduled cycle is still unestablished |
 | Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
 | Repeatable development rounds | Prepared relevant work, explicit finite participation, reliable installation, recorded receipts and clear pause reasons | Server extension and local acceptance implemented/tested; existing local worker connection recovered and native hourly schedule resumed within existing consent. Actual scheduled completion remains to be observed |
 | Demonstrated development value | Useful checked improvements with recorded review effort and fewer maintainer interventions | Not yet measured; test counts and idle wakes do not establish value |
@@ -45,12 +45,12 @@ scheduled prompts, finite consent renewal and the bounded source-evidence worklo
 are implemented. See [hourly workers](hourly-workers.md) and
 [evidence campaigns](evidence-campaigns.md) for their authority and validation limits.
 The immediate acceptance gate is a real scheduled two-worker evidence cycle and a
-human-confirmed useful outcome. The [prepared backlog](development-backlog.md) keeps
+maintainer-accepted useful outcome. The [prepared backlog](development-backlog.md) keeps
 the next three slices concrete without admitting concurrent campaigns. General human
 consultation remains host-native; durable waiting/resumption is deferred until a real
 task needs it. Isolated contributed-code execution remains planned.
 Worker-dependent acceptance gates do not block independent local engineering. While
-the pilot awaits contributors or human disposition, improve repeatable participation
+the pilot awaits contributors or maintainer disposition, improve repeatable participation
 and prepare relevant work on the review branch without admitting more live campaigns
 or changing live policy. [Private snapshots](recovery.md) now have a
 synthetic WAL/process-loss recovery exercise; real restore and reconciliation remain
@@ -78,7 +78,8 @@ then propose scoped, revocable capabilities while the owner retains final execut
 authority. Shared voting and agent promotion start as shadow recommendations, not
 live powers. This does not bypass the current pilot or change frozen campaign rules.
 The brief names a process-boundary receipt-recovery exercise as independent work
-while host setup or human disposition is pending.
+while host setup or an assigned review is pending. Its completed exercise is recorded
+in that brief.
 
 ## 0. Safe bootstrap — reference implementation
 
@@ -115,7 +116,7 @@ Exit: submitted malicious code cannot access host credentials; a changed theorem
 
 ## 4. Bounded platform-improvement project
 
-Allow consented contributions to a fixed baseline and evaluator. Use independent reproduction, held-out tests and human-only merges. Start with a regression fixture or read-only optimization. Track validated improvement rather than throughput theater. Add protected environment/branch enforcement before any release automation.
+Allow consented contributions to a fixed baseline and evaluator. Use independent reproduction, held-out tests and separate authorized maintainer integration. Start with a regression fixture or read-only optimization. Track validated improvement rather than throughput theater. Add protected environment/branch enforcement before any release automation.
 
 Exit: one real useful change produced, independently validated, reviewed and manually merged through DAIA's workflow.
 

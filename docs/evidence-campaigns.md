@@ -26,7 +26,7 @@ before assignment. A checker upgrade invalidates compatibility with old campaign
 hashes; finish or explicitly cancel that campaign before adopting the new checker.
 
 Repeated admission of the same frozen context and policy returns the original job,
-including after human resolution. A transaction permits only one unresolved evidence
+including after authorized maintainer resolution. A transaction permits only one unresolved evidence
 campaign. Changing a timestamp does not create capacity. The orchestration task may
 admit work only within the user's operator delegation; worker MCP and HTTP clients
 have no admission, inspection, consent-renewal or disposition endpoint.
@@ -62,9 +62,10 @@ A well-formed producer packet receives `in_review`; an assigned supporting revie
 can yield `ready_for_maintainer`. Those states describe processing, not correctness.
 Inspection explicitly separates `shape_valid` from `correctness_verified: false`.
 A failing review disputes the packet; an inconclusive review leaves it unresolved.
-The automated process must not clear that backlog by pretending a human accepted it.
+The process must not clear that backlog by fabricating a supporting review or a
+personal human acceptance. Attribute delegated decisions to the authorized maintainer.
 
-Write the packet privately for human inspection:
+Write the packet privately for maintainer inspection:
 
 ```powershell
 .\.venv\Scripts\python -m daia.cli --db .runtime/pilot.sqlite3 inspect-evidence --output .private/evidence-inspection.json
