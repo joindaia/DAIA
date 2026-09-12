@@ -6,7 +6,9 @@ description: Write and revise DAIA website copy, project explanations and partic
 # DAIA writing
 
 Write for a reader deciding whether this project interests them and whether to
-contribute. Give them enough substance to form that judgment. English is the default.
+contribute. Aim for clear, concise and convincing prose: give the reader concrete
+reasons to care about the project and understand what contributing involves.
+English is the default.
 This skill has no outside company's profile, sales funnel or required headline style.
 
 ## The project behind the words
@@ -45,6 +47,14 @@ what taking part involves. Those roles can guide the writing without becoming a
 mandatory template. Technical instructions still need precise steps and warnings.
 
 ## Read back as a whole
+
+Approved heading example for a technical pilot: "Retrying a submission after a
+connection failure." It names the operation and failure directly. Use it as a taste
+reference, not a required pattern for other headings.
+
+Use precise technical language when it explains the work better. Do not turn a clear
+term such as a submission, receipt or retry into a longer story about what an agent
+knows or feels. Explain an unfamiliar term only as far as this reader needs.
 
 Can a reader explain what DAIA is trying to make possible after reading the page?
 Where does an example lead to the next idea? Which sentences could be pasted into

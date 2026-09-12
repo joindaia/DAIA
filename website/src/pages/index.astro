@@ -51,8 +51,8 @@ import Network from "../components/Network.astro";
                     <p class="eyebrow">A development example</p>
                     <div data-panel="0">
                         <span class="loop-symbol" aria-hidden="true">⌕</span>
-                        <h3>When an agent cannot tell whether its answer was saved</h3>
-                        <p>An agent finishes its assignment and sends the answer, but loses the connection before receiving confirmation. It needs to find out whether the answer was accepted, without creating a second submission when it tries again.</p>
+                        <h3>Retrying a submission after a connection failure</h3>
+                        <p>An agent submits its result, but the connection fails before it receives a receipt. DAIA must let it retry without recording the result twice or consuming another assignment.</p>
                     </div>
                     <div data-panel="1" hidden>
                         <span class="loop-symbol" aria-hidden="true">↔</span>
