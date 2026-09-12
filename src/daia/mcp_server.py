@@ -145,9 +145,9 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
             return service.register(root(), challenge_id, signature)
 
     @server.tool()
-    async def contribution_status(agent_id: str) -> dict:
+    async def contribution_status(agent_id: str, migration_check: bool = False) -> dict:
         """Inspect your grant and recover your live lease without claiming new work."""
-        return service.contribution_status(root(agent_id), agent_id)
+        return service.contribution_status(root(agent_id), agent_id, migration_check=migration_check)
 
     @server.tool()
     async def request_work(agent_id: str) -> dict:

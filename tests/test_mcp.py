@@ -275,7 +275,7 @@ def test_closed_admission_does_not_replace_grant_validation(network, contributor
         assert response.status_code == 401
 
 
-def test_contributor_mutual_tls_real_mcp(tmp_path):
+def test_contributor_mutual_tls_real_mcp(tmp_path, monkeypatch):
     import datetime
     import ipaddress
     import ssl
@@ -339,6 +339,25 @@ def test_contributor_mutual_tls_real_mcp(tmp_path):
         result = asyncio.run(host.remote("contribution_status", agent_id=host.agent))
         assert isinstance(result, dict)
         assert host.state["used"] == 0
+        # Exercise the migration transaction over real HTTP -> mutual TLS.
+        # Only canonical public routing is replaced by this ephemeral loopback URL;
+        # TLS verification, SDK calls and saved state are real.
+        import daia.contributor as contributor_module
+        with running_server(build_mcp_app(service)) as old_url:
+            original = tmp_path / "migration-invite.json"
+            original.write_text(json.dumps({**grant, "network_id": service.network_id, "url": old_url}))
+            moving = Contributor(original)
+            asyncio.run(moving.register())
+            before = dict(moving.state)
+            with monkeypatch.context() as local_route:
+                local_route.setattr(contributor_module, "public_origin", lambda value: value if value == url else (_ for _ in ()).throw(ValueError()))
+                asyncio.run(moving.migrate_endpoint({"url": url, "tls": identity["tls"]}, tmp_path))
+                reloaded = Contributor(original)
+                reply = asyncio.run(reloaded.remote("contribution_status", agent_id=reloaded.agent))
+                assert reply["agent_id"] == moving.agent and reloaded.transport["url"] == url
+                asyncio.run(reloaded.migrate_endpoint(rollback=True))
+                assert reloaded.transport is None
+                assert all(reloaded.state[k] == value for k, value in before.items())
         # A trusted signer does not make the wrong server hostname acceptable.
         host.identity["url"] = url.replace("127.0.0.1", "localhost")
         with pytest.raises(ValueError, match="Coordinator unavailable"):

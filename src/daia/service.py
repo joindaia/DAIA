@@ -475,14 +475,29 @@ class Coordinator:
             self._event(db, "submission_recorded", receipt)
             return {"receipt_hash": receipt, "result_id": result_id, "status": state}
 
-    def contribution_status(self, root, agent):
+    def contribution_status(self, root, agent, migration_check=False):
         """Own grant and recoverable lease only; never reveals other contributors."""
         with self.store.connect() as db:
             self._agent(db, root, agent)
             self._expire(db)
             grant = self._root(db, root)
             active = db.execute("SELECT * FROM assignments WHERE root_id=? AND state='leased'", (root,)).fetchone()
-            return {"assigned": grant["assigned"], "max_jobs": grant["max_jobs"],
+            history = {}
+            if migration_check:
+                # Only this contributor's durable history, never other roots' records.
+                own = {table: [dict(row) for row in db.execute(
+                    f"SELECT * FROM {table} WHERE root_id=? ORDER BY id", (root,))]
+                    for table in ("agents", "assignments", "results", "reviews")}
+                own["jobs"] = [dict(row) for row in db.execute(
+                    "SELECT * FROM jobs WHERE id IN (SELECT job_id FROM assignments WHERE root_id=?) ORDER BY id", (root,))]
+                own["campaigns"] = [dict(row) for row in db.execute(
+                    "SELECT * FROM evidence_campaigns WHERE job_id IN (SELECT job_id FROM assignments WHERE root_id=?) ORDER BY job_id", (root,))]
+                objects = {root} | {row["id"] for table in ("agents", "assignments", "results", "reviews", "jobs") for row in own[table]}
+                own["events"] = [dict(row) for row in db.execute("SELECT * FROM events ORDER BY sequence")
+                                 if json.loads(row["event_json"])["object_id"] in objects]
+                history["history_hash"] = digest(own)
+            return {**history, "network_id": self.network_id, "root_id": root, "agent_id": agent,
+                    "assigned": grant["assigned"], "max_jobs": grant["max_jobs"],
                     "expires": grant["expires"], "cooldown_until": grant["cooldown_until"],
                     "other_agent_has_lease": bool(active and active["agent_id"] != agent),
                     "lease": self._package(db, active) if active and active["agent_id"] == agent else None}

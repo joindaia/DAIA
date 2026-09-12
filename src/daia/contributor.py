@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from .crypto import fingerprint, public_hex, sign, strict_json
-from .mcp_server import pilot_origin
+from .mcp_server import pilot_origin, public_origin
 from .signer import validate_envelope
 
 INSTRUCTIONS = (
@@ -63,8 +63,27 @@ def exclusive_host(path):
         yield
 
 
+def closed_transport(config, directory):
+    """Operator-owned public endpoint; never infer public access from an invite URL."""
+    if not isinstance(config, dict) or set(config) != {"url", "tls"}:
+        raise ValueError("Expected an explicit HTTPS endpoint and TLS credentials")
+    public_origin(config["url"])
+    tls = config["tls"]
+    if (not isinstance(tls, dict) or set(tls) != {"ca_file", "certificate", "private_key"}
+            or any(not isinstance(v, str) or not v for v in tls.values())):
+        raise ValueError("Invalid migration TLS configuration")
+    normalized = {"url": config["url"], "tls": {k: str((directory / v).resolve()) for k, v in tls.items()}}
+    try:
+        context = ssl.create_default_context(cafile=normalized["tls"]["ca_file"])
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_cert_chain(normalized["tls"]["certificate"], normalized["tls"]["private_key"], password=lambda: "")
+    except (OSError, ValueError, ssl.SSLError):
+        raise ValueError("Migration TLS credentials could not be loaded") from None
+    return normalized, context
+
+
 class Contributor:
-    def __init__(self, invite_file, max_jobs=1, minutes=30, clock=time.time):
+    def __init__(self, invite_file, max_jobs=1, minutes=30, clock=time.time, *, save_on_load=True):
         if type(max_jobs) is not int or not 1 <= max_jobs <= 10000 or not 1 <= minutes <= 1440:
             raise ValueError("Use 1..10000 jobs and 1..1440 minutes")
         self.invite_file = Path(invite_file).resolve()
@@ -110,7 +129,57 @@ class Contributor:
         self.state["deadline"] = min(self.state["deadline"], self.consent_expiry)
         self.key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(self.state["key"]))
         self.agent = fingerprint(public_hex(self.key))
-        self.save()
+        self.original_tls_context = self.tls_context
+        self.transport = None
+        if self.state.get("transport") is not None:
+            self.transport, self.tls_context = closed_transport(self.state["transport"], self.invite_file.parent)
+        if save_on_load:
+            self.save()
+
+    async def migrate_endpoint(self, config=None, directory=None, rollback=False):
+        """Explicit operator action; never exposed as a contributor MCP tool."""
+        if not self.state["registered"]:
+            raise ValueError("Migration requires the existing registered identity")
+        if rollback:
+            if "previous_transport" not in self.state:
+                raise ValueError("No previous endpoint recorded")
+            config = self.state["previous_transport"]
+        if config is None and not rollback:
+            raise ValueError("Explicit migration configuration required")
+        target, context = (None, self.original_tls_context) if config is None else closed_transport(config, directory or self.invite_file.parent)
+        if target == self.transport:
+            raise ValueError("Endpoint is already selected")
+        before = await self.remote("contribution_status", agent_id=self.agent, migration_check=True)
+        expected = (self.identity["network_id"], self.identity["root_id"], self.agent)
+        if tuple(before.get(k) for k in ("network_id", "root_id", "agent_id")) != expected:
+            raise ValueError("Source coordinator identity could not be verified")
+        if not isinstance(before.get("history_hash"), str) or len(before["history_hash"]) != 64:
+            raise ValueError("Source history verification is unavailable")
+        previous, previous_context = self.transport, self.tls_context
+        try:
+            self.transport, self.tls_context = target, context
+            destination = await self.remote("contribution_status", agent_id=self.agent, migration_check=True)
+        finally:
+            self.transport, self.tls_context = previous, previous_context
+        after = await self.remote("contribution_status", agent_id=self.agent, migration_check=True)
+        if before != destination or before != after:
+            raise ValueError("Coordinator state differs; pause work and verify the restored snapshot")
+        # Preserve a private pre-change state copy; replacing the live state is atomic.
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=self.path.parent,
+                                         prefix=".migration-backup-", suffix=".json", delete=False) as backup:
+            os.chmod(backup.name, 0o600)
+            json.dump(self.state, backup)
+            backup.flush()
+            os.fsync(backup.fileno())
+        old_state = self.state
+        self.state = {**old_state, "transport": target, "previous_transport": previous}
+        try:
+            self.save()
+        except Exception:
+            self.state = old_state
+            raise
+        self.transport, self.tls_context = target, context
+        return {"status": "endpoint_changed", "consent_changed": False}
 
     @property
     def consent_expiry(self):
@@ -180,7 +249,7 @@ class Contributor:
             async with asyncio.timeout(30):
                 async with httpx2.AsyncClient(verify=self.tls_context or True,
                                              headers={"Authorization": "Bearer " + self.identity["token"]}) as http:
-                    async with streamable_http_client(self.identity["url"], http_client=http) as streams:
+                    async with streamable_http_client(self.transport["url"] if self.transport else self.identity["url"], http_client=http) as streams:
                         async with ClientSession(*streams) as session:
                             await session.initialize()
                             result = await session.call_tool(name, arguments)
@@ -400,6 +469,8 @@ def main():
     operation.add_argument("--renew-consent", action="store_true",
                         help="One-shot finite renewal; never saved in MCP configuration")
     operation.add_argument("--accept-grant", action="store_true", help="Owner-only absolute consent after server extension; requires existing identity")
+    operation.add_argument("--migrate-endpoint", type=Path, help="Operator-only endpoint JSON; preserve saved identity and consent")
+    operation.add_argument("--switch-back-endpoint", action="store_true", help="Verify and return to the previous endpoint without rolling back work")
     parser.add_argument("--until", type=int, help="Absolute approved consent deadline for --accept-grant")
     parser.add_argument("--additional-jobs", type=int)
     parser.add_argument("--project", type=Path, default=Path.cwd())
@@ -416,9 +487,16 @@ def main():
             configure(args.project, invite, args.max_jobs, args.minutes)
             return
         with exclusive_host(invite.with_suffix(".contributor.lock")):
-            if args.accept_grant and not invite.with_suffix(".contributor.json").is_file():
+            if (args.accept_grant or args.migrate_endpoint or args.switch_back_endpoint) and not invite.with_suffix(".contributor.json").is_file():
                 raise ValueError("Existing contributor identity required")
-            host = Contributor(invite, args.max_jobs, args.minutes)
+            host = Contributor(invite, args.max_jobs, args.minutes,
+                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint))
+            if args.migrate_endpoint or args.switch_back_endpoint:
+                config = strict_json(args.migrate_endpoint.read_text(encoding="utf-8")) if args.migrate_endpoint else None
+                directory = args.migrate_endpoint.resolve().parent if args.migrate_endpoint else None
+                asyncio.run(host.migrate_endpoint(config, directory, args.switch_back_endpoint))
+                print("DAIA endpoint changed. Existing identity, consent and work state preserved.")
+                return
             if args.accept_grant:
                 accepted = asyncio.run(host.accept_grant(args.max_jobs, args.until))
                 print(f"DAIA consent accepted: {accepted['max_jobs'] - accepted['jobs_used']} jobs remaining, deadline {accepted['deadline']}.")

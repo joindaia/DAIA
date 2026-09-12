@@ -675,3 +675,101 @@ def test_stdio_restart_recovers_discarded_http_submission_response(tmp_path):
     with running_server(lose_response) as url:
         asyncio.run(exercise(invite_file(tmp_path, service, url)))
     assert discarded == [True]
+
+
+def test_endpoint_migration_preserves_state_and_rollback(tmp_path, network, monkeypatch):
+    service, _ = network
+    path = invite_file(tmp_path, service)
+    host = direct(Contributor(path, clock=service.clock), service)
+    asyncio.run(host.register())
+    target = {"url": "https://mcp.example.org/mcp", "tls": {"ca_file": "ca", "certificate": "cert", "private_key": "key"}}
+    context = object()
+    monkeypatch.setattr(contributor_module, "closed_transport", lambda config, directory: (config, context))
+    async def status(name, **args):
+        assert name == "contribution_status" and args["migration_check"] is True
+        return service.contribution_status(host.identity["root_id"], host.agent, migration_check=True)
+    host.remote = status
+    host.state.update(stopped=True, used=1, pending={"artifact": "saved", "signature": "unchanged"}, receipt={"status": "in_review"})
+    host.save()
+    before = json.loads(path.with_suffix(".contributor.json").read_text())
+    invite_before = path.read_bytes()
+    asyncio.run(host.migrate_endpoint(target, tmp_path))
+    assert all(host.state[k] == v for k, v in before.items())
+    assert path.read_bytes() == invite_before
+    restored = Contributor(path, clock=service.clock)
+    assert restored.agent == host.agent and restored.transport == target
+    assert restored.state["pending"] == before["pending"]
+    # Work recorded after migration must survive rollback, not be restored from backup.
+    host.state["used"] = 2
+    host.state["pending"] = None
+    host.save()
+    asyncio.run(host.migrate_endpoint(rollback=True))
+    assert host.transport is None and host.state["used"] == 2 and host.state["pending"] is None
+    assert host.state["key"] == before["key"] and host.state["deadline"] == before["deadline"]
+    backups = list(tmp_path.glob('.migration-backup-*.json'))
+    assert len(backups) == 2
+    if sys.platform != "win32":
+        assert all(p.stat().st_mode & 0o777 == 0o600 for p in backups)
+
+
+@pytest.mark.parametrize("failure", ["network", "history", "source_changed", "unreachable", "save"])
+def test_endpoint_migration_failure_keeps_original(tmp_path, network, monkeypatch, failure):
+    service, _ = network
+    path = invite_file(tmp_path, service)
+    host = direct(Contributor(path, clock=service.clock), service)
+    asyncio.run(host.register())
+    target = {"url": "https://mcp.example.org/mcp", "tls": {}}
+    monkeypatch.setattr(contributor_module, "closed_transport", lambda config, directory: (config, object()))
+    count = 0
+    async def status(name, **args):
+        nonlocal count
+        count += 1
+        reply = service.contribution_status(host.identity["root_id"], host.agent, migration_check=True)
+        if count == 2:
+            if failure == "unreachable":
+                raise ValueError("unreachable")
+            if failure == "network": reply["network_id"] = "different"
+            if failure == "history": reply["history_hash"] = "0" * 64
+        if count == 3 and failure == "source_changed": reply["assigned"] += 1
+        return reply
+    host.remote = status
+    before = host.path.read_bytes()
+    if failure == "save":
+        monkeypatch.setattr(host, "save", lambda: (_ for _ in ()).throw(OSError("disk failed")))
+    with pytest.raises((ValueError, OSError)):
+        asyncio.run(host.migrate_endpoint(target, tmp_path))
+    assert host.path.read_bytes() == before and host.transport is None
+    assert host.state == json.loads(before)
+
+
+@pytest.mark.parametrize("url", ["http://mcp.example.org/mcp", "https://mcp.example.org/mcp?x=1", "https://127.0.0.1/mcp"])
+def test_migration_rejects_unsafe_endpoint_before_state_change(tmp_path, url):
+    with pytest.raises(ValueError):
+        contributor_module.closed_transport({"url": url, "tls": {}}, tmp_path)
+
+
+def test_migration_history_is_scoped_and_detects_work(network, contributor):
+    service, _ = network
+    own, aid, _ = contributor()
+    other, other_aid, _ = contributor()
+    def digest():
+        return service.contribution_status(own["root_id"], aid, migration_check=True)["history_hash"]
+    before = digest()
+    contributor(root=other["root_id"])
+    assert digest() == before
+    service.seed()
+    service.request_work(own["root_id"], aid)
+    assert digest() != before
+    with pytest.raises(Exception):
+        service.contribution_status(other["root_id"], aid, migration_check=True)
+    assert "history_hash" not in service.contribution_status(own["root_id"], aid)
+
+
+def test_migration_digest_detects_missing_audit_event(network, contributor):
+    service, _ = network
+    own, aid, _ = contributor()
+    before = service.contribution_status(own["root_id"], aid, migration_check=True)["history_hash"]
+    with service.store.connect() as db:
+        db.execute("DELETE FROM events WHERE event_json LIKE ?", ('%' + aid + '%',))
+    after = service.contribution_status(own["root_id"], aid, migration_check=True)["history_hash"]
+    assert before != after

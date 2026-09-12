@@ -30,3 +30,51 @@ Before public cutover, implement the mandatory closed launcher and gateway limit
 certificate-to-agent binding and revocation, verify the reverse proxy cannot bypass
 that binding, and test migration/recovery with existing helper identities. Direct
 native MCP clients without certificate support need a separate authorization path.
+
+## Explicit endpoint migration
+
+The operator can prepare a JSON document with exactly `url` and `tls` (the three
+credential paths above), then run:
+
+```sh
+python -m daia.contributor --invite /private/invite.json --migrate-endpoint /private/endpoint.json
+```
+
+This is a one-shot CLI operation, not an agent-callable MCP tool. Stop the helper
+before using it; the existing invite lock prevents simultaneous local hosts. The
+public destination must be a canonical HTTPS `/mcp` URL with a DNS hostname and
+client TLS credentials. Relative credential paths resolve beside the endpoint
+file; the saved override uses absolute paths.
+
+Both coordinators must support migration checks. After the operator has paused
+claims and restored a verified snapshot, the helper compares authenticated network,
+root and agent identity, grant, lease and the contributor's durable history digest
+on source, destination and source again. Differences or connection failures refuse
+migration. This is a consistency check against trusted endpoints, not a proof that
+a server is honest or an atomic distributed cutover. The operator must prevent
+writes between snapshot verification and cutover and independently verify the full
+database restore. Other contributors' history is not returned by this check. The contributor root
+is the confidentiality boundary: registered sibling agents under that root can
+observe that the root-wide digest changed, just as they share the grant allowance.
+The digest is opt-in on `contribution_status`; ordinary helper polling omits it.
+
+Only the saved transport changes, using the helper's atomic state replacement.
+The original invite, key, local usage, deadline, stop flag, lease and pending result
+remain intact. A private pre-change state backup is written beside the state file;
+on Windows, the enclosing directory's ACL must also protect it. Do not feed these
+files to worker jobs.
+
+```sh
+python -m daia.contributor --invite /private/invite.json --switch-back-endpoint
+```
+
+Switchback verifies both endpoints again and selects the previous transport. It does
+not restore old usage or results from the backup. A stale or unreachable endpoint
+therefore requires operator recovery rather than silently losing intervening work.
+Neither action extends consent. Ordinary reconnects use the saved transport override.
+
+Unit tests cover preservation, mismatch, unreachable destination and failed save.
+A real SDK HTTP-to-mutual-TLS test exercises migration, restart and rollback using
+an ephemeral loopback routing exception in the test only. Public-host routing,
+closed-gateway integration and populated off-host recovery still need combined
+acceptance before live cutover.
