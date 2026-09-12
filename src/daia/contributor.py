@@ -448,8 +448,16 @@ class Contributor:
         except (KeyError, TypeError, ValueError, RecursionError):
             raise ValueError('Coordinator response refused') from None
 
-    async def perform(self, operation, *, artifact=None, verdict=None):
-        result = await self._perform(operation, artifact=artifact, verdict=verdict)
+    def check_assignment_scope(self, assignment_id):
+        current = self.state['pending'] or self.state['lease']
+        if (not isinstance(assignment_id, str) or len(assignment_id) != 32
+                or any(c not in '0123456789abcdef' for c in assignment_id)
+                or not current or current.get('assignment_id') != assignment_id):
+            raise ValueError('Assignment scope changed or unavailable')
+
+    async def perform(self, operation, *, artifact=None, verdict=None, assignment_id=None):
+        result = await self._perform(operation, artifact=artifact, verdict=verdict,
+                                     assignment_id=assignment_id)
         if self.job_authority is None and self.transport is None:
             return result
         if operation == 'request_work' and isinstance(result, dict) and 'assignment_id' in result:
@@ -470,8 +478,12 @@ class Contributor:
                     container['work_authorization'] = 'refused'
         return self.model_response(result)
 
-    async def _perform(self, operation, *, artifact=None, verdict=None):
+    async def _perform(self, operation, *, artifact=None, verdict=None, assignment_id=None):
         async with self.lock:
+            if assignment_id is not None:
+                if operation not in {'heartbeat', 'submit_result'}:
+                    raise ValueError('Operation outside assignment scope')
+                self.check_assignment_scope(assignment_id)
             if operation in {"stop_contributing", "release_work"}:
                 if operation == "stop_contributing":
                     self.state["stopped"] = True
@@ -498,6 +510,8 @@ class Contributor:
                     and (self.state['lease'] or self.state['used'] < self.state['max_jobs'])):
                 raise ValueError('Public work requires local job authorization')
             grant = await self.recover()
+            if assignment_id is not None:
+                self.check_assignment_scope(assignment_id)
             if operation == "contribution_status":
                 return {**self.status(), "grant": grant}
             if operation == "request_work":
@@ -529,7 +543,9 @@ class Contributor:
                 if lease is None:
                     raise ValueError("No live lease; request work first")
                 if operation in {"heartbeat", "submit_result"}:
-                    self.check_job_authorization(lease)
+                    capabilities = self.check_job_authorization(lease)
+                    if assignment_id is not None and (capabilities is None or operation not in capabilities):
+                        raise ValueError('Assignment capability refused')
                 arguments = dict(agent_id=self.agent, assignment_id=lease["assignment_id"])
                 if operation == "heartbeat":
                     result = await self.remote("heartbeat", **arguments)
@@ -612,6 +628,29 @@ def build_server(host):
     return server
 
 
+def build_assignment_server(host, assignment_id):
+    """Trusted-side interface for one assignment; not an OS isolation boundary."""
+    if host.job_authority is None or not host.state['registered']:
+        raise ValueError('Existing identity and job authority required')
+    host.check_assignment_scope(assignment_id)
+    from mcp.server import MCPServer
+    server = MCPServer('DAIA assignment', log_level='WARNING', instructions=
+                       'Submit the prepared assignment result. Retry exact pending results after a lost receipt.')
+
+    @server.tool()
+    async def heartbeat() -> dict:
+        """Renew only the pinned assignment within its existing deadline."""
+        return await host.perform('heartbeat', assignment_id=assignment_id)
+
+    @server.tool()
+    async def submit_result(artifact: str, verdict: str) -> dict:
+        """Submit this assignment only; retry the exact content after response loss."""
+        return await host.perform('submit_result', artifact=artifact, verdict=verdict,
+                                  assignment_id=assignment_id)
+
+    return server
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--invite", type=Path, required=True)
@@ -625,10 +664,14 @@ def main():
     operation.add_argument("--accept-grant", action="store_true", help="Owner-only absolute consent after server extension; requires existing identity")
     operation.add_argument("--migrate-endpoint", type=Path, help="Operator-only endpoint JSON; preserve saved identity and consent")
     operation.add_argument("--switch-back-endpoint", action="store_true", help="Verify and return to the previous endpoint without rolling back work")
+    operation.add_argument("--assignment", help="Serve only heartbeat and submission for an existing assignment")
     parser.add_argument("--until", type=int, help="Absolute approved consent deadline for --accept-grant")
     parser.add_argument("--additional-jobs", type=int)
     parser.add_argument("--project", type=Path, default=Path.cwd())
     args = parser.parse_args()
+    if args.assignment is not None and (len(args.assignment) != 32
+            or any(c not in '0123456789abcdef' for c in args.assignment)):
+        parser.error('--assignment requires an exact assignment ID')
     if args.accept_grant != (args.until is not None):
         parser.error("--accept-grant and --until must be used together")
     if args.renew_consent and args.additional_jobs is None:
@@ -641,11 +684,13 @@ def main():
             configure(args.project, invite, args.max_jobs, args.minutes, job_authority=args.job_authority)
             return
         authority = load_job_authority(args.job_authority) if args.job_authority else None
+        if args.assignment and authority is None:
+            raise ValueError('Assignment host requires job authority')
         with exclusive_host(invite.with_suffix(".contributor.lock")):
-            if (args.accept_grant or args.migrate_endpoint or args.switch_back_endpoint) and not invite.with_suffix(".contributor.json").is_file():
+            if (args.accept_grant or args.migrate_endpoint or args.switch_back_endpoint or args.assignment) and not invite.with_suffix(".contributor.json").is_file():
                 raise ValueError("Existing contributor identity required")
             host = Contributor(invite, args.max_jobs, args.minutes,
-                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint),
+                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint or args.assignment),
                                job_authority=authority)
             if args.migrate_endpoint or args.switch_back_endpoint:
                 config = strict_json(args.migrate_endpoint.read_text(encoding="utf-8")) if args.migrate_endpoint else None
@@ -662,7 +707,8 @@ def main():
                 print("DAIA consent renewed: "
                       f"{renewed['jobs_added']} jobs added, deadline {renewed['deadline']}.")
                 return
-            build_server(host).run(transport="stdio")
+            server = build_assignment_server(host, args.assignment) if args.assignment else build_server(host)
+            server.run(transport="stdio")
     except ConfigurationConflict:
         print("A different DAIA contributor configuration exists. Review the existing daia_contributor "
               "command and arguments in MCP settings, including its interpreter and invite paths. "

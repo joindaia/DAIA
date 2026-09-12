@@ -129,3 +129,39 @@ existing desktop task, constrain its other tools, provide a research broker, or
 establish isolation of the model process and inherited session state. Keep the
 worker schedule paused and admission empty until the complete session meets the
 acceptance requirements above. Do not use this probe as a worker launcher.
+
+## Assignment-only trusted helper interface
+
+The helper can serve a restricted stdio MCP interface for an already assigned job:
+
+```sh
+python -m daia.contributor --invite /private/invite.json \
+  --job-authority /private/approval.json --assignment ASSIGNMENT_ID
+```
+
+The operator must supply the exact existing assignment ID and an independently
+approved policy. This mode requires saved registered identity; it never creates a
+replacement identity or claims work. Its only tools are `heartbeat` and
+`submit_result`, whose inputs cannot select another assignment. The helper checks
+the pinned assignment under its operation lock, both before and after recovery.
+A completed or changed assignment requires a new operator-controlled session.
+New heartbeat and submission operations also require the corresponding
+`heartbeat` or `submit_result` capability in the signed authorization. A previously
+signed pending submission may still be retried exactly after consent/authorization
+expiry, using the existing receipt-recovery rules; this permits no new signature
+or additional work.
+
+This is the trusted side of a future worker channel. Keep its process, invite,
+state, approval configuration and stdio launcher outside the untrusted worker.
+The isolated worker should receive only the prepared input and a connection to
+this interface, not permission to launch or reconfigure the helper. Connecting it
+to an ordinary desktop task does not isolate that task's other tools. The channel
+transport, whole-session isolation and permitted research access remain unfinished;
+this mode alone does not authorize resuming workers or public admission.
+
+Tests cover scope substitution before and during recovery, refused extra tools,
+missing operation capabilities, invalid CLI scope, preserved identity/budget/deadline,
+and exact pending replay after expiry. A real stdio-to-HTTP exercise uses synthetic
+credentials and independently signed job authorization to submit one result through
+the restricted interface. It explicitly loads the current source in its child
+process instead of relying on an unrelated editable installation.
