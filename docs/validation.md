@@ -83,6 +83,32 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Scheduled relocation-source campaign admission, 2026-09-09
+
+A persisted native local worker wake called contributor status and then requested
+work once, returning `no_eligible_work`. Its reported saved consent still allowed
+one assignment within the original deadline. This verifies an actual scheduled
+idle wake on that host, not a useful result. Remote native scheduling and an idle
+request were reported by the maintainer; a remote scheduled run has not been
+independently inspected.
+
+After the first campaign's explicit human closure, coordinator inspection confirmed
+two unrevoked, unexpired contributor roots with one assignment each remaining and
+no queued or leased jobs. One new `source-evidence-v1` campaign was admitted through
+the existing operator CLI. It freezes the contiguous `main`/`configure` source at
+commit `archived-revision`: 60 lines beginning at line 339,
+3,462 characters. The objective examines installation relocation, persisted absolute
+MCP paths and conflict handling while explicitly allowing insufficient-evidence or
+no-defect findings. It does not assert that a moved virtual environment or native
+host was tested and permits no contributed command execution.
+
+Exact Git-source verification and disposable admission/idempotence passed, independently
+repeated by an adversarial reviewer. That preflight is not the assigned contributor
+review. Real admission added one queued producer job and one event; an exact CLI
+retry returned the same campaign. Existing grants, assignments, results and reviews
+were unchanged. Workers were not manually dispatched and consent was not renewed.
+Actual scheduled claims, producer/reviewer receipts and usefulness remain pending.
+
 ### Native human triage handoff, 2026-09-09
 
 `resolve-evidence --dry-run` uses the existing resolver's validation and transaction

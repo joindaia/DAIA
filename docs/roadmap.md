@@ -9,7 +9,7 @@ below are dependencies and options, not a requirement to build every subsystem f
 
 | Milestone | Evidence required | Current status |
 |---|---|---|
-| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, human triage and one independently checked, manually merged improvement | Interactive receipts exist; remote schedule reported enabled; scheduled cycle and manual merge unverified |
+| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, human triage and one independently checked, manually merged improvement | One local native idle wake verified; next relocation-source campaign admitted; remote scheduling reported; scheduled two-host results and manual merge still unverified |
 | Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
 | Durable general human consultation | Save a question, release work rather than hold a lease, explicitly share an answer, resume with newly frozen context | Planned; requires lifecycle and privacy review before implementation |
 | Safe executable contributions | Untrusted code runs only in an isolated evaluator, with independent trusted results | Planned; source evidence remains inert |
