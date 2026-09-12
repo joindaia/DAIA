@@ -83,6 +83,25 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Existing-state operator database opening, 2026-09-09
+
+A missing database path previously initialized a new coordinator during inspection,
+resolution or revocation; inspection and revocation could report success against that
+empty state. Those commands now use non-creating store access and require an existing
+network identity. Missing, empty, unrelated and identity-less inputs fail without
+creating parents or repairing schema/identity. Encoded SQLite `mode=rw` connections
+also prevent recreating a file deleted after store construction. Bootstrap operations
+retain creation behavior; this is not authentication of a database or protection from
+replacement by another valid coordinator.
+
+The initial operator regression run returned **7 failed, 1 passed**. After the fix,
+the operator/evidence/backup tests returned **37 passed**, the full native Windows
+suite **137 passed, 1 skipped** with the existing upstream warning, and the deterministic
+demo passed. The eight operator cases were independently repeated by an adversarial
+reviewer with no blockers. Rejected files retained their bytes; normal existing-state
+commands retained the network identity; an identity deleted between construction and
+opening was not recreated. All mutations were confined to disposable test databases.
+
 ### Complete private inspection exports, 2026-09-09
 
 The inspection CLI previously opened its exclusive destination before collecting

@@ -55,6 +55,14 @@ This is a local recovery exercise, not a production failover or power-loss test.
 
 ## Restoring a real coordinator remains a human operation
 
+Existing-state operator commands (`inspect-evidence`, `resolve-evidence`, `revoke`)
+open an initialized database without creating or repairing its schema or network
+identity. They fail on missing/uninitialized input instead of silently reporting
+results from a new coordinator. Store connections use SQLite `mode=rw` so a file
+deleted after construction is not recreated on the next connection. This does not
+authenticate a database, detect replacement by another valid coordinator, or make
+inspection read-only. Bootstrap commands retain their explicit creation behavior.
+
 A snapshot preserves state at capture time. It cannot contain later receipts,
 revocations, consumed grants, human decisions or reassigned leases. Replacing the live
 database with an older snapshot could revive an old grant or assignment; integrity

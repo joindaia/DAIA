@@ -100,7 +100,7 @@ def main():
         try:
             if args.output.exists() or args.output.is_symlink():
                 raise FileExistsError()
-            service = Coordinator(Store(args.db))
+            service = Coordinator(Store(args.db, create=False))
             args.output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             with TemporaryDirectory(prefix=".daia-inspection-", dir=args.output.parent) as staging:
                 temporary = Path(staging) / "inspection.json"
@@ -116,7 +116,13 @@ def main():
                         "Preserve any output; inspect it before retrying.\n")
         print("Private evidence inspection written; treat all artifacts as untrusted data.")
         return
-    service = Coordinator(Store(args.db))
+    if args.command in {"resolve-evidence", "revoke"}:
+        try:
+            service = Coordinator(Store(args.db, create=False))
+        except (OSError, ValueError, sqlite3.DatabaseError):
+            parser.exit(1, "Existing coordinator database could not be opened. Check the database path and private storage.\n")
+    else:
+        service = Coordinator(Store(args.db))
     if args.command == "init":
         print("Initialized local development database.")
     elif args.command == "invite":

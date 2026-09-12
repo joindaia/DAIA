@@ -41,8 +41,12 @@ class Coordinator:
     def __init__(self, store: Store, clock=time.time):
         self.store, self.clock = store, clock
         with store.connect() as db:
-            db.execute("INSERT OR IGNORE INTO metadata VALUES ('network_id', ?)", (new_id(),))
-            self.network_id = db.execute("SELECT value FROM metadata WHERE key='network_id'").fetchone()[0]
+            if store.create:
+                db.execute("INSERT OR IGNORE INTO metadata VALUES ('network_id', ?)", (new_id(),))
+            identity = db.execute("SELECT value FROM metadata WHERE key='network_id'").fetchone()
+            if identity is None or not isinstance(identity[0], str) or not identity[0]:
+                raise Denied("Expected an initialized coordinator database")
+            self.network_id = identity[0]
 
     def now(self):
         return int(self.clock())

@@ -125,12 +125,19 @@ CREATE TABLE IF NOT EXISTS evidence_campaigns (
 """
 
 class Store:
-    def __init__(self, path: str):
-        self.path = path
+    def __init__(self, path: str, *, create=True):
+        self.path, self.create = path, create
         target = Path(path)
-        target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if create:
+            target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         if target.is_symlink():
             raise ValueError("Database symlinks are not allowed")
+        if not create:
+            if not target.is_file():
+                raise ValueError("An existing coordinator database is required")
+            if os.name == "posix" and target.stat().st_mode & 0o077:
+                raise ValueError("Existing database must have private filesystem permissions")
+            return
         # Exclusive creation avoids a world-readable first-write window on POSIX.
         # Windows ACLs still need operator review; chmod is not an ACL solution.
         try:
@@ -145,7 +152,9 @@ class Store:
 
     @contextmanager
     def connect(self):
-        db = sqlite3.connect(self.path, timeout=10, isolation_level=None)
+        # Creation is explicit in __init__; a missing file must never be recreated on reconnect.
+        db = sqlite3.connect(Path(self.path).absolute().as_uri() + "?mode=rw", uri=True,
+                             timeout=10, isolation_level=None)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys=ON")
         db.execute("PRAGMA busy_timeout=10000")
