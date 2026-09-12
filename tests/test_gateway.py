@@ -57,6 +57,7 @@ def test_real_closed_launcher(network, contributor, tmp_path):
     policy = tmp_path / "policy.json"
     policy.write_text(json.dumps({"resource": "https://mcp.example.org/mcp", "allowed_agents": [aid],
                                   "certificate_agents": {"a" * 64: aid}}))
+    policy.chmod(0o600)
     path = parent / "mcp.sock"
     database = tmp_path / "network.sqlite3"
     env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")}
@@ -100,6 +101,7 @@ def test_launcher_refuses_missing_database_without_creating_it(tmp_path):
     from daia.gateway import configured_app
     policy = tmp_path / "policy.json"
     policy.write_text(json.dumps({"resource": "https://mcp.example.org/mcp", "allowed_agents": [], "certificate_agents": {}}))
+    policy.chmod(0o600)
     database = tmp_path / "missing.sqlite3"
     with pytest.raises(ValueError, match="existing coordinator database"):
         configured_app(policy, database)
@@ -134,6 +136,7 @@ def test_invalid_existing_database_refuses_startup_without_socket(tmp_path, kind
             db.execute("CREATE TABLE unrelated (value TEXT)")
     policy = tmp_path / "policy.json"
     policy.write_text(json.dumps({"resource": "https://mcp.example.org/mcp", "allowed_agents": [], "certificate_agents": {}}))
+    policy.chmod(0o600)
     path = tmp_path / "never.sock"
     result = subprocess.run([sys.executable, "-m", "daia.gateway", "--config", str(policy),
                              "--db", str(database), "--socket", str(path)],
