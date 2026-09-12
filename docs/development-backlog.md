@@ -60,3 +60,10 @@ mathematics, and keeps proof execution outside the coordinator.
 Tracked work: archived project reference and
 archived project reference. These issues are not
 live scheduler assignments.
+
+## Shared orchestration follow-up
+
+Follow the [milestone brief](delegated-orchestration.md): finish the process-boundary
+receipt exercise, then prepare bounded shadow planning. Measure maintainer effort
+and verification overhead before adding voting or promotion capabilities. This is
+planned work; current admission, consent and execution gates remain in force.

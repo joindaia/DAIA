@@ -607,3 +607,71 @@ def test_native_stdio_release_declines_one_job(tmp_path):
                 assert status["lease"] is None and status["grant"]["assigned"] == 1
     with running_server(build_mcp_app(service)) as url:
         asyncio.run(exercise(invite_file(tmp_path, service, url)))
+
+
+def test_stdio_restart_recovers_discarded_http_submission_response(tmp_path):
+    """Discard a committed response across real HTTP and restart the signer process."""
+    service = Coordinator(Store(str(tmp_path / "recovery.sqlite3")))
+    service.seed()
+    app = build_mcp_app(service)
+    discarded = []
+
+    async def lose_response(scope, receive, send):
+        if scope["type"] != "http" or scope["method"] != "POST":
+            return await app(scope, receive, send)
+        messages = []
+        body = b""
+        while True:
+            message = await receive()
+            messages.append(message)
+            body += message.get("body", b"")
+            if not message.get("more_body", False):
+                break
+        request = json.loads(body)
+        lose = (not discarded and request.get("method") == "tools/call"
+                and request.get("params", {}).get("name") == "submit_result")
+
+        async def replay_receive():
+            return messages.pop(0) if messages else await receive()
+
+        async def capture(message):
+            pass  # Deliberately discard the real response after the server commits.
+
+        await app(scope, replay_receive, capture if lose else send)
+        if lose:
+            assert service.metrics()["results"] == 1
+            discarded.append(True)
+            await send({"type": "http.response.start", "status": 503, "headers": []})
+            await send({"type": "http.response.body", "body": b"Injected response loss"})
+
+    async def exercise(path):
+        parameters = StdioServerParameters(command=sys.executable, args=[
+            "-m", "daia.contributor", "--invite", str(path)])
+        artifact = '{"factors":[101,103]}'
+        async with stdio_client(parameters) as streams:
+            async with ClientSession(*streams) as session:
+                await session.initialize()
+                await call(session, "request_work")
+                result = await session.call_tool("submit_result", {
+                    "artifact": artifact, "verdict": "candidate"})
+                assert result.is_error
+        saved = Contributor(path)
+        before = saved.state.copy()
+        assert before["pending"] is not None and before["used"] == 1
+        assert service.metrics() == {"jobs": 3, "results": 1, "promoted": 0}
+        async with stdio_client(parameters) as streams:
+            async with ClientSession(*streams) as session:
+                await session.initialize()
+                receipt = await call(session, "submit_result", artifact=artifact, verdict="candidate")
+                assert receipt["status"] == "already_recorded"
+                status = await call(session, "request_work")
+                assert status["status"] == "budget_exhausted"
+        after = Contributor(path).state
+        for field in ("used", "max_jobs", "deadline", "key"):
+            assert after[field] == before[field]
+        assert after["pending"] is None
+        assert service.metrics() == {"jobs": 3, "results": 1, "promoted": 0}
+
+    with running_server(lose_response) as url:
+        asyncio.run(exercise(invite_file(tmp_path, service, url)))
+    assert discarded == [True]

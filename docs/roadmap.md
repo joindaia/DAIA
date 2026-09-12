@@ -59,6 +59,16 @@ frozen. See [pilot operation](evidence-campaigns.md#optional-two-agent-technical
 The next acceptance check is actual scheduled producer/reviewer receipts in that mode
 after disposition of the existing campaign, not adding a third agent.
 
+## Delegating orchestration
+
+The [shared-orchestration milestone brief](delegated-orchestration.md) defines the
+next direction: delegate planning, measure total review and coordination overhead,
+then propose scoped, revocable capabilities while the owner retains final execution
+authority. Shared voting and agent promotion start as shadow recommendations, not
+live powers. This does not bypass the current pilot or change frozen campaign rules.
+The brief names a process-boundary receipt-recovery exercise as independent work
+while host setup or human disposition is pending.
+
 ## 0. Safe bootstrap — reference implementation
 
 Implemented: bounded certificate workload, durable local leases, grant expiry, owner conflicts,
