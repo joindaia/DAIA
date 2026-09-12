@@ -258,3 +258,30 @@ native process launcher and check the child exit status for subsequent probes.
 This supersedes the earlier missing-runtime preflight. No Docker/provider login,
 worker creation, credential import or actual assignment execution has been done.
 Installation and a working CLI are prerequisites, not isolation acceptance.
+
+### Native daemon preflight and account gate
+
+The daemon initially failed through the inherited WSL process environment. A
+long-form, dedicated TEMP/TMP directory avoided the short-path directory error.
+The next failure was traced to containerd's EROFS plugin: `mkfs.erofs` could not
+be found. Supplying a native PATH containing the installed `bin`, `libexec`, and
+Windows system directories, with `PATHEXT=.COM;.EXE;.BAT;.CMD`, allowed daemon
+startup. These overrides were confined to the launched process, not global OS
+settings. No existing sandbox state was deleted.
+
+Verified runtime changes:
+
+- `settings set ssh.agentForwardingEnabled false` succeeded; daemon restart and
+  subsequent `settings get` confirmed `false`.
+- The fresh global network policy was initialized with `policy init deny-all`.
+- `create shell --name daia-boundary-probe --cpus 2 --memory 2g --deny-network **`
+  then refused with HTTP 401 because no Docker account session exists. No task
+  workspace or model credential was supplied. A created/booted VM is not proven.
+
+The next external prerequisite is a Docker account login through its supported
+native flow. Do not borrow an unrelated personal account, collect session tokens,
+or treat the failed create as a completed isolation test. After login, repeat the
+mountless shell preflight before adding provider authentication or task data.
+
+The independent review of the restricted MCP fixture found no actionable issue;
+its scope remains the synthetic namespace exchange, not the complete microVM.
