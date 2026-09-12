@@ -43,3 +43,54 @@ def test_admin_endpoints_absent(client):
                      "/v1/renew-consent", "/v1/extend-grant", "/v1/backup", "/v1/restore"):
         assert client.get(endpoint).status_code == 404
         assert client.post(endpoint, json={}).status_code == 404
+
+
+@pytest.mark.parametrize("chunks, expected_status", [([b"ab", b"cd"], None), ([b"ab", b"cde"], 413)])
+def test_body_limit_bounds_message_retention_and_preserves_bytes(chunks, expected_status):
+    import asyncio
+    import weakref
+    from daia.http import BodyLimit
+
+    class Message(dict):
+        pass
+
+    async def exercise():
+        refs, sent, received = [], [], []
+        step = 0
+
+        async def receive():
+            nonlocal step
+            # Lazily produced events: the fixture itself does not retain messages.
+            assert sum(ref() is not None for ref in refs) <= 2
+            if step < 128:
+                message = Message(type="http.request", body=b"", more_body=True)
+            elif step < 128 + len(chunks):
+                i = step - 128
+                message = Message(type="http.request", body=chunks[i], more_body=i < len(chunks)-1)
+            else:
+                return {"type": "http.disconnect"}
+            refs.append(weakref.ref(message))
+            step += 1
+            return message
+
+        async def send(message):
+            sent.append(message)
+
+        async def app(scope, receive, send):
+            body = bytearray()
+            while True:
+                message = await receive()
+                body.extend(message.get("body", b""))
+                if not message.get("more_body", False):
+                    break
+            received.append(bytes(body))
+            assert await receive() == {"type": "http.disconnect"}
+
+        await BodyLimit(app, maximum=4)({"type": "http", "headers": []}, receive, send)
+        if expected_status is None:
+            assert received == [b"abcd"]
+        else:
+            assert not received
+            assert sent[0]["status"] == expected_status
+
+    asyncio.run(exercise())

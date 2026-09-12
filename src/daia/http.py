@@ -20,20 +20,23 @@ class BodyLimit:
         origins = [value for key, value in scope.get("headers", []) if key.lower() == b"origin"]
         if origins and (len(origins) != 1 or origins[0] not in self.allowed_origins):
             return await JSONResponse({"error": "origin_denied"}, 403)(scope, receive, send)
-        parts, length = [], 0
+        body = bytearray()
         while True:
             message = await receive()
             if message["type"] == "http.disconnect":
                 return
-            length += len(message.get("body", b""))
-            if length > self.maximum:
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > self.maximum:
                 return await JSONResponse({"error": "body_too_large"}, 413)(scope, receive, send)
-            parts.append(message)
+            body.extend(chunk)
             if not message.get("more_body", False):
                 break
+        replayed = False
         async def buffered_receive():
-            if parts:
-                return parts.pop(0)
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": bytes(body), "more_body": False}
             return await receive()
         await self.app(scope, buffered_receive, send)
 

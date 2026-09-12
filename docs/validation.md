@@ -1,5 +1,24 @@
 # Bootstrap validation record
 
+## Bounded request-message retention, 2026-09-11
+
+The shared REST/MCP body limiter now accumulates bounded body bytes rather than
+retaining every ASGI request event. A lazy synthetic stream of empty events exposed
+count-dependent metadata retention in the previous implementation; this does not
+establish reachability through a deployed ASGI server or a network exploit.
+
+The regression checks retention, split-body byte preservation at the exact limit,
+overflow rejection, and receive fallback after replay. The prior implementation
+failed both parameterized cases. An internal code reviewer reported no findings and
+independently ran all eight HTTP tests successfully; this is not an assigned signed
+DAIA campaign review. The actual campaign remains unresolved awaiting its reviewer.
+
+Full local suite with required socket access: **213 passed, 2 skipped** (Windows
+file-sharing tests), one existing dependency deprecation warning, 24.58 seconds.
+An earlier sandbox-restricted attempt had failures and stalled; it was interrupted
+and is not counted as passing. CI and deployment of this change are separate checks.
+
+
 ## WSL migration and explicit local acceptance, 2026-09-09
 
 The maintainer approved WSL as the default and a finite seven-day extension for the
