@@ -216,7 +216,7 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
         backend.terminate()
         backend.wait(timeout=10)
         backup_database(service.store.path, restored_db)
-        backend = subprocess.Popen([sys.executable, "-m", "daia.gateway", "--db", str(restored_db),
+        backend = subprocess.Popen([sys.executable, "-m", "daia.gateway", "--db", str(restored_db), "--maintenance",
                                     "--config", str(policy), "--socket", str(sock)], env=env,
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         deadline = time.monotonic() + 10
@@ -233,7 +233,7 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
             if host == "mcp.example.org" and port == 443:
                 host, port = "127.0.0.1", gateway_port
             return await connect_tcp(backend, host, port, *args, **kwargs)
-        with running_server(build_mcp_app(service)) as source_url:
+        with running_server(build_mcp_app(service, maintenance=True)) as source_url:
             invite = tmp_path / "migration-invite.json"
             invite.write_text(json.dumps({**grant, "network_id": service.network_id, "url": source_url}))
             helper = Contributor(invite, clock=service.clock)
@@ -251,6 +251,24 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
                 asyncio.run(helper.migrate_endpoint(destination, tmp_path))
                 helper = Contributor(invite, clock=service.clock)
                 assert helper.transport["url"] == destination["url"]
+                # Both endpoints are frozen. A pending receipt must survive a
+                # rejected delivery until only the restored destination is opened.
+                with pytest.raises(ValueError, match="Coordinator unavailable or operation denied"):
+                    asyncio.run(helper.perform("submit_result", artifact=args["artifact"], verdict=args["verdict"]))
+                helper = Contributor(invite, clock=service.clock)
+                assert helper.state["pending"] == original["pending"]
+                assert helper.state["used"] == original["used"]
+                assert helper.state["deadline"] == original["deadline"]
+                backend.terminate()
+                backend.wait(timeout=10)
+                backend = subprocess.Popen([sys.executable, "-m", "daia.gateway", "--db", str(restored_db),
+                                            "--config", str(policy), "--socket", str(sock)], env=env,
+                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                deadline = time.monotonic() + 10
+                while not sock.exists():
+                    assert backend.poll() is None and time.monotonic() < deadline
+                    time.sleep(0.05)
+                time.sleep(5)  # Drain operator migration SDK sessions before replay.
                 recovered = asyncio.run(helper.perform("submit_result", artifact=args["artifact"], verdict=args["verdict"]))
                 assert recovered["status"] == "already_recorded"
                 assert helper.state["used"] == original["used"]
