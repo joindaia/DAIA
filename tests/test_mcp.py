@@ -364,3 +364,24 @@ def test_contributor_tls_config_failure_precedes_state_creation(tmp_path, tls):
         Contributor(invite)
     assert "private-canary" not in str(error.value)
     assert not invite.with_suffix(".contributor.json").exists()
+
+
+def test_contributor_legacy_http_real_mcp(tmp_path):
+    from daia.contributor import Contributor
+    service = Coordinator(Store(str(tmp_path / "legacy.sqlite3")))
+    grant = service.invite()
+    with running_server(build_mcp_app(service)) as url:
+        invite = tmp_path / "invite.json"
+        invite.write_text(json.dumps({**grant, "network_id": service.network_id, "url": url}))
+        host = Contributor(invite)
+        asyncio.run(host.register())
+        assert isinstance(asyncio.run(host.remote("contribution_status", agent_id=host.agent)), dict)
+        assert host.state["used"] == 0
+        # Certificate configuration must never silently fall back to plaintext.
+        identity = json.loads(invite.read_text())
+        identity["tls"] = {"ca_file": "ca.pem", "certificate": "client.pem", "private_key": "client.key"}
+        invite.write_text(json.dumps(identity))
+        previous = invite.with_suffix(".contributor.json").read_bytes()
+        with pytest.raises(ValueError, match="Invalid contributor TLS configuration"):
+            Contributor(invite)
+        assert invite.with_suffix(".contributor.json").read_bytes() == previous
