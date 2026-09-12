@@ -106,3 +106,26 @@ consent expiry were not changed. Do not resume scheduled job consumption or migr
 this worker into the public cohort until its entire tool surface has an enforced
 separate execution boundary and the canary test fails as intended. Reconnecting MCP
 or moving its project folder does not by itself provide that separation.
+
+## Reproducible native Codex command probe
+
+An opt-in test now exercises a named native Codex permission profile with root
+access denied, minimal operating-system reads, the resolved Codex executable
+readable, and the disposable task directory writable. Network access is disabled.
+It uses an empty temporary Codex configuration home and makes no model requests.
+
+```sh
+DAIA_RUN_CODEX_SANDBOX_TESTS=1 PYTHONPATH=src python -m pytest tests/test_codex_permissions.py -q
+```
+
+On the tested Linux installation (Codex 0.153.4), this refused both direct and
+symlink reads of an outside synthetic canary and a connection to a live host
+loopback listener. An unsandboxed control first connected successfully to that
+listener; the task still wrote its result inside its workspace. The test fails
+rather than skips when explicitly requested and the executable or sandbox fails.
+
+This is evidence for the native command profile only. It does not configure the
+existing desktop task, constrain its other tools, provide a research broker, or
+establish isolation of the model process and inherited session state. Keep the
+worker schedule paused and admission empty until the complete session meets the
+acceptance requirements above. Do not use this probe as a worker launcher.
