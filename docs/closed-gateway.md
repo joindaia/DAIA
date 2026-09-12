@@ -243,3 +243,17 @@ and confirm both new-connection refusal and old-stream closure. Sending SIGHUP a
 is insufficient: a rejected reload leaves the old configuration active. This patch
 adds the configuration and test, not a deployed revocation management service.
 See [Nginx worker shutdown documentation](https://nginx.org/en/docs/ngx_core_module.html#worker_shutdown_timeout).
+
+### Idle request clients
+
+The real Nginx exercise also holds two authenticated TLS connections open: one
+stops halfway through the HTTP headers, the other advertises a body and sends only
+its first byte. Both must close within fourteen seconds, optionally returning HTTP 408 first, under
+the template's ten-second header/body idle timeouts. A subsequent authenticated
+MCP initialization must still succeed. The isolated VPS exercise passed in 17.79s,
+including the existing submission, receipt replay and stream-revocation checks.
+A negative control with sixty-second idle limits failed with a read timeout.
+
+These checks cover clients that stop sending. They do not establish resistance to
+continuous slow trickles, connection floods or a production capacity limit. Per-IP
+concurrency and rate-limit acceptance remain separate work before public exposure.

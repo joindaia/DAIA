@@ -1,5 +1,6 @@
 """Optional real Nginx/Unix-socket TLS exercise; no public ports or real identities."""
 import datetime
+from contextlib import ExitStack
 import json
 import os
 from pathlib import Path
@@ -93,11 +94,13 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
         command = [shutil.which("nginx"), "-c", str(config), "-p", str(tmp_path) + "/"]
         subprocess.run(command + ["-t"], check=True, capture_output=True)
         proxy = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        def transport(identity="client"):
+        def tls_context(identity="client"):
             context = ssl.create_default_context(cafile=str(tmp_path / "client-ca.pem"))
             if identity:
                 context.load_cert_chain(str(tmp_path / (identity + ".pem")), str(tmp_path / (identity + ".key")))
-            return httpx.Client(verify=context, base_url=f"https://127.0.0.1:{port}", headers={"Host": "mcp.example.org"}, timeout=3)
+            return context
+        def transport(identity="client"):
+            return httpx.Client(verify=tls_context(identity), base_url=f"https://127.0.0.1:{port}", headers={"Host": "mcp.example.org"}, timeout=3)
         init = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": {"name": "nginx-test", "version": "1"}}}
         headers = {"Authorization": "Bearer " + grant["token"], "Accept": "application/json, text/event-stream",
                    "X-DAIA-Client-Cert": "spoofed", "X-DAIA-Client-Cert-SHA256": "spoofed"}
@@ -131,6 +134,39 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
         for identity in [None, "outsider"]:
             with transport(identity) as client:
                 assert client.post("/mcp", json=init, headers=headers).status_code in {400, 403}
+        # Leave one header and one body incomplete. The configured ten-second
+        # idle limits must close both connections without waiting for more bytes.
+        with ExitStack() as stack:
+            idle = []
+            context = tls_context()
+            for partial in [
+                b"POST /mcp HTTP/1.1\r\nHost: mcp.example.org\r\nX-Incomplete: ",
+                b"POST /mcp HTTP/1.1\r\nHost: mcp.example.org\r\nContent-Length: 100\r\n"
+                + ("Authorization: Bearer " + grant["token"] + "\r\n\r\n{").encode(),
+            ]:
+                raw = stack.enter_context(socket.create_connection(("127.0.0.1", port), timeout=3))
+                connection = stack.enter_context(context.wrap_socket(raw, server_hostname="mcp.example.org"))
+                connection.settimeout(14)
+                connection.sendall(partial)
+                idle.append(connection)
+            started = time.monotonic()
+            for connection in idle:
+                remaining = 14 - (time.monotonic() - started)
+                assert remaining > 0
+                connection.settimeout(remaining)
+                response = connection.recv(4096)
+                assert response == b"" or response.startswith(b"HTTP/1.1 408 ")
+                received = len(response)
+                while response:
+                    remaining = 14 - (time.monotonic() - started)
+                    assert remaining > 0 and received <= 8192
+                    connection.settimeout(remaining)
+                    response = connection.recv(4096)
+                    received += len(response)
+                assert time.monotonic() - started < 14
+        # Timed-out clients must not prevent a normal authenticated request.
+        with transport() as client:
+            assert client.post("/mcp", json=init, headers=headers).status_code == 200
         with transport() as active:
             with active.stream("GET", "/mcp", headers=session_headers, timeout=8) as stream:
                 assert stream.status_code == 200
