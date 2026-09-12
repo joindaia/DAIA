@@ -16,7 +16,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    # Windows HTTP/process tests need room before the required history scan.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -39,7 +40,7 @@ jobs:
       - name: Unit and HTTP tests
         env:
           DAIA_REQUIRE_NGINX: ${{ runner.os == 'Linux' && '1' || '0' }}
-        run: uv run --frozen --extra dev --extra mcp python -m pytest -q
+        run: uv run --frozen --extra dev --extra mcp python -m pytest -q --durations=15
       - name: Deterministic demonstration
         run: uv run --frozen --extra dev --extra mcp python -m daia.cli demo
       - name: Signed receipt recovery after process restart
