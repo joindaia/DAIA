@@ -451,3 +451,20 @@ restart test passed. The earlier `UnexpectedToolError` remains unreproduced, wit
 established root cause. No repair claim follows from these passes.
 
 Future changes should record exact tested versions, commands, supported hosts, evaluator digests and failure cases. Do not claim a missing integration passed because the core tests did. Store private logs outside Git and publish only sanitized summaries.
+
+## Two-agent technical pilot (2026-09-09)
+
+Maintainer-approved opt-in `--pilot` admission freezes a new policy and explicit
+non-independent technical-review label. Existing campaigns/default policies remain
+unchanged. A different agent may review under shared ownership; producer-agent and
+root-level released-review exclusions remain. Passing feedback is
+`pilot_ready_for_maintainer`, requires human triage, and never promotes.
+
+Linux Python 3.12 full suite: **209 passed, 2 skipped** in 23.02 seconds. Skips are
+Windows file-sharing checks; one existing upstream AnyIO deprecation remains.
+Coverage includes same-root and separate-root pairs, pass/fail/uncertainty, old-policy
+immutability, frozen hashes and admission retries, release/expiry exclusion, strict
+operator opt-in, real CLI preparation/admission, and two stdio MCP helper processes.
+The original deterministic demo passed. Source privacy: 75 files, no findings.
+No live campaign was admitted, resolved or relabeled; no contributor identity,
+consent or schedule was changed. Actual scheduled pilot receipts remain unverified.

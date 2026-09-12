@@ -141,3 +141,28 @@ mapping and its reporting limits. This does not change the v1 gate.
 The first success measure is one human-confirmed useful packet at bounded effort,
 followed by an independently checked, manually merged improvement. Shape-valid packets,
 model agreement, empty hourly wakes and job counts are not substitutes for that outcome.
+
+## Optional two-agent technical pilot
+
+The maintainer may select `admit-evidence --context CONTEXT.json --pilot`
+(or add `--dry-run` for preparation only) for a **new** campaign. Two existing
+agents suffice, including different keys under one contributor root. Separate roots
+also work but do not imply independent ownership. No identity migration is needed.
+
+Admission freezes policy `source-evidence-pilot-v1` and context fields
+`review_assurance: pilot-technical-not-independent`, `shared_ownership_allowed: true`
+and `independent_review: false`. Both workers receive this context, bound into their
+signed envelopes. Source packet schemas and the inert checker are unchanged.
+The producer agent, including one that released or expired its producer assignment,
+cannot review. Another agent may review under the same root. One live lease per root,
+finite consent and consumed budgets remain enforced. Once a root has received the
+review, release/expiry retains its exclusion; a new key is not a retry mechanism.
+
+A passing technical review yields `pilot_ready_for_maintainer`, never `promoted` or
+independent approval. Failure and uncertainty still block a useful disposition.
+Human triage remains mandatory; no review authorizes merge, execution or rewards.
+Operator inspection retains the pilot label and `correctness_verified: false`.
+
+The default distinct-root policy and existing frozen campaigns are unchanged. The
+single-unresolved-campaign gate still applies, including when `--pilot` is selected.
+This mode is a private development aid, not a production independence mechanism.

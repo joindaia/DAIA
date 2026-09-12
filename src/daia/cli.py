@@ -79,6 +79,7 @@ def main():
     evidence = sub.add_parser("admit-evidence", help="Operator-only frozen data-only source-analysis campaign")
     evidence.add_argument("--context", type=Path, required=True)
     evidence.add_argument("--dry-run", action="store_true", help="Validate a prepared context in a disposable database; do not admit live work")
+    evidence.add_argument("--pilot", action="store_true", help="New campaign only: technical review by a different agent; shared ownership allowed, no independence claim")
     inspect = sub.add_parser("inspect-evidence", help="Write private campaign evidence for human inspection")
     inspect.add_argument("--output", type=Path, required=True)
     resolve = sub.add_parser("resolve-evidence", help="Human-only evidence disposition; no merge or payout")
@@ -105,7 +106,7 @@ def main():
                 # Reuse the actual admission checks without opening the selected database.
                 with TemporaryDirectory() as temp:
                     preview = Coordinator(Store(str(Path(temp) / "preview.sqlite3")))
-                    preview.admit_evidence(document)
+                    preview.admit_evidence(document, pilot=args.pilot)
                 print(json.dumps({"status": "validated", "admitted": False,
                                   "live_eligibility_checked": False,
                                   "baseline_commit": document["baseline_commit"]}))
@@ -163,7 +164,7 @@ def main():
     elif args.command == "seed":
         print(json.dumps({"job_id": service.seed(args.number)}))
     elif args.command == "admit-evidence":
-        print(json.dumps(service.admit_evidence(document)))
+        print(json.dumps(service.admit_evidence(document, pilot=args.pilot)))
     elif args.command == "resolve-evidence":
         try:
             result = service.resolve_evidence(args.job, args.disposition, args.note, dry_run=args.dry_run)

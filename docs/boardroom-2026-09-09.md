@@ -158,3 +158,21 @@ existing backup API. No new service, automatic restore or live policy change was
 The protocol adversarial participant reviewed the actual diff, required the distinction
 between pre-snapshot stale leases and post-snapshot rollback, and reported no blocking
 finding after independently running the 98-pass suite (one platform-specific skip).
+
+## Maintainer-approved two-agent technical pilot
+
+The maintainer chose a private pilot with two existing agents rather than requiring
+another contributor. The orchestrating model proposed one opt-in frozen admission
+policy, explicit non-independent context labels, no producer-agent self-review,
+retained root-level review exposure and a distinct human-triage result status.
+A separate GPT-5.6 Sol/high adversarial participant inspected the implementation and
+reported no blocking correctness issue. It checked the old-policy boundary, CLI
+forwarding, verdict handling and exposure/replacement-key tests, and independently
+ran `git diff --check`. Full suite and MCP execution evidence were supplied by the
+orchestrator, not independently rerun by that participant.
+
+Decision: enable only for newly admitted source-evidence campaigns. Shared ownership
+is acceptable for technical feedback, never independent approval. Existing frozen
+campaigns retain their rules and disposition requirement; no new root or reset is
+needed. One live lease per root and finite consent remain. General human-question
+storage, automatic merge and rewards remain outside this increment.

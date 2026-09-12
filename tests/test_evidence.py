@@ -231,7 +231,8 @@ def test_operator_cli_verifies_real_git_excerpt(tmp_path, network):
     assert not missing.parent.exists()
 
 
-def test_evidence_flow_through_two_stdio_workers(network, tmp_path):
+@pytest.mark.parametrize("pilot", [False, True])
+def test_evidence_flow_through_two_stdio_workers(network, tmp_path, pilot):
     pytest.importorskip("mcp")
     from mcp.client.session import ClientSession
     from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -241,7 +242,7 @@ def test_evidence_flow_through_two_stdio_workers(network, tmp_path):
     import time
     service, now = network
     now[0] = int(time.time())
-    service.admit_evidence(document())
+    service.admit_evidence(document(), pilot=pilot)
     async def exercise(url):
         outcomes = []
         for _ in range(2):
@@ -255,7 +256,7 @@ def test_evidence_flow_through_two_stdio_workers(network, tmp_path):
                     result = await call(session, "submit_result", artifact=packet(lease),
                                         verdict="candidate" if lease["mode"] == "produce" else "pass")
                     outcomes.append(result["status"])
-        assert outcomes == ["in_review", "ready_for_maintainer"]
+        assert outcomes == ["in_review", "pilot_ready_for_maintainer" if pilot else "ready_for_maintainer"]
     with running_server(build_mcp_app(service)) as url:
         asyncio.run(exercise(url))
     assert service.metrics()["promoted"] == 0

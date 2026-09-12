@@ -8,7 +8,7 @@ Use the approved WSL/Linux Python environment for development. Retain Windows co
 
 ## Invariants
 
-Authentication derives the contributor root; a body cannot choose it. Agents cannot choose jobs, review targets, verification modes, reviewers or their own priority. Same-root keys cannot self-review or fill several modes for one candidate. Exposure history survives lease release/expiry. Leases have a hard deadline; old assignments cannot submit after reassignment. Receipts and follow-on work are idempotent. Freeze policy and context hashes before work starts. A trusted check failure is never overruled by agent consensus.
+Authentication derives the contributor root; a body cannot choose it. Agents cannot choose jobs, review targets, verification modes, reviewers or their own priority. Default policies exclude same-root review. Explicit source-evidence pilot campaigns allow a different agent under shared ownership for technical review only; the producer agent stays excluded, review exposure remains root-scoped, and no independence or promotion is claimed. Exposure history survives lease release/expiry. Leases have a hard deadline; old assignments cannot submit after reassignment. Receipts and follow-on work are idempotent. Freeze policy and context hashes before work starts. A trusted check failure is never overruled by agent consensus.
 
 User consent, stopping and refusal are mandatory. Job budgets are not provider quota percentages. Do not collect provider account credentials, circumvent limits, or imply provider approval.
 

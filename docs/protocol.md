@@ -68,3 +68,11 @@ The current system has typed candidate/pass/fail/inconclusive submissions, not a
 ## Planned production changes
 
 Replace development tokens with standard OAuth/OIDC access and revocable consent grants; establish client interoperability; introduce qualified capability admission, server-issued invitations, object-store quotas, explicit adjudication/retry jobs, external checker receipts, full shared signature vectors, and auditable assignment receipts. Public randomness needs a frozen eligible set and privacy review; it is not implemented by `secrets.choice`.
+
+## Explicit technical pilot exception
+
+New source-evidence campaigns can opt into the [two-agent pilot](evidence-campaigns.md#optional-two-agent-technical-pilot).
+Its frozen policy permits a different agent of the producer's root to supply technical
+review, labeled as not independent. Default root exclusions and all historical
+campaigns retain their rules. Review exposure remains root-scoped after release;
+positive pilot results require human triage and never count as promoted.

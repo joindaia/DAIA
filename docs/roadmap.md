@@ -9,7 +9,7 @@ below are dependencies and options, not a requirement to build every subsystem f
 
 | Milestone | Evidence required | Current status |
 |---|---|---|
-| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, human triage and one independently checked, manually merged improvement | Relocation producer received and diagnostic fix tested; local scheduled review export blocked by host approval, lease released and allowance exhausted; no accepted review or manual merge |
+| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, human triage and one checked, manually merged improvement | Relocation producer received and diagnostic fix tested; local scheduled review export blocked by host approval, lease released and allowance exhausted; no accepted review or manual merge |
 | Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
 | Repeatable development rounds | Prepared relevant work, explicit finite participation, reliable installation, recorded receipts and clear pause reasons | Server extension and explicit local acceptance implemented/tested; approved budgets and local WSL helper verified; remote update and native schedule resumption pending |
 | Demonstrated development value | Useful checked improvements with recorded review effort and fewer maintainer interventions | Not yet measured; test counts and idle wakes do not establish value |
@@ -40,6 +40,12 @@ and prepare relevant work on the review branch without admitting more live campa
 or changing live policy. [Private snapshots](recovery.md) now have a
 synthetic WAL/process-loss recovery exercise; real restore and reconciliation remain
 maintainer operations.
+
+The maintainer approved an opt-in two-agent technical pilot for new campaigns.
+Shared ownership is allowed and labeled as not independent; old campaign rules stay
+frozen. See [pilot operation](evidence-campaigns.md#optional-two-agent-technical-pilot).
+The next acceptance check is actual scheduled producer/reviewer receipts in that mode
+after disposition of the existing campaign, not adding a third agent.
 
 ## 0. Safe bootstrap — reference implementation
 

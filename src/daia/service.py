@@ -191,8 +191,10 @@ class Coordinator:
             self._event(db, "job_admitted", jid)
             return jid
 
-    def admit_evidence(self, document):
+    def admit_evidence(self, document, *, pilot=False):
         """OPERATOR ONLY: one unresolved, immutable, data-only source-analysis campaign."""
+        if type(pilot) is not bool:
+            raise Denied("Pilot mode must be an explicit boolean")
         if not isinstance(document, dict) or set(document) != {"objective", "baseline_commit", "source"}:
             raise Denied("Expected objective, baseline_commit and one frozen source excerpt")
         source = document["source"]
@@ -221,10 +223,13 @@ class Coordinator:
                        source_provenance="operator-supplied-frozen-excerpt",
                        schemas=EVIDENCE_SCHEMAS, schema_hashes=EVIDENCE_SCHEMA_HASHES,
                        checker_hash=EVIDENCE_CHECKER_HASH)
+        if pilot:
+            context.update(review_assurance="pilot-technical-not-independent",
+                           shared_ownership_allowed=True, independent_review=False)
         if len(json.dumps(context, ensure_ascii=False).encode("utf-8")) > 10000:
             raise Denied("Context exceeds the source-analysis limit")
         # This NEW policy collects evidence; it cannot promote a correctness or payout claim.
-        policy = Policy("source-evidence-v1", ("adversarial",), 1, True)
+        policy = Policy("source-evidence-pilot-v1" if pilot else "source-evidence-v1", ("adversarial",), 1, True)
         admission = digest({"context_hash": digest_bytes(json.dumps(context, ensure_ascii=False,
                            sort_keys=True, separators=(",", ":")).encode()), "policy_hash": policy.hash})
         with self.store.connect() as db:
@@ -270,7 +275,9 @@ class Coordinator:
                 else:
                     raise Denied("A recorded disposition cannot be overwritten")
             result = db.execute("SELECT id,state FROM results WHERE job_id=?", (job,)).fetchone()
-            if campaign["disposition"] is None and disposition == "useful" and (result is None or result["state"] != "ready_for_maintainer"):
+            policy = load_policy(db.execute("SELECT policy_json FROM jobs WHERE id=?", (job,)).fetchone()[0])
+            ready = "pilot_ready_for_maintainer" if policy.version == "source-evidence-pilot-v1" else "ready_for_maintainer"
+            if campaign["disposition"] is None and disposition == "useful" and (result is None or result["state"] != ready):
                 raise Denied("Useful disposition requires the assigned review first")
             jobs = [job] + ([] if result is None else [r[0] for r in db.execute("SELECT id FROM jobs WHERE target_id=?", (result["id"],))])
             if dry_run:
@@ -348,12 +355,16 @@ class Coordinator:
                     continue
                 if j["target_id"]:
                     result = db.execute("SELECT * FROM results WHERE id=?", (subject,)).fetchone()
-                    if result is None or result["root_id"] == root or result["state"] != "in_review":
+                    pilot = load_policy(j["policy_json"]).version == "source-evidence-pilot-v1"
+                    if result is None or (not pilot and result["root_id"] == root) or result["state"] != "in_review":
                         continue
                     # A released/expired producer has already seen the premises. Its
                     # exposure was recorded under the producer job, not this result ID.
-                    if db.execute("SELECT 1 FROM assignments WHERE job_id=? AND root_id=?",
-                                  (result["job_id"], root)).fetchone():
+                    # Pilot permits another agent of the same owner, not the producer
+                    # agent itself. Review exposure above remains root-scoped after release.
+                    identity_column, identity = ("agent_id", agent) if pilot else ("root_id", root)
+                    if db.execute(f"SELECT 1 FROM assignments WHERE job_id=? AND {identity_column}=?",
+                                  (result["job_id"], identity)).fetchone():
                         continue
                 eligible.append(j)
             if not eligible:
@@ -456,6 +467,8 @@ class Coordinator:
                 result = db.execute("SELECT * FROM results WHERE id=?", (result_id,)).fetchone()
                 reviews = [dict(r) for r in db.execute("SELECT * FROM reviews WHERE result_id=?", (result_id,))]
                 state = evaluate(policy, bool(result["machine_check"]), reviews)
+                if policy.version == "source-evidence-pilot-v1" and state == "ready_for_maintainer":
+                    state = "pilot_ready_for_maintainer"
                 db.execute("UPDATE results SET state=? WHERE id=?", (state, result_id))
             db.execute("UPDATE assignments SET state='submitted',receipt_hash=? WHERE id=?", (receipt, assignment))
             db.execute("UPDATE jobs SET state='completed' WHERE id=?", (j["id"],))

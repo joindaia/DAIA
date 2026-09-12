@@ -32,15 +32,12 @@ additional-assignment budget and absolute end time, separately from the hourly w
 frequency. Apply neither a server increase nor local renewal until explicitly
 authorized. Updating the schedule alone does not change either budget.
 
-The first slice now has a tested operator-only server extension and preview. It
-preserves identity and history and refuses already-expired or revoked grants. This
-is a prerequisite, not completed recurring participation. Remaining work is the
-reviewed owner-side private invite refresh and explicit local renewal, including the
-chosen longer window, before changing schedules. Until then the helper retains its
-original invite expiry and 24-hour cap. No live grant or local consent was increased.
-
 The owner-side handoff now uses explicit `--accept-grant` with a saved fixed deadline;
 it keeps the invite unchanged. WSL migration and local consent were verified after
 owner approval. Remaining operational checks are remote update execution and native
-schedules in the correct project, not another renewal. Earlier server-only notes above
-record the prior stage. Human disposition and review exclusions remain unchanged.
+schedules in the correct project, not another renewal. Human disposition and review exclusions remain unchanged.
+
+For the next round, the maintainer approved explicit `--pilot` admission: the two
+existing agents may exchange technical review under shared ownership, with no
+independence claim. Default and historical rules stay frozen. Prepare at most three
+contexts as before; the existing campaign still requires its pending disposition.

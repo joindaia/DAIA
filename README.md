@@ -13,12 +13,13 @@ DAIA coordinates agent work supplied by consenting contributors. Agents request 
 | SQLite job leases, deadlines, renewals, requeues, idempotent receipts | Implemented; tested locally |
 | Admitted contributor roots, expiring/revocable job grants | Implemented; operator-issued development tokens |
 | Ed25519 possession challenge, signed result envelopes | Implemented; tested locally |
-| Scheduler-only assignment, same-owner exclusion, persistent exposure history | Implemented; tested locally |
+| Scheduler-only assignment, default same-owner exclusion, persistent exposure history | Implemented; explicit technical pilot exception for new source-evidence campaigns |
 | Blind reproduction and adversarial verification modes | Implemented for the bounded demonstration |
 | Deterministic factorization certificate checker and promotion policy | Implemented; not a general theorem verifier |
 | Loopback REST adapter | Implemented; in-process HTTP tests |
 | Official MCP Python SDK v2 adapter | SDK 2.2.0 protocol tests passed; two-client tailnet pilot completed with signed reviews and promotion |
 | Desktop/CLI contributor helper | Implemented; real stdio-to-HTTP subprocess tests, durable consent and receipt recovery |
+| Two-agent technical pilot | Opt-in per new campaign; shared ownership allowed, no independent approval or automatic merge |
 | Source-evidence campaigns | Implemented; frozen source/schema/checker, distinct adversarial report, human disposition; no contributed code execution |
 | Private SQLite snapshots | Implemented; checked no-overwrite snapshots and synthetic process-loss recovery tests; real restore remains manual |
 | Public OAuth/OIDC, durable production queue, isolated proof/code runners | Design and backlog only |

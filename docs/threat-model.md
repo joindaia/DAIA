@@ -32,3 +32,11 @@ The prototype's direct data-only verifier is an intentionally narrow safe worklo
 ## First adversarial exercises
 
 Test many keys under one root, many roots under one attacker, repeated release/retry, majority collusion, reviewer starvation, replay across networks, key revocation during a lease, forged machine receipts, stale policy hashes, poisoning of the research graph, escaped artifact paths, size bombs, malicious URLs, and disguised requests for local secrets. Record measured results, not only a checkmark that a review agent approved the design.
+
+## Private technical pilot
+
+Explicit new source-evidence pilot campaigns relax producer-root exclusion to
+producer-agent exclusion. Shared ownership and correlated review are accepted for
+technical feedback, clearly labeled as not independent. There is no promotion or
+reward authority. Root-level review exposure, finite consent and human triage remain.
+This exception must not be presented as Sybil resistance or production verification.
