@@ -781,7 +781,7 @@ def test_migrate_restored_database_recovers_lost_receipt(tmp_path, network, monk
     service, now = network
     service.seed()
     path = invite_file(tmp_path, service)
-    host = direct(Contributor(path, minutes=1, clock=service.clock), service)
+    host = direct(Contributor(path, max_jobs=2, minutes=1, clock=service.clock), service)
     asyncio.run(host.perform("request_work"))
     direct(host, service, lose="submit_result")
     artifact = '{"factors":[101,103]}'
@@ -801,11 +801,39 @@ def test_migrate_restored_database_recovers_lost_receipt(tmp_path, network, monk
     host.remote = migration_status
     asyncio.run(host.migrate_endpoint(target, tmp_path))
     assert all(host.state[k] == v for k, v in original.items())
+    # A failed retry may reconcile a completed lease, but must not lose signing
+    # evidence that reconstruction could otherwise silently regenerate.
+    direct(host, restored)
+    remote = host.remote
+    calls = []
+    async def refuse_submission(name, **args):
+        calls.append(name)
+        if name == "submit_result":
+            raise ValueError("Simulated maintenance refusal")
+        return await remote(name, **args)
+    host.remote = refuse_submission
+    before_retry = json.loads(host.path.read_text())
+    assert before_retry["lease"]["assignment_id"] == before_retry["pending"]["assignment_id"]
+    with pytest.raises(ValueError, match="maintenance refusal"):
+        asyncio.run(host.perform("submit_result", artifact=artifact, verdict="candidate"))
+    assert calls == ["contribution_status", "submit_result"]
+    expected = {**before_retry, "lease": None}
+    assert expected["pending_receipt_hash"]
+    assert host.state == json.loads(host.path.read_text()) == expected
     now[0] += 61  # Local consent expiry must not prevent recovering an existing receipt.
     restarted = direct(Contributor(path, clock=service.clock), restored)
     receipt = asyncio.run(restarted.perform("submit_result", artifact=artifact, verdict="candidate"))
     assert receipt["status"] == "already_recorded"
+    assert receipt["receipt_hash"] == expected["pending_receipt_hash"]
+    recovered_state = {**expected, "receipt": receipt, "pending": None,
+                       "pending_receipt_hash": None, "lease": None}
+    assert restarted.state == json.loads(restarted.path.read_text()) == recovered_state
+    assert Contributor(path, clock=service.clock).state == recovered_state
     assert restarted.state["used"] == original["used"] == 1
     assert restarted.state["deadline"] == original["deadline"]
+    assert restarted.state["used"] < restarted.state["max_jobs"]
+    async def forbid_remote(name, **args):
+        pytest.fail("Expired consent attempted a remote operation: " + name)
+    restarted.remote = forbid_remote
     assert (asyncio.run(restarted.perform("request_work")))["status"] == "expired"
     assert service.metrics() == restored.metrics()
