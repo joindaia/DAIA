@@ -1,0 +1,4 @@
+# Install as /etc/systemd/system/daia-proxy.service.d/backend-lifecycle.conf
+# The base proxy unit must retain Requires= and After=daia-mcp.service.
+[Unit]
+PartOf=daia-mcp.service

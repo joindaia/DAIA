@@ -199,3 +199,20 @@ must explicitly start the proxy after backend readiness, then verify both units
 and the public TLS rejection. During this update the missed proxy start caused a
 brief TLS connection failure; starting it restored the expected rejection. Backend
 readiness alone must not be recorded as successful end-to-end service recovery.
+
+### Paired service lifecycle correction
+
+The two lifecycle drop-in examples in `deploy/` now remove the manual proxy-start
+requirement for the current VPS configuration. The backend wants the proxy; the
+proxy is part of the backend lifecycle, retaining its existing `Requires` and
+`After` relationships. After installing both drop-ins, reload systemd and restart
+the backend. Verify both services and the public TLS refusal; an active backend
+alone is still insufficient evidence of end-to-end availability.
+
+A disposable pair of systemd units demonstrated paired start, restart and stop.
+The same configuration was installed on the admission-closed VPS. Restarting only
+the backend replaced the proxy process automatically; the backend refused an
+unsigned request with HTTP 403 and the public endpoint refused a request without
+a client certificate with HTTP 400. Admission policy was unchanged. This handles
+explicit lifecycle operations; it does not claim automatic recovery from every
+independent crash, failed startup, certificate expiry or network outage.
