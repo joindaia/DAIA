@@ -1,7 +1,8 @@
 # DAIA website preview
 
 A static Astro site in English. The landing page explains the current two-agent
-technical pilot; `/participate/` explains invitation-only onboarding. It has no
+technical pilot; `/roadmap/` explains the north star and measurable milestones with
+a dated, manually maintained status; `/participate/` explains invitation-only onboarding. It has no
 coordinator connection, signup, analytics, external fonts or provider integration.
 
 ## Develop
@@ -21,7 +22,7 @@ npm run build
 npm run preview
 ```
 
-Astro outputs the three static pages to `dist/`. These commands bind to loopback.
+Astro outputs four static pages to `dist/`. These commands bind to loopback.
 The current Astro preview command can run in the background; use `npx astro preview
 status` and `npx astro preview stop` to inspect or stop it. No site is deployed.
 

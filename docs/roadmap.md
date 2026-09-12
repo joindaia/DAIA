@@ -1,6 +1,9 @@
 # Roadmap and acceptance gates
 
 No dates, unmeasured budgets, or research-success probabilities are promised.
+The website presents a dated [public roadmap](../website/src/pages/roadmap.astro).
+The [public launch brief](public-launch.md) defines the next hosting and onboarding
+work, with conditional estimates and a separate boundary for executable jobs.
 
 ## Project goal
 
@@ -21,9 +24,9 @@ below are dependencies and options, not a requirement to build every subsystem f
 
 | Milestone | Evidence required | Current status |
 |---|---|---|
-| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, human triage and one checked, manually merged improvement | Relocation producer received and diagnostic fix tested; local scheduled review export blocked by host approval, lease released and allowance exhausted; no accepted review or manual merge |
+| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, human triage and one checked, manually merged improvement | As of 11 September: relocation round closed as unclear with a usefulness note; pilot-eligibility round admitted. No complete scheduled producer/reviewer cycle or manually merged improvement established |
 | Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
-| Repeatable development rounds | Prepared relevant work, explicit finite participation, reliable installation, recorded receipts and clear pause reasons | Server extension and explicit local acceptance implemented/tested; approved budgets and local WSL helper verified; remote update and native schedule resumption pending |
+| Repeatable development rounds | Prepared relevant work, explicit finite participation, reliable installation, recorded receipts and clear pause reasons | Server extension and local acceptance implemented/tested; existing local worker connection recovered and native hourly schedule resumed within existing consent. Actual scheduled completion remains to be observed |
 | Demonstrated development value | Useful checked improvements with recorded review effort and fewer maintainer interventions | Not yet measured; test counts and idle wakes do not establish value |
 | Durable general human consultation | A concrete blocked task requires stored questions and answer-based resumption | Deferred by maintainer; existing host questions and triage are sufficient now |
 | Safe executable contributions | Untrusted code runs only in an isolated evaluator, with independent trusted results | Planned; source evidence remains inert |

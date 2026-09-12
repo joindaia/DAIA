@@ -951,3 +951,41 @@ section[id] {
 .participation-body > p + p {
     margin-top: 20px;
 }
+
+/* Direction pages reuse the site's typography, colors and native disclosure controls. */
+.direction { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; border-bottom: 1px solid #bbc3b5; }
+.direction .eyebrow { margin-bottom: 26px; }
+.direction-copy { align-self: center; }
+.direction-copy p + p { margin-top: 24px; color: var(--body); }
+.direction-copy .text-link { display: inline-block; margin-top: 28px; }
+.roadmap-date { margin: 26px 0; font-size: 12px; color: #c4cebf; }
+.roadmap .participation-body > .eyebrow { margin-bottom: 24px; }
+.roadmap .participation-body > p + p { margin-top: 22px; color: var(--body); }
+.measurement { padding-top: 28px; border-top: 1px solid #bbc3b5; }
+.measurement h3 { font-size: 25px; }
+.measurement ul { padding-left: 20px; line-height: 1.8; margin: 20px 0; }
+.milestones { background: var(--forest); color: var(--cream); }
+.milestones h2 { margin: 25px 0 55px; }
+.milestone-list { list-style: none; padding: 0; margin: 0; }
+.milestone-list > li { display: grid; grid-template-columns: 100px 1fr; gap: 30px; border-top: 1px solid #ffffff30; padding: 40px 0; }
+.milestone-number { color: var(--lime); font-size: 48px; letter-spacing: -.05em; }
+.milestone-list h3 { font-size: clamp(25px, 3vw, 40px); margin: 16px 0; }
+.milestone-list li > div { max-width: 760px; }
+.milestone-list li > div > p:not(.eyebrow), .milestone-list details p { color: #c4cebf; }
+.milestone-list details { margin-top: 24px; }
+.milestone-list summary { cursor: pointer; color: var(--lime); padding: 12px 0; }
+.milestone-list summary span { margin-left: 14px; display: inline-block; transition: transform .2s; }
+.milestone-list details[open] summary span { transform: rotate(45deg); }
+.milestone-list details p { padding-top: 12px; }
+.roadmap .research-link { display: block; margin-top: 22px; }
+@media (max-width: 600px) {
+    .direction { grid-template-columns: 1fr; gap: 30px; }
+    .milestone-list > li { grid-template-columns: 36px 1fr; gap: 16px; padding: 28px 0; }
+    .milestone-number { font-size: 30px; }
+    .roadmap .participation-body h2 { font-size: 36px; }
+}
+@media (max-width: 400px) {
+    .site-header { padding-left: 20px; padding-right: 20px; }
+    .site-header nav { gap: 12px; font-size: 11px; }
+    .nav-cta span { display: none; }
+}
