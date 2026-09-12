@@ -100,6 +100,13 @@ below. Model labels and reasoning settings are configuration, not a measured ran
 
 ## Ordered continuation
 
+Maintainer update: general human consultation is deferred. The immediate sequence
+in [roadmap](roadmap.md) and its [development backlog](development-backlog.md)
+supersedes item 3 below. Prioritize a complete useful cycle, repeatable finite
+participation and evidence of reduced maintainer effort. Existing native questions
+remain available without a durable question subsystem. The historical discussion
+below records the earlier recommendation, not authority to implement it now.
+
 1. Verify one real native scheduled worker cycle with the helper on each host, finite
    consent and a fixed evidence campaign. Record empty wakes, claims, receipts,
    disagreement, uncertainty and human disposition; do not create activity for its own sake.

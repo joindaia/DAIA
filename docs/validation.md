@@ -1,5 +1,21 @@
 # Bootstrap validation record
 
+## Prepared development backlog, 2026-09-09
+
+Implemented `admit-evidence --dry-run`: exact Git provenance plus the existing
+admission validator in disposable storage, without opening the selected live database.
+Native Windows full suite: **165 passed, 1 skipped**. The extended real-CLI test
+passed independently and proves successful preparation while a campaign is already
+unresolved, no creation of a missing selected database, unchanged existing rows, and
+rejection of mismatched source, invalid schema and oversized input. No review findings.
+Three private source packets were validated against commit `1fa7b25`; zero live jobs
+were admitted. Preparation does not establish useful work or live eligibility.
+
+The roadmap and native orchestration now defer general human-question storage and
+prioritize repeatable development rounds. Same-root server grant extension and
+week-long helper consent remain unimplemented; no worker budget or schedule was
+renewed. CI for this increment is not yet recorded here.
+
 For subsequent Windows/MCP execution and dependency-audit results, see
 [the native Windows audit](audit-2026-09-08.md). The bootstrap record below describes
 the earlier environment and has not been retroactively relabeled.

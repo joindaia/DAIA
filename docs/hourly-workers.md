@@ -35,6 +35,21 @@ host capabilities; neither should be inferred from the other.
 
 ## One-time contributor consent
 
+Four bounds are separate: schedule frequency, the schedule's end date, local helper
+consent, and the coordinator grant. One assignment is one producer or review task,
+not a message, model call or token allowance. Ten additional assignments means ten
+in total over the consent window, not ten per day. An idle `no_eligible_work` response
+does not consume a server assignment; a claimed job consumes capacity even if it is
+released or expires. The helper conservatively counts an uncertain lost claim too.
+An idle native wake can still consume host/provider usage.
+
+Longer schedules alone cannot extend consent. The current helper permits at most
+1,440 minutes per explicit local renewal, capped by original invite expiry and
+remaining server capacity. There is no implemented same-root server grant extension.
+Week-long continuation of an exhausted pilot therefore requires a reviewed feature;
+do not issue a fresh root, edit saved counters or restart with larger flags to get it.
+The proposed continuation is tracked in the [development backlog](development-backlog.md).
+
 The first setup authorizes one job in 30 minutes. Ordinary reconnect flags never
 extend saved consent. The human owner can authorize a recurring pilot with the same
 invite, key and root using this one-shot command after closing its active MCP helper:

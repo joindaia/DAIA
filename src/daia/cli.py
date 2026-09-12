@@ -73,6 +73,7 @@ def main():
     seed.add_argument("--number", type=int, default=10403)
     evidence = sub.add_parser("admit-evidence", help="Operator-only frozen data-only source-analysis campaign")
     evidence.add_argument("--context", type=Path, required=True)
+    evidence.add_argument("--dry-run", action="store_true", help="Validate a prepared context in a disposable database; do not admit live work")
     inspect = sub.add_parser("inspect-evidence", help="Write private campaign evidence for human inspection")
     inspect.add_argument("--output", type=Path, required=True)
     resolve = sub.add_parser("resolve-evidence", help="Human-only evidence disposition; no merge or payout")
@@ -88,6 +89,24 @@ def main():
     args = parser.parse_args()
     if args.command == "demo":
         return demo()
+    if args.command == "admit-evidence":
+        from .crypto import strict_json
+        try:
+            if args.context.stat().st_size > 16384:
+                raise ValueError()
+            document = strict_json(args.context.read_text(encoding="utf-8-sig"))
+            verify_evidence_source(document)
+            if args.dry_run:
+                # Reuse the actual admission checks without opening the selected database.
+                with TemporaryDirectory() as temp:
+                    preview = Coordinator(Store(str(Path(temp) / "preview.sqlite3")))
+                    preview.admit_evidence(document)
+                print(json.dumps({"status": "validated", "admitted": False,
+                                  "live_eligibility_checked": False,
+                                  "baseline_commit": document["baseline_commit"]}))
+                return
+        except (OSError, ValueError, TypeError, RecursionError, sqlite3.DatabaseError):
+            parser.exit(1, "Evidence context validation failed. Check the frozen source, schema and private storage.\n")
     if args.command == "backup":
         try:
             backup_database(args.db, args.output)
@@ -131,11 +150,6 @@ def main():
     elif args.command == "seed":
         print(json.dumps({"job_id": service.seed(args.number)}))
     elif args.command == "admit-evidence":
-        from .crypto import strict_json
-        if args.context.stat().st_size > 16384:
-            raise ValueError("Context file exceeds 16 KiB")
-        document = strict_json(args.context.read_text(encoding="utf-8-sig"))
-        verify_evidence_source(document)
         print(json.dumps(service.admit_evidence(document)))
     elif args.command == "resolve-evidence":
         try:

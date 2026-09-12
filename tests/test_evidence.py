@@ -171,7 +171,7 @@ def test_invalid_source_context_is_refused(network):
         service.admit_evidence(doc)
 
 
-def test_operator_cli_verifies_real_git_excerpt(tmp_path):
+def test_operator_cli_verifies_real_git_excerpt(tmp_path, network):
     def git(*args):
         return subprocess.check_output(["git", "-C", str(tmp_path), "-c", "core.autocrlf=false",
             "-c", "core.hooksPath=" + str(tmp_path / "empty-hooks"), "-c", "commit.gpgsign=false",
@@ -191,6 +191,44 @@ def test_operator_cli_verifies_real_git_excerpt(tmp_path):
     for revision in ("0" * 40, git("rev-parse", "HEAD:src/example.py").decode().strip()):
         with pytest.raises(ValueError, match="exactly match"):
             verify_evidence_source({**doc, "baseline_commit": revision}, tmp_path)
+
+    # Real CLI preparation works even while another campaign blocks live admission.
+    service, _ = network
+    service.admit_evidence(document())
+    with sqlite3.connect(service.store.path) as db:
+        before = list(db.iterdump())
+    context = tmp_path / "context.json"
+    prepared = {**doc, "objective": "Check the increment contract; do not execute the excerpt."}
+    context.write_text(json.dumps(prepared), encoding="utf-8")
+    environment = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")}
+
+    def prepare(database):
+        return subprocess.run([sys.executable, "-m", "daia.cli", "--db", str(database),
+            "admit-evidence", "--context", str(context), "--dry-run"], cwd=tmp_path,
+            env=environment, capture_output=True, text=True, timeout=30)
+
+    missing = tmp_path / "must-not-exist" / "pilot.sqlite3"
+    for database in (service.store.path, missing):
+        result = prepare(database)
+        assert result.returncode == 0, result.stderr
+        assert json.loads(result.stdout) == {"status": "validated", "admitted": False,
+            "live_eligibility_checked": False, "baseline_commit": commit}
+        assert not missing.parent.exists()
+    with sqlite3.connect(service.store.path) as db:
+        assert list(db.iterdump()) == before
+
+    # Both Git provenance and the real admission schema are checked, with safe errors.
+    for invalid in ({**prepared, "objective": ""}, {**prepared, "extra": "private-context-canary"},
+                    {**prepared, "source": {**prepared["source"], "text": "private-context-canary"}}):
+        context.write_text(json.dumps(invalid), encoding="utf-8")
+        result = prepare(missing)
+        assert result.returncode == 1 and result.stdout == ""
+        assert "Evidence context validation failed" in result.stderr
+        assert "private-context-canary" not in result.stderr and str(tmp_path) not in result.stderr
+        assert not missing.parent.exists()
+    context.write_text("x" * 16385, encoding="utf-8")
+    assert prepare(missing).returncode == 1
+    assert not missing.parent.exists()
 
 
 def test_evidence_flow_through_two_stdio_workers(network, tmp_path):

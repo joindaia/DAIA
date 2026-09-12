@@ -31,6 +31,25 @@ campaign. Changing a timestamp does not create capacity. The orchestration task 
 admit work only within the user's operator delegation; worker MCP and HTTP clients
 have no admission, inspection, consent-renewal or disposition endpoint.
 
+## Prepare a small backlog without admission
+
+Validate each private context before a live slot becomes available:
+
+```powershell
+.\.venv\Scripts\python -m daia.cli admit-evidence --context .private/next-campaign.json --dry-run
+```
+
+This reads the exact Git source and runs the existing admission validation in a
+disposable database. It never opens the selected `--db`, admits live work, assigns
+an agent or changes a grant. `validated` means the packet meets source/schema/size
+checks; it does not mean useful work, current live eligibility, consent or approval.
+The real admission command repeats validation and retains the one-unresolved-campaign
+gate. Keep the frozen packet unchanged; if its baseline is superseded, explicitly
+prepare and check a replacement rather than silently rebasing an assigned task.
+The [development backlog](development-backlog.md) names the next bounded topics.
+
+## Artifacts and disposition
+
 The producer artifact has `source_digest`, `line`, `finding`, `reproduction_outline`
 and `suggested_change`. The adversarial artifact instead has `source_digest`,
 `candidate_digest`, `line`, `assessment`, `objections` and `next_check`.

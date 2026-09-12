@@ -11,7 +11,9 @@ below are dependencies and options, not a requirement to build every subsystem f
 |---|---|---|
 | One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, human triage and one independently checked, manually merged improvement | Relocation producer received and diagnostic fix tested; local scheduled review export blocked by host approval, lease released and allowance exhausted; no accepted review or manual merge |
 | Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
-| Durable general human consultation | Save a question, release work rather than hold a lease, explicitly share an answer, resume with newly frozen context | Planned; requires lifecycle and privacy review before implementation |
+| Repeatable development rounds | Prepared relevant work, explicit finite participation, reliable installation, recorded receipts and clear pause reasons | Native scheduling and bounded local consent implemented; same-root server grant continuation still missing |
+| Demonstrated development value | Useful checked improvements with recorded review effort and fewer maintainer interventions | Not yet measured; test counts and idle wakes do not establish value |
+| Durable general human consultation | A concrete blocked task requires stored questions and answer-based resumption | Deferred by maintainer; existing host questions and triage are sufficient now |
 | Safe executable contributions | Untrusted code runs only in an isolated evaluator, with independent trusted results | Planned; source evidence remains inert |
 | Wider participation and rewards | Provider/licensing/privacy review, measured useful contribution and explicit allocation policy | Planned; no public service or payouts |
 
@@ -28,12 +30,14 @@ scheduled prompts, finite consent renewal and the bounded source-evidence worklo
 are implemented. See [hourly workers](hourly-workers.md) and
 [evidence campaigns](evidence-campaigns.md) for their authority and validation limits.
 The immediate acceptance gate is a real scheduled two-worker evidence cycle and a
-human-confirmed useful outcome. General human consultation is host-native; durable
-waiting/resumption and isolated contributed-code execution remain planned.
+human-confirmed useful outcome. The [prepared backlog](development-backlog.md) keeps
+the next three slices concrete without admitting concurrent campaigns. General human
+consultation remains host-native; durable waiting/resumption is deferred until a real
+task needs it. Isolated contributed-code execution remains planned.
 Worker-dependent acceptance gates do not block independent local engineering. While
-the pilot awaits contributors or human disposition, continue bounded recovery,
-failure-handling and documentation work on the review branch without creating more
-campaigns or changing live policy. [Private snapshots](recovery.md) now have a
+the pilot awaits contributors or human disposition, improve repeatable participation
+and prepare relevant work on the review branch without admitting more live campaigns
+or changing live policy. [Private snapshots](recovery.md) now have a
 synthetic WAL/process-loss recovery exercise; real restore and reconciliation remain
 maintainer operations.
 
