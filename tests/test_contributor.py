@@ -342,6 +342,63 @@ def test_other_lock_errors_are_not_reported_as_contention(tmp_path, monkeypatch)
     assert error.value.errno == errno.EIO
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows file-sharing semantics")
+@pytest.mark.parametrize("release_reader", [True, False])
+def test_atomic_save_retries_same_stage_under_windows_reader(tmp_path, monkeypatch, release_reader):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    path = invite_file(tmp_path, service)
+    host = Contributor(path)
+    before = host.path.read_bytes()
+    host.state["stopped"] = True
+    replace = contributor_module.os.replace
+    stages, waits = [], []
+    with host.path.open("rb") as reader:
+        def held_replace(source, target):
+            stages.append((source, source.read_bytes()))
+            try:
+                return replace(source, target)
+            except OSError as error:
+                assert error.winerror in {5, 32, 33}
+                assert host.path.read_bytes() == before
+                if release_reader:
+                    reader.close()
+                raise
+
+        monkeypatch.setattr(contributor_module.os, "replace", held_replace)
+        monkeypatch.setattr(contributor_module.time, "sleep", waits.append)
+        if release_reader:
+            host.save()
+            assert json.loads(host.path.read_bytes()) == host.state
+            assert len(stages) == 2 and waits == [0.05]
+        else:
+            with pytest.raises(OSError):
+                host.save()
+            assert host.path.read_bytes() == before
+            assert len(stages) == 3 and waits == [0.05, 0.05]
+    assert all(stage == stages[0] for stage in stages)
+    assert not list(tmp_path.glob(".contributor-*"))
+
+
+def test_atomic_save_does_not_retry_unrelated_errors(tmp_path, monkeypatch):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    host = Contributor(invite_file(tmp_path, service))
+    before = host.path.read_bytes()
+    attempts, waits = [], []
+
+    def fail(source, target):
+        attempts.append(source)
+        raise OSError(errno.EIO, "Injected I/O failure")
+
+    monkeypatch.setattr(contributor_module.os, "replace", fail)
+    monkeypatch.setattr(contributor_module.time, "sleep", waits.append)
+    with pytest.raises(OSError) as error:
+        host.save()
+    assert error.value.errno == errno.EIO
+    assert len(attempts) == 1 and not waits
+    assert host.path.read_bytes() == before
+    assert not list(tmp_path.glob(".contributor-*"))
+
+
 def test_empty_queue_tampered_envelope_and_revocation(tmp_path):
     service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
     path = invite_file(tmp_path, service)

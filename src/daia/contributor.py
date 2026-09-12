@@ -103,7 +103,16 @@ class Contributor:
                 json.dump(self.state, handle, ensure_ascii=False)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.replace(temporary, self.path)
+            for attempt in range(3):
+                try:
+                    os.replace(temporary, self.path)
+                    break
+                except OSError as error:
+                    if (os.name != "nt" or getattr(error, "winerror", None) not in {5, 32, 33}
+                            or attempt == 2):
+                        raise
+                    # Windows readers can briefly deny replacement; permanent denial still fails.
+                    time.sleep(0.05)
         finally:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)

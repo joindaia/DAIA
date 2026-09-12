@@ -30,6 +30,10 @@ If startup reports that the invite already has an active contributor host, close
 the other desktop/CLI session using it and reconnect. Keep the saved state and
 consent; the message does not authorize deleting files or stopping unrelated apps.
 Other startup failures retain a generic error to avoid exposing private file contents.
+On Windows, a reader can briefly block atomic state replacement. The helper retries
+only that same staged replacement up to three times, with 50 ms between attempts.
+If replacement still fails, the operation fails; it does not delete the prior state,
+change permissions, or retry the surrounding contribution operation.
 Desktop setup prints the next steps; it does not launch a model turn or create a
 schedule. For recurring work, follow the [schedule setup and verification steps](hourly-workers.md#create-and-verify-the-schedule)
 on the contributing machine. A session may expose DAIA tools while lacking a native

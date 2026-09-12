@@ -83,6 +83,26 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Bounded Windows state replacement retries, 2026-09-09
+
+A disposable local reproduction held the state file open for reading and observed
+`PermissionError` / Windows error 5 from `os.replace`; closing the reader allowed the
+same save to succeed. This establishes a possible failure mechanism, not which process
+or condition caused the earlier intermittent test failure.
+
+The save path now retries only the already-closed, flushed staged replacement on
+Windows errors 5, 32 or 33. Three total attempts add at most two 50 ms retry waits.
+Permanent denial still propagates; the destination is never deleted or chmodded and
+the enclosing operation is not replayed. Tests exercise an actual held Windows reader
+that releases after failure, one that remains open through exhaustion, identical
+staged path/bytes, unchanged durable state on failure, temporary cleanup and immediate
+failure for unrelated I/O errors. The failed-renewal CLI regression remains passing.
+Independent adversarial review ran the four focused cases successfully and found no
+blocker. This is bounded contention handling, not a new power-loss durability claim.
+Native Windows validation returned **111 passed, 1 skipped**, with the existing
+upstream deprecation warning. Compilation, source privacy and whitespace checks passed.
+The live helper and frozen campaign were not restarted or modified.
+
 ### Contributor lock diagnostics, 2026-09-09
 
 Recognized nonblocking lock-contention errors now produce a fixed, actionable startup
