@@ -229,8 +229,13 @@ Documentation verified on 2026-09-12:
 
 The current development preflight found no sbx command on either inspected PATH,
 no KVM device in the WSL environment, and a Windows hypervisor reported present.
-No runtime was installed or provider login performed. Check native Windows
-Hypervisor Platform availability next; do not fall back to host task execution.
+No runtime was installed or provider login performed. A subsequent direct Windows Hypervisor Platform API probe succeeded with
+`HResult=0`, `HypervisorPresent=true`, and `WrittenBytes=4`. Repeat it with
+`scripts/probe_windows_hypervisor.ps1` in Windows PowerShell. The earlier DISM
+feature query required administrator access; the read-only API probe did not.
+[Microsoft documents this capability](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-platform/funcs/whvgetcapability)
+as a platform availability check. It does not prove a sandbox starts or its
+network/account boundaries work. Do not fall back to host task execution.
 The supplied research test package has not yet arrived or been independently run.
 
 Release evidence must include both a genuinely useful native-agent patch and an
