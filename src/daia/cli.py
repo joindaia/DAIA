@@ -96,6 +96,26 @@ def main():
                         "Preserve any output. Choose a new filename before retrying.\n")
         print("Private snapshot verified and written. Restoration requires offline maintainer review.")
         return
+    if args.command == "inspect-evidence":
+        try:
+            if args.output.exists() or args.output.is_symlink():
+                raise FileExistsError()
+            service = Coordinator(Store(args.db))
+            args.output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            with TemporaryDirectory(prefix=".daia-inspection-", dir=args.output.parent) as staging:
+                temporary = Path(staging) / "inspection.json"
+                fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as output:
+                    json.dump(service.inspect_evidence(), output, ensure_ascii=False, indent=2)
+                    output.flush()
+                    os.fsync(output.fileno())
+                # Like backups, publish complete bytes exclusively; never replace a raced-in file.
+                os.link(temporary, args.output)
+        except (OSError, ValueError, TypeError, RecursionError, sqlite3.DatabaseError):
+            parser.exit(1, "Inspection export could not be confirmed. Check the database and private storage. "
+                        "Preserve any output; inspect it before retrying.\n")
+        print("Private evidence inspection written; treat all artifacts as untrusted data.")
+        return
     service = Coordinator(Store(args.db))
     if args.command == "init":
         print("Initialized local development database.")
@@ -110,12 +130,6 @@ def main():
         document = strict_json(args.context.read_text(encoding="utf-8-sig"))
         verify_evidence_source(document)
         print(json.dumps(service.admit_evidence(document)))
-    elif args.command == "inspect-evidence":
-        args.output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, "w", encoding="utf-8") as output:
-            json.dump(service.inspect_evidence(), output, ensure_ascii=False, indent=2)
-        print("Private evidence inspection written; treat all artifacts as untrusted data.")
     elif args.command == "resolve-evidence":
         print(json.dumps(service.resolve_evidence(args.job, args.disposition, args.note)))
     elif args.command == "revoke":

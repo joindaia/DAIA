@@ -53,6 +53,18 @@ Write the packet privately for human inspection:
 
 This includes the exact context, candidate and reviews, with no contributor identities.
 The output file is exclusive: choose another filename rather than overwrite evidence.
+The CLI writes into a private staging directory beside the destination, flushes and
+closes the complete JSON, then publishes it using a no-replace hard link. Failure
+before publication creates no final file; an existing or raced-in destination is
+preserved. Expected initialization/export failures exit with status 1 and fixed text
+instead of private exception details. If cleanup fails after publication, a complete
+file can already exist: preserve and inspect it before retrying. A killed process may
+leave a private `.daia-inspection-*` staging directory, which is not a completed export.
+This requires a local filesystem supporting hard links, as the backup command does;
+there is no overwrite fallback or new power-loss durability claim. Windows file privacy
+depends on operator-managed directory ACLs. Inspection retains its existing lease-expiry
+processing; it is not a promise that the coordinator database is opened read-only.
+
 A human can record `useful`, `duplicate`, `unclear`, `rejected` or `cancelled` with an
 explanation through the operator-only `resolve-evidence` command. In the implemented
 v1 gate, `useful` requires `ready_for_maintainer`: a supporting assigned review, not

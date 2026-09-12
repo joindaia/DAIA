@@ -83,6 +83,26 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Complete private inspection exports, 2026-09-09
+
+The inspection CLI previously opened its exclusive destination before collecting
+and streaming the packet. Collection or write failures could leave an empty or
+partial final file that blocked a retry. It now stages private UTF-8 JSON beside
+the destination, flushes and closes it, then publishes through a no-replace hard link.
+Initialization/export failures use a fixed diagnostic; a late cleanup error preserves
+any published file for inspection. Existing lease-expiry processing is unchanged.
+
+Six initial regressions failed before the change. The final eight focused cases cover
+initialization, inspection, injected recursion and partial-write failures, fsync
+failure, complete Unicode output, an existing/raced-in destination, and cleanup after
+publication. Pre-publication failures permit retry at the same unused destination;
+published and competing files are preserved. The evidence suite returned **17 passed**
+and the native Windows suite **129 passed, 1 skipped**, with the existing upstream
+warning. An adversarial reviewer independently ran all eight focused cases and found
+no remaining findings after requesting recursion-error handling. These are synthetic
+failure checks, not a power-loss test or proof of Windows ACL enforcement. No live
+campaign was inspected, resolved or changed as part of testing this export increment.
+
 ### Backup CLI failure diagnostics, 2026-09-09
 
 Expected backup filesystem, SQLite and validation failures now return exit status 1

@@ -1,6 +1,9 @@
 """Evidence campaigns check structure and provenance binding, never execute submitted code."""
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
+from pathlib import Path
+import sqlite3
 import subprocess
 import asyncio
 import sys
@@ -218,3 +221,104 @@ def test_evidence_flow_through_two_stdio_workers(network, tmp_path):
     with running_server(build_mcp_app(service)) as url:
         asyncio.run(exercise(url))
     assert service.metrics()["promoted"] == 0
+
+
+@pytest.mark.parametrize("failure", ["initialization", "inspection", "recursion", "partial_write", "flush"])
+def test_inspection_failure_leaves_no_final_file_and_allows_retry(network, tmp_path, monkeypatch, capsys, failure):
+    from daia.cli import main
+    from daia.service import Coordinator
+    service, _ = network
+    service.admit_evidence(document())
+    target = tmp_path / "private" / "inspection.json"
+    monkeypatch.setattr(sys, "argv", ["daia", "--db", service.store.path, "inspect-evidence", "--output", str(target)])
+
+    def fail(*args, **kwargs):
+        if failure == "recursion":
+            raise RecursionError("private-export-canary")
+        if failure == "initialization":
+            raise sqlite3.OperationalError("private-export-canary")
+        if failure == "partial_write":
+            args[1].write('{"partial":')
+            args[1].flush()
+        raise OSError("private-export-canary")
+
+    with monkeypatch.context() as fault:
+        if failure == "initialization":
+            fault.setattr(Coordinator, "__init__", fail)
+        elif failure in {"inspection", "recursion"}:
+            fault.setattr(Coordinator, "inspect_evidence", fail)
+        elif failure == "partial_write":
+            fault.setattr(json, "dump", fail)
+        else:
+            fault.setattr(os, "fsync", fail)
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code == 1
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "Inspection export could not be confirmed" in output.err
+    assert "private-export-canary" not in output.err and str(tmp_path) not in output.err
+    assert not target.exists()
+    assert not list(target.parent.glob(".daia-inspection-*"))
+    main()
+    assert json.loads(target.read_text(encoding="utf-8")) == service.inspect_evidence()
+
+
+@pytest.mark.parametrize("race", [False, True])
+def test_inspection_publishes_complete_private_json_without_overwrite(network, tmp_path, monkeypatch, capsys, race):
+    from daia.cli import main
+    service, _ = network
+    service.admit_evidence(document("Inspect a caf\u00e9 contract without executing it."))
+    expected = service.inspect_evidence()
+    target = tmp_path / "private" / "inspection.json"
+    monkeypatch.setattr(sys, "argv", ["daia", "--db", service.store.path, "inspect-evidence", "--output", str(target)])
+    link = os.link
+    reached = []
+
+    def publish(source, destination):
+        reached.append(True)
+        assert not target.exists()
+        assert json.loads(Path(source).read_text(encoding="utf-8")) == expected
+        if os.name == "posix":
+            assert Path(source).stat().st_mode & 0o077 == 0
+        if race:
+            target.write_bytes(b"preserve competing output")
+        link(source, destination)
+
+    monkeypatch.setattr(os, "link", publish)
+    if race:
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code == 1
+        assert target.read_bytes() == b"preserve competing output"
+        assert capsys.readouterr().out == ""
+    else:
+        main()
+        assert json.loads(target.read_text(encoding="utf-8")) == expected
+        before = target.read_bytes()
+        with pytest.raises(SystemExit):
+            main()
+        assert target.read_bytes() == before
+    assert reached == [True]
+    assert not list(target.parent.glob(".daia-inspection-*"))
+
+
+def test_inspection_cleanup_error_preserves_complete_published_output(network, tmp_path, monkeypatch, capsys):
+    import daia.cli as cli
+    service, _ = network
+    target = tmp_path / "private" / "inspection.json"
+    monkeypatch.setattr(sys, "argv", ["daia", "--db", service.store.path, "inspect-evidence", "--output", str(target)])
+    cleanup = cli.TemporaryDirectory.cleanup
+
+    def cleanup_then_fail(temporary):
+        cleanup(temporary)
+        raise OSError("private-cleanup-canary")
+
+    monkeypatch.setattr(cli.TemporaryDirectory, "cleanup", cleanup_then_fail)
+    with pytest.raises(SystemExit) as error:
+        cli.main()
+    assert error.value.code == 1
+    assert json.loads(target.read_text(encoding="utf-8")) == []
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "Preserve any output" in output.err and "private-cleanup-canary" not in output.err
