@@ -78,3 +78,9 @@ A real SDK HTTP-to-mutual-TLS test exercises migration, restart and rollback usi
 an ephemeral loopback routing exception in the test only. Public-host routing,
 closed-gateway integration and populated off-host recovery still need combined
 acceptance before live cutover.
+
+A populated local database backup/restore regression also records a result while
+simulating loss of its confirmation, migrates the unchanged helper state to the
+restored coordinator and recovers `already_recorded` after local consent expiry.
+It verifies unchanged usage/deadline and refuses a new claim. This is local restored
+state evidence; it does not replace the combined public-gateway or off-host test.

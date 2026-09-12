@@ -773,3 +773,38 @@ def test_migration_digest_detects_missing_audit_event(network, contributor):
         db.execute("DELETE FROM events WHERE event_json LIKE ?", ('%' + aid + '%',))
     after = service.contribution_status(own["root_id"], aid, migration_check=True)["history_hash"]
     assert before != after
+
+
+def test_migrate_restored_database_recovers_lost_receipt(tmp_path, network, monkeypatch):
+    from daia.store import backup_database
+    service, now = network
+    service.seed()
+    path = invite_file(tmp_path, service)
+    host = direct(Contributor(path, minutes=1, clock=service.clock), service)
+    asyncio.run(host.perform("request_work"))
+    direct(host, service, lose="submit_result")
+    artifact = '{"factors":[101,103]}'
+    with pytest.raises(ValueError, match="response loss"):
+        asyncio.run(host.perform("submit_result", artifact=artifact, verdict="candidate"))
+    assert host.state["pending"] is not None
+    snapshot = tmp_path / "restored.sqlite3"
+    backup_database(service.store.path, snapshot)
+    restored = Coordinator(Store(snapshot, create=False), clock=service.clock)
+    original = json.loads(host.path.read_text())
+    target = {"url": "https://mcp.example.org/mcp", "tls": {}}
+    monkeypatch.setattr(contributor_module, "closed_transport", lambda config, directory: (config, object()))
+    async def migration_status(name, **args):
+        assert name == "contribution_status" and args["migration_check"]
+        selected = restored if host.transport else service
+        return selected.contribution_status(host.identity["root_id"], host.agent, migration_check=True)
+    host.remote = migration_status
+    asyncio.run(host.migrate_endpoint(target, tmp_path))
+    assert all(host.state[k] == v for k, v in original.items())
+    now[0] += 61  # Local consent expiry must not prevent recovering an existing receipt.
+    restarted = direct(Contributor(path, clock=service.clock), restored)
+    receipt = asyncio.run(restarted.perform("submit_result", artifact=artifact, verdict="candidate"))
+    assert receipt["status"] == "already_recorded"
+    assert restarted.state["used"] == original["used"] == 1
+    assert restarted.state["deadline"] == original["deadline"]
+    assert (asyncio.run(restarted.perform("request_work")))["status"] == "expired"
+    assert service.metrics() == restored.metrics()
