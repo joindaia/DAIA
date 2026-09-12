@@ -167,3 +167,20 @@ root was removed after the check. No database or coordinator listener was opened
 This verifies interpreter and import compatibility against the matching host OS,
 not a clean-host provisioning exercise or successful full gateway startup. The
 existing production units, admission policy and contributor state were untouched.
+
+## Receipt replay with restored runtime
+
+`PYTHONPATH=src python -B scripts/probe_recovery.py` creates only a disposable
+synthetic coordinator and signing identity. It records one result against a
+one-job grant, saves a pending signed submission, takes a checked snapshot and
+removes the source database. A fresh interpreter opens the restored database
+without schema creation and retries the saved submission twice. Both retries must
+return the original receipt hash with `already_recorded`; the result count stays
+one and the contributor status stays unchanged. An altered artifact with the
+original signature must be refused.
+
+This probe passed locally and inside the disposable matching-OS systemd root using
+the off-host source/runtime artifacts. No real contributor data or listener was
+used. It establishes service-level receipt replay after process restart; it does
+not exercise helper endpoint migration, the TLS/proxy service chain, recovery of
+post-snapshot changes, or a newly provisioned host. Those remain separate gates.
