@@ -3,8 +3,8 @@
 This workload gathers source-bound findings and a distinct adversarial review. It
 does not execute contributed code, certify bugs, establish novelty, credit rewards,
 or authorize a merge. The fixed `source-evidence-v1` policy requires a producer root,
-one different adversarial root, and human disposition. Existing math policies are
-unchanged. One review plus human triage is a deliberately narrower evidence-gathering
+one different adversarial root, and authorized maintainer disposition. Existing math policies are
+unchanged. One review plus maintainer triage is a deliberately narrower evidence-gathering
 experiment, not independent correctness verification or consensus.
 
 The operator prepares a private JSON context with exactly `objective`, `baseline_commit`
@@ -84,7 +84,7 @@ there is no overwrite fallback or new power-loss durability claim. Windows file 
 depends on operator-managed directory ACLs. Inspection retains its existing lease-expiry
 processing; it is not a promise that the coordinator database is opened read-only.
 
-A human can record `useful`, `duplicate`, `unclear`, `rejected` or `cancelled` with an
+An authorized maintainer can record `useful`, `duplicate`, `unclear`, `rejected` or `cancelled` with an
 explanation through the operator-only `resolve-evidence` command. In the implemented
 v1 gate, `useful` requires `ready_for_maintainer`: a supporting assigned review, not
 merely a completed review. An inconclusive or failing review does not satisfy it.
@@ -92,6 +92,15 @@ Resolution records are immutable and retries idempotent;
 closing a campaign cancels queued/leased work and fences old assignments. Historical
 receipts and exposure remain. This local operator boundary is not a cryptographic
 proof that a human typed the command.
+
+## Standing delegated triage in the private pilot
+
+The owner has since authorized [routine maintainer decisions](maintainer-delegation.md).
+For that pilot, the maintainer follows the same preview, review gate, effect check and
+immutable resolution procedure, but records a delegated decision instead of requesting
+a fresh human choice. Assigned workers have no such authority. The procedure below
+still applies when an owner decision is actually required; it is not an instruction
+to interrupt every authorized routine round.
 
 ## Native human decision handoff
 
@@ -138,7 +147,7 @@ terminal classification for a user's requested `useful` disposition without thei
 approval. See the [triage proposal](evidence-triage-proposal.md) for the concrete
 mapping and its reporting limits. This does not change the v1 gate.
 
-The first success measure is one human-confirmed useful packet at bounded effort,
+The first success measure is one maintainer-accepted useful packet at bounded effort,
 followed by an independently checked, manually merged improvement. Shape-valid packets,
 model agreement, empty hourly wakes and job counts are not substitutes for that outcome.
 
@@ -160,7 +169,7 @@ review, release/expiry retains its exclusion; a new key is not a retry mechanism
 
 A passing technical review yields `pilot_ready_for_maintainer`, never `promoted` or
 independent approval. Failure and uncertainty still block a useful disposition.
-Human triage remains mandatory; no review authorizes merge, execution or rewards.
+Maintainer disposition remains mandatory; no worker review authorizes merge, execution or rewards.
 Operator inspection retains the pilot label and `correctness_verified: false`.
 
 The default distinct-root policy and existing frozen campaigns are unchanged. The

@@ -6,6 +6,16 @@ Read README.md, docs/architecture.md, docs/protocol.md, docs/threat-model.md and
 
 Use the approved WSL/Linux Python environment for development. Retain Windows contributor compatibility. Do not introduce a frontend framework, a worker daemon, Kubernetes, a blockchain, or extra services without an approved need. Run tests with `python -m pytest -q`; the demo is `python -m daia.cli demo` after installation or with `PYTHONPATH=src`. Do not claim optional integrations were tested if dependencies were unavailable.
 
+## Standing maintainer delegation
+
+The owner delegated routine DAIA development and evidence triage to the maintainer
+on 11 September 2026. Follow [the delegation](docs/maintainer-delegation.md).
+Work only on DAIA; do not contact outside people or organizations. Coordination
+between existing DAIA workers is internal project work. This replaces the requirement
+to ask the owner to approve every routine campaign disposition. Preview, evaluate
+and record the maintainer's own decision honestly; never claim personal human review.
+Assigned workers retain their existing task, tool and consent boundaries.
+
 ## Invariants
 
 Authentication derives the contributor root; a body cannot choose it. Agents cannot choose jobs, review targets, verification modes, reviewers or their own priority. Default policies exclude same-root review. Explicit source-evidence pilot campaigns allow a different agent under shared ownership for technical review only; the producer agent stays excluded, review exposure remains root-scoped, and no independence or promotion is claimed. Exposure history survives lease release/expiry. Leases have a hard deadline; old assignments cannot submit after reassignment. Receipts and follow-on work are idempotent. Freeze policy and context hashes before work starts. A trusted check failure is never overruled by agent consensus.

@@ -24,7 +24,7 @@ below are dependencies and options, not a requirement to build every subsystem f
 
 | Milestone | Evidence required | Current status |
 |---|---|---|
-| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, human triage and one checked, manually merged improvement | As of 11 September: relocation round closed as unclear with a usefulness note; pilot-eligibility round admitted. No complete scheduled producer/reviewer cycle or manually merged improvement established |
+| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, explicit technical-pilot assurance, human triage and one checked, manually merged improvement | As of 11 September: pilot-eligibility analysis and supporting technical review submitted; round closed as useful source analysis, with no defect established. Writing round admitted. A checked and merged improvement from a complete scheduled cycle is still unestablished |
 | Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
 | Repeatable development rounds | Prepared relevant work, explicit finite participation, reliable installation, recorded receipts and clear pause reasons | Server extension and local acceptance implemented/tested; existing local worker connection recovered and native hourly schedule resumed within existing consent. Actual scheduled completion remains to be observed |
 | Demonstrated development value | Useful checked improvements with recorded review effort and fewer maintainer interventions | Not yet measured; test counts and idle wakes do not establish value |
@@ -59,8 +59,16 @@ maintainer operations.
 The maintainer approved an opt-in two-agent technical pilot for new campaigns.
 Shared ownership is allowed and labeled as not independent; old campaign rules stay
 frozen. See [pilot operation](evidence-campaigns.md#optional-two-agent-technical-pilot).
-The next acceptance check is actual scheduled producer/reviewer receipts in that mode
-after disposition of the existing campaign, not adding a third agent.
+The eligibility-analysis round now has producer/reviewer receipts and an explicit
+individual owner disposition. The writing round is active. Next, establish a useful
+checked improvement and its scheduled-worker provenance; no third agent is needed.
+
+The owner granted [standing maintainer delegation](maintainer-delegation.md) on
+11 September. Routine campaign triage and continuation now use that authorization,
+with decisions attributed to the maintainer. The earlier requirement for a fresh
+owner answer at each round no longer governs routine work. Worker review, consent
+and isolation rules remain intact. Development stays within DAIA and involves no
+external outreach.
 
 ## Delegating orchestration
 

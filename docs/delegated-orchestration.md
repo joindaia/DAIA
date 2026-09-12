@@ -3,12 +3,18 @@
 Status: approved direction and planning brief, not implemented governance or a change
 to live permissions. Existing campaigns retain their frozen rules.
 
+The later [standing maintainer delegation](maintainer-delegation.md), authorized on
+11 September, permits routine DAIA planning, triage and integration without a fresh
+owner question. It does not implement voting, grant rights to arbitrary workers or
+extend contributor consent. References below to owner-controlled execution describe
+the wider capability design; routine operator decisions now use that delegation.
+
 ## Outcome
 
 Reduce dependence on one maintainer agent by distributing planning and review as
 bounded, consented work. Keep a small deterministic coordinator for assignment,
-budgets, receipts and policy checks. The owner retains final execution authority
-until specific, revocable delegations are separately approved.
+budgets, receipts and policy checks. The owner retains authority outside the standing maintainer delegation and over
+future execution grants to workers. Routine DAIA integration is already delegated.
 
 Success means useful checked changes with less maintainer effort after accounting
 for planning, review, retries and rework. More jobs or more votes are not success.
@@ -17,11 +23,12 @@ efficiency advantage are not.
 
 ## Sequence and acceptance
 
-1. **Establish the baseline.** Complete the existing scheduled two-agent pilot after
-   its pending disposition and host setup checks. Record one actual useful change,
+1. **Establish the baseline.** Record the provenance and outcome of the scheduled two-agent pilot. The
+   eligibility-analysis round was closed through explicit individual owner approval;
+   the writing round is active under the later standing delegation. Record one actual useful change,
    its receipts, tests, review and execution decision. Separate the three historical
-   factorization-demo jobs from the three source-analysis/review jobs. Do not count
-   six completed assignments as six delivered improvements.
+   factorization-demo jobs from subsequent source-analysis/review jobs. Completed
+   assignments are not automatically delivered improvements.
 2. **Delegate planning in shadow mode.** Give an assigned agent one bounded planning
    question against an approved project snapshot. Its inert proposal names the
    problem, code scope, acceptance check, dependencies, risk and expected review
@@ -59,11 +66,12 @@ No schema extension or executable plan is required.
 Accept, reject and revise are maintainer decisions, not new worker operations.
 An accepted proposal may be resolved as `useful` only when the existing frozen review
 and disposition requirements are satisfied. Rejection uses the existing `rejected`
-disposition after explicit approval. Revision never edits signed evidence: prepare an
-explicit closure proposal (`unclear` or `rejected`, according to the evidence), obtain
-approval and close through the existing resolver. Only then can a newly frozen,
-materially revised campaign be admitted and reviewed on its own merits. Neither this
-brief nor the shadow packet authorizes closing the currently pending campaign.
+disposition with an attributed maintainer decision. Revision never edits signed
+evidence: preview a closure proposal (`unclear` or `rejected`, according to the
+evidence), verify its effects and close through the existing resolver within the
+standing delegation. Actions outside that delegation still require owner approval. Only then can a newly frozen,
+materially revised campaign be admitted and reviewed on its own merits. A shadow packet
+itself grants no authority; the separate standing delegation covers routine triage.
 
 ## Trust and execution
 
@@ -100,8 +108,8 @@ reputation engine or new service is needed for the first planning experiment.
 
 ## First independent engineering slice
 
-While the existing live campaign and WSL worker setup await completion, implement a
-local process-boundary receipt-recovery exercise using synthetic isolated state.
+The original independent slice was a local process-boundary receipt-recovery
+exercise using synthetic isolated state; its completion is recorded below.
 Simulate acceptance of a submission followed by loss of its response. Retry the exact
 submission and check one durable receipt, no duplicate follow-on work and no extra
 assignment consumption. Record failures honestly; do not renew consent, touch live
@@ -136,5 +144,5 @@ editing files or running tests. The review requested the explicit schema mapping
 immutable revision lifecycle now documented above, and narrower reporting of the
 recovery assertions. Counts alone do not verify follow-on job types or target bindings.
 This model review is design feedback, not a signed campaign review or permission to
-admit work. The first shadow packet remains a private, validated draft pending the
-existing campaign disposition and live eligibility checks.
+admit work. The first shadow packet remains a private draft. Refresh it against current project
+state and validate capacity before admitting it after the active writing round.

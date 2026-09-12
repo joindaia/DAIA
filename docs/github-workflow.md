@@ -29,11 +29,14 @@ change is safe to deploy. Follow the protocol and pilot documents for its frozen
 
 The pull-request template requires the issue, acceptance criteria, relevant evidence, privacy
 considerations and protected-boundary impact. Passing CI and agent reviews inform a decision; they
-do not make it. A human maintainer verifies the stated criteria and has sole authority to change
-scope, request revisions and merge.
+do not make it. The maintainer verifies the stated criteria before changing scope, requesting
+revisions or merging. The owner has authorized routine DAIA integration through the
+[standing delegation](maintainer-delegation.md); assigned workers cannot approve or
+merge their own submissions.
 
 The repository does not claim enforcement through premium GitHub branch protection. If repository
-settings later make checks required, configure them deliberately and retain human merge authority.
+settings later make checks required, configure them deliberately and retain the separate
+maintainer integration decision.
 Dependabot opens reviewable updates for GitHub Actions and the website npm dependencies; it cannot merge them.
 
 ## Local checks
