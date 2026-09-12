@@ -28,6 +28,16 @@ Do not reuse an invite to simulate independent reviewers. Do not paste invite co
 into a prompt. Transfer a remote invite only to its intended, explicitly authorized host.
 The JSON file also supplies the signer's expected root and network. Files are ignored by Git.
 
+The invite script stages private JSON, flushes and closes it, then publishes without
+overwriting an existing destination. On failure it attempts to revoke only the new
+grant returned by that attempt. A cleanup failure can leave a complete but revoked
+file: do not use or share output from a failed attempt. Failed revocation, or an
+issuance failure before a grant is returned, is reported as unconfirmed and requires
+private operator inspection before retrying. Existing and competing files are retained.
+This requires a filesystem supporting hard links. It is not a transaction across
+the database and filesystem; process loss can leave an issued grant or staging files.
+Windows access control remains the operator's responsibility.
+
 The current development pilot can use HTTP inside Tailscale's encrypted private network;
 it does not claim application HTTPS. Never enable Funnel or expose port 8000 publicly.
 Verify the tailnet ACL/grants restrict access to the intended clients before broadening use.

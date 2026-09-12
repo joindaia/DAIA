@@ -83,6 +83,25 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Complete private invite publication, 2026-09-09
+
+The pilot invite script previously opened its final file before coordinator
+initialization and writing. Failure could leave empty or partial output; exceptions
+could disclose private paths. It now stages private JSON, flushes and closes it,
+then publishes through a no-replace hard link. A caught failure compensates by
+revoking only the newly returned grant. If revocation fails, or issuance fails
+before returning the grant, the fixed diagnostic explicitly leaves revocation
+unconfirmed. A late cleanup error can retain a complete but revoked output.
+
+Eight focused tests cover actual CLI success and an occupied destination,
+initialization, partial write, fsync, cleanup after publication, failed compensation,
+issuance commit/return uncertainty, and a competing destination with a valid grant.
+The focused suite returned **8 passed**, independently repeated by an adversarial
+reviewer with no findings. The full native Windows suite returned **148 passed,
+1 skipped**, with the existing upstream warning. All issued/revoked grants were
+disposable test data; no live contributor state changed. This does not establish
+crash atomicity across the database and filesystem or Windows ACL enforcement.
+
 ### Truthful, idempotent revocation, 2026-09-09
 
 An unknown contributor previously produced a success message and a revocation event
