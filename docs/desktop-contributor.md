@@ -39,6 +39,15 @@ schedule. For recurring work, follow the [schedule setup and verification steps]
 on the contributing machine. A session may expose DAIA tools while lacking a native
 scheduling tool, or expose scheduling while failing to load the DAIA helper.
 
+If configuration reports a different existing DAIA entry, review the `daia_contributor`
+command and arguments in MCP settings. After moving a project, these may still name
+the old interpreter or invite location. The CLI now preserves that actionable
+guidance instead of replacing it with a generic startup error. It does not overwrite
+the entry or move files: keep the saved identity and consent, and do not delete state
+to resolve a configuration conflict. Other handled startup errors, including malformed
+TOML, still use generic diagnostics without disclosing private values. This diagnostic does not establish
+that a moved Python environment or native app configuration reload will work.
+
 Defaults are **one assigned job and 30 minutes**, measured from the helper's first
 startup. The human launcher can choose `-MaxJobs` and `-Minutes` at setup. The helper
 persists the budget and deadline next to the invite; restarting or increasing launch

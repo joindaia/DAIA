@@ -303,6 +303,36 @@ def test_project_configuration_preserves_settings(tmp_path):
         configure(tmp_path, invite, max_jobs=2)
 
 
+@pytest.mark.parametrize("conflict", [True, False])
+def test_configure_cli_guidance_preserves_private_files(tmp_path, conflict):
+    directory = tmp_path / ".codex"
+    directory.mkdir()
+    config = directory / "config.toml"
+    config.write_text('model = "existing"\n[mcp_servers.daia_contributor]\n'
+                      'command = "old-interpreter-private-canary"\n'
+                      'args = ["--invite", "old-invite-private-canary"]\nenabled = true\n'
+                      if conflict else 'malformed-private-canary = [', encoding="utf-8")
+    invite = tmp_path / "invite.json"
+    invite.write_text('{"token":"token-private-canary"}', encoding="utf-8")
+    state = invite.with_suffix(".contributor.json")
+    state.write_text('{"key":"key-private-canary","stopped":true}', encoding="utf-8")
+    original = {path: path.read_bytes() for path in (config, invite, state)}
+    result = subprocess.run([sys.executable, "-m", "daia.contributor", "--configure",
+                             "--project", str(tmp_path), "--invite", str(invite)],
+                            stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 1 and result.stdout == ""
+    if conflict:
+        assert "MCP settings" in result.stderr and "daia_contributor" in result.stderr
+        assert "interpreter and invite paths" in result.stderr
+        assert "Keep the saved identity and consent" in result.stderr
+    else:
+        assert "DAIA host could not start" in result.stderr
+        assert "MCP settings" not in result.stderr
+    assert all(text not in result.stderr for text in ("private-canary", "Traceback", str(tmp_path)))
+    assert {path: path.read_bytes() for path in original} == original
+    assert not invite.with_suffix(".contributor.lock").exists()
+
+
 def test_busy_cli_reports_contention_without_changing_private_state(tmp_path):
     service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
     path = invite_file(tmp_path, service)

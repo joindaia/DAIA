@@ -33,6 +33,10 @@ class ContributorBusy(ValueError):
     """The existing invite is already locked by another helper."""
 
 
+class ConfigurationConflict(ValueError):
+    """A different saved MCP entry needs an explicit owner edit."""
+
+
 @contextmanager
 def exclusive_host(path):
     """OS releases the lock on crash. No stale PID or lockfile recovery ceremony."""
@@ -364,6 +368,11 @@ def main():
                       f"{renewed['jobs_added']} jobs added, deadline {renewed['deadline']}.")
                 return
             build_server(host).run(transport="stdio")
+    except ConfigurationConflict:
+        print("A different DAIA contributor configuration exists. Review the existing daia_contributor "
+              "command and arguments in MCP settings, including its interpreter and invite paths. "
+              "Keep the saved identity and consent.", file=sys.stderr)
+        raise SystemExit(1) from None
     except ContributorBusy:
         print("This invite already has an active contributor host. Close its other desktop/CLI "
               "session, then reconnect. Keep the saved state; do not reset consent.", file=sys.stderr)
@@ -388,7 +397,7 @@ def configure(project, invite, max_jobs=1, minutes=30):
         print("DAIA MCP configuration already installed. Restart the app to reconnect.")
         return
     if current is not None:
-        raise ValueError("A different DAIA contributor configuration exists; edit it in MCP settings")
+        raise ConfigurationConflict("A different DAIA contributor configuration exists; edit it in MCP settings")
     addition = "\n[mcp_servers.daia_contributor]\n" + "\n".join(
         f"{key} = {json.dumps(value)}" for key, value in entry.items()) + "\n"
     tomllib.loads(text + addition)

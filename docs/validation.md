@@ -83,6 +83,37 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Relocation finding to configuration diagnostic, 2026-09-09
+
+The relocation campaign received a source-bound producer packet identifying lost
+MCP-settings guidance. Independent maintainer inspection of `main`, `configure` and
+the PowerShell caller confirmed the path: a deliberately refused configuration
+conflict was caught as a generic startup error. The shared conflict branch now
+raises a dedicated `ValueError` subtype; the CLI shows fixed guidance to review
+the existing MCP command/arguments while keeping identity and consent. It neither
+overwrites an existing entry nor echoes arbitrary private exception values.
+
+A new real CLI conflict regression failed before the change; the malformed-TOML
+control passed. Both then passed, along with the existing preservation check:
+**3 passed**. The tests preserve exact config/invite/state bytes, expose no private
+canaries or paths and do not start the helper. The full native Windows suite returned
+**165 passed, 1 skipped**, with the existing upstream warning. A separate maintainer
+adversarial reviewer independently repeated the three focused checks and found no
+code issues; its documentation precision correction was applied. Submitted commands
+and reproduction text remained inert; the regression is maintainer-authored.
+
+The actual local scheduled worker prepared an adversarial packet but its host's
+automatic approval review rejected export as exceeding earlier one-job authorization.
+No signed campaign review or receipt was recorded. The worker released the lease
+and paused its native schedule at its saved limit; both original contributor grants
+have no assignment capacity remaining. The review job is queued and the campaign
+remains unresolved pending human triage. No blocked export was resubmitted through
+another route, and no lease, grant, key or consent was reset. The prepared packet and
+separate maintainer code review are not substitutes for an assigned signed review.
+Remote producer receipt proves recorded work, not independently verified remote
+scheduling. This fix does not establish actual installation relocation, completed
+two-host scheduled verification, a manual merge or an accepted campaign defect.
+
 ### Scheduled relocation-source campaign admission, 2026-09-09
 
 A persisted native local worker wake called contributor status and then requested
