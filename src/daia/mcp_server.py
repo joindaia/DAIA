@@ -10,6 +10,9 @@ from .http import BodyLimit
 from urllib.parse import urlsplit
 from pathlib import Path
 import re
+from contextvars import ContextVar
+
+_gateway_agent = ContextVar("daia_gateway_agent", default=None)
 
 from .crypto import strict_json
 
@@ -45,7 +48,8 @@ def validate_allowed_agents(agents) -> frozenset[str]:
 
 
 def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
-                  allowed_agents: frozenset[str] | None = None):
+                  allowed_agents: frozenset[str] | None = None,
+                  certificate_agents: dict[str, str] | None = None):
     from mcp.server import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
     from mcp.server.auth.provider import AccessToken, TokenVerifier
@@ -54,6 +58,14 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
     from pydantic import AnyHttpUrl
     from mcp.server.transport_security import TransportSecuritySettings
 
+    if certificate_agents is not None:
+        if not isinstance(certificate_agents, dict) or len(certificate_agents) > 256:
+            raise ValueError("Invalid certificate policy")
+        certificate_agents = dict(certificate_agents)
+        validate_allowed_agents(list(certificate_agents))
+        validate_allowed_agents(set(certificate_agents.values()))
+        if allowed_agents is None:
+            raise ValueError("Certificate mode requires explicit agent admission")
     if allowed_agents is not None:
         allowed_agents = validate_allowed_agents(allowed_agents)
 
@@ -71,7 +83,13 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
                 with service.store.connect() as db:
                     row = service._root(db, root)
                     expires = row["expires"]
-                return AccessToken(token=token, client_id="daia-development-host", subject=root,
+                bound_agent = _gateway_agent.get() if certificate_agents is not None else None
+                if certificate_agents is not None:
+                    if bound_agent not in allowed_agents:
+                        return None
+                    with service.store.connect() as db:
+                        service._agent(db, root, bound_agent)
+                return AccessToken(token=token, client_id=("daia-cert:" + bound_agent if bound_agent else "daia-development-host"), subject=root,
                                    scopes=["work:contribute"], expires_at=expires, resource=resource)
             except Denied:
                 return None
@@ -88,6 +106,8 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
         if access is None or not access.subject:
             raise Denied("Authenticated contributor required")
         if allowed_agents is not None and agent_id not in allowed_agents:
+            raise ToolError("Agent not admitted")
+        if certificate_agents is not None and access.client_id != "daia-cert:" + str(agent_id):
             raise ToolError("Agent not admitted")
         return access.subject
 
@@ -133,8 +153,33 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
         return service.submit(root(agent_id), agent_id, assignment_id, artifact, verdict, signature)
 
     # Serving this app at the root preserves its built-in lifespan and /mcp route.
-    return BodyLimit(server.streamable_http_app(
+    app = BodyLimit(server.streamable_http_app(
         transport_security=TransportSecuritySettings(
             enable_dns_rebinding_protection=True, allowed_hosts=hosts, allowed_origins=origins),
         max_request_body_size=16384,
     ), allowed_origins=origins)
+
+    if certificate_agents is None:
+        return app
+
+    async def certificate_boundary(scope, receive, send):
+        if scope["type"] != "http":
+            return await app(scope, receive, send)
+        # Uvicorn Unix sockets have no IP peer. Filesystem connect permissions are
+        # still mandatory: this header is an assertion by the trusted gateway.
+        headers = [value for key, value in scope.get("headers", [])
+                   if key.lower() == b"x-daia-client-cert-sha256"]
+        fingerprint = headers[0].decode("ascii", errors="replace") if len(headers) == 1 else ""
+        agent = certificate_agents.get(fingerprint)
+        if scope.get("client") is not None or agent is None:
+            await send({"type": "http.response.start", "status": 403,
+                        "headers": [(b"content-type", b"text/plain")]})
+            await send({"type": "http.response.body", "body": b"Forbidden"})
+            return
+        token = _gateway_agent.set(agent)
+        try:
+            await app(scope, receive, send)
+        finally:
+            _gateway_agent.reset(token)
+
+    return certificate_boundary

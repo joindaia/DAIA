@@ -385,3 +385,66 @@ def test_contributor_legacy_http_real_mcp(tmp_path):
         with pytest.raises(ValueError, match="Invalid contributor TLS configuration"):
             Contributor(invite)
         assert invite.with_suffix(".contributor.json").read_bytes() == previous
+
+
+@pytest.mark.skipif(not hasattr(socket, "AF_UNIX") or __import__("os").name == "nt", reason="Unix gateway socket")
+def test_certificate_binding_over_real_unix_socket(network, contributor, tmp_path):
+    service, now = network
+    first = contributor()
+    second = contributor(root=first[0]["root_id"])
+    other = contributor()
+    mapping = {"a" * 64: first[1], "b" * 64: second[1]}
+    app = build_mcp_app(service, allowed_agents={first[1], second[1]}, certificate_agents=mapping)
+    mapping["c" * 64] = first[1]  # Policy is copied, not a mutable caller-owned gate.
+    path = str(tmp_path / "gateway.sock")
+    server = uvicorn.Server(uvicorn.Config(app, uds=path, log_level="critical", access_log=False))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    try:
+        deadline = time.monotonic() + 10
+        while not server.started:
+            assert thread.is_alive() and time.monotonic() < deadline
+            time.sleep(0.01)
+        with httpx.Client(transport=httpx.HTTPTransport(uds=path), base_url="http://localhost:8000") as client:
+            headers = {"Authorization": "Bearer " + first[0]["token"],
+                       "Accept": "application/json, text/event-stream",
+                       "x-daia-client-cert-sha256": "a" * 64}
+            init = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+                "protocolVersion": "2025-03-26", "capabilities": {},
+                "clientInfo": {"name": "gateway-test", "version": "1"}}}
+            for cert in ["", "c" * 64, "bad"]:
+                assert client.post("/mcp", json=init, headers={**headers, "x-daia-client-cert-sha256": cert}).status_code == 403
+            assert client.post("/mcp", json=init, headers=[*headers.items(), ("x-daia-client-cert-sha256", "a" * 64)]).status_code == 403
+            response = client.post("/mcp", json=init, headers=headers)
+            assert response.status_code == 200
+            headers["Mcp-Session-Id"] = response.headers["mcp-session-id"]
+            headers["MCP-Protocol-Version"] = "2025-03-26"
+            client.post("/mcp", json={"jsonrpc": "2.0", "method": "notifications/initialized"}, headers=headers)
+            request = {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
+            assert client.post("/mcp", json=request, headers={**headers, "x-daia-client-cert-sha256": "b" * 64}).status_code in {403, 404}
+            assert client.post("/mcp", json=request, headers={**headers, "Authorization": "Bearer " + other[0]["token"]}).status_code == 401
+            def result(payload):
+                response = client.post("/mcp", json=payload, headers=headers)
+                assert response.status_code == 200
+                return json.loads(next(line[6:] for line in response.text.splitlines() if line.startswith("data: ")))["result"]
+            names = {t["name"] for t in result(request)["tools"]}
+            assert "register_agent" not in names and "registration_challenge" not in names
+            for aid, denied in [(first[1], False), (second[1], True)]:
+                output = result({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
+                    "name": "contribution_status", "arguments": {"agent_id": aid}}})
+                assert output.get("isError", False) == denied
+            now[0] = first[0]["expires"]
+            assert client.post("/mcp", json=request, headers=headers).status_code == 401
+    finally:
+        server.should_exit = True
+        thread.join(timeout=10)
+        assert not thread.is_alive()
+
+
+def test_certificate_gateway_rejects_tcp_even_with_header(network, contributor):
+    service, _ = network
+    grant, aid, _ = contributor()
+    app = build_mcp_app(service, allowed_agents={aid}, certificate_agents={"a" * 64: aid})
+    with running_server(app) as url:
+        assert httpx.post(url, headers={"Authorization": "Bearer " + grant["token"],
+                         "x-daia-client-cert-sha256": "a" * 64}, json={}).status_code == 403
