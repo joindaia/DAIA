@@ -83,6 +83,24 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Operator write-outcome diagnostics, 2026-09-09
+
+After successful database initialization, resolution and revocation could still
+raise raw storage exceptions. The CLI now reports an unconfirmed outcome and asks
+for private inspection before retrying, without claiming rollback or exposing
+exception text. A denied resolution has a fixed diagnostic naming the campaign,
+review, existing-decision and note checks. Service transactions and authority gates
+are unchanged.
+
+Seven new regressions failed before the change; the operator suite then returned
+**18 passed**. Failure injection covers SQLite errors before and after a committed
+operation, OS errors, safe diagnostics, and idempotent retries with one event.
+A real CLI rejection retains the positive-review gate and unset disposition without
+printing the supplied note or identifier. All mutations use disposable databases.
+The full native Windows suite returned **155 passed, 1 skipped**, with the existing
+upstream warning. A separate adversarial reviewer independently repeated all seven
+new cases with no findings. No live disposition or grant was changed.
+
 ### Complete private invite publication, 2026-09-09
 
 The pilot invite script previously opened its final file before coordinator

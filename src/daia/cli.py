@@ -137,12 +137,20 @@ def main():
         verify_evidence_source(document)
         print(json.dumps(service.admit_evidence(document)))
     elif args.command == "resolve-evidence":
-        print(json.dumps(service.resolve_evidence(args.job, args.disposition, args.note)))
+        try:
+            result = service.resolve_evidence(args.job, args.disposition, args.note)
+        except Denied:
+            parser.exit(1, "Evidence disposition refused. Check the campaign, required review, existing decision and note.\n")
+        except (OSError, sqlite3.DatabaseError):
+            parser.exit(1, "Evidence disposition could not be confirmed. Inspect the saved campaign privately before retrying.\n")
+        print(json.dumps(result))
     elif args.command == "revoke":
         try:
             service.revoke(args.root_id)
         except Denied:
             parser.exit(1, "Contributor not found. Check its identifier and coordinator database.\n")
+        except (OSError, sqlite3.DatabaseError):
+            parser.exit(1, "Revocation could not be confirmed. Check the saved grant privately before retrying.\n")
         print("Contributor grant is revoked.")
     else:
         import uvicorn

@@ -134,3 +134,62 @@ def test_concurrent_revocation_is_idempotent_and_preserves_signed_history(networ
         service.authenticate(who[0]["token"])
     with pytest.raises(Denied):
         service.request_work(root, agent)
+
+
+@pytest.mark.parametrize("command", ["resolve-evidence", "revoke"])
+@pytest.mark.parametrize("failure", ["before", "after_commit", "storage"])
+def test_operator_write_error_reports_uncertainty_and_retry_is_idempotent(network, monkeypatch, capsys, command, failure):
+    from daia.cli import main
+    from test_evidence import document
+    service, _ = network
+    job = service.admit_evidence(document())["job_id"]
+    root = service.invite()["root_id"]
+    arguments = (["resolve-evidence", "--job", job, "--disposition", "cancelled", "--note", "Synthetic decision"]
+                 if command == "resolve-evidence" else ["revoke", root])
+    monkeypatch.setattr(sys, "argv", ["daia", "--db", service.store.path, *arguments])
+    method = "resolve_evidence" if command == "resolve-evidence" else "revoke"
+    original = getattr(Coordinator, method)
+    reached = []
+
+    def fail(*args, **kwargs):
+        reached.append(True)
+        if failure == "after_commit":
+            original(*args, **kwargs)
+        error = OSError if failure == "storage" else sqlite3.OperationalError
+        raise error("private-operator-canary")
+
+    with monkeypatch.context() as fault:
+        fault.setattr(Coordinator, method, fail)
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code == 1
+    assert reached == [True]
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "could not be confirmed" in output.err and "before retrying" in output.err
+    assert "private-operator-canary" not in output.err and service.store.path not in output.err
+    with service.store.connect() as db:
+        disposition = db.execute("SELECT disposition FROM evidence_campaigns WHERE job_id=?", (job,)).fetchone()[0]
+        revoked = db.execute("SELECT revoked FROM contributors WHERE id=?", (root,)).fetchone()[0]
+        assert disposition == ("cancelled" if command == "resolve-evidence" and failure == "after_commit" else None)
+        assert revoked == int(command == "revoke" and failure == "after_commit")
+    main()
+    main()
+    with service.store.connect() as db:
+        events = [json.loads(row[0])["kind"] for row in db.execute("SELECT event_json FROM events")]
+        kind = "evidence_campaign_resolved" if command == "resolve-evidence" else "contributor_revoked"
+        assert events.count(kind) == 1
+
+
+def test_resolution_cli_refusal_keeps_gate_and_private_note(network):
+    from test_evidence import document
+    service, _ = network
+    job = service.admit_evidence(document())["job_id"]
+    result = subprocess.run([sys.executable, "-m", "daia.cli", "--db", service.store.path,
+                             "resolve-evidence", "--job", job, "--disposition", "useful",
+                             "--note", "private-note-canary"], capture_output=True, text=True, timeout=20)
+    assert result.returncode == 1 and result.stdout == ""
+    assert "Evidence disposition refused" in result.stderr
+    assert all(value not in result.stderr for value in ("Traceback", "private-note-canary", service.store.path, job))
+    with service.store.connect() as db:
+        assert db.execute("SELECT disposition FROM evidence_campaigns WHERE job_id=?", (job,)).fetchone()[0] is None
