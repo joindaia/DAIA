@@ -219,7 +219,7 @@ class Coordinator:
                         "correctness_verified": False}, "reviews": reviews})
             return campaigns
 
-    def resolve_evidence(self, job, disposition, note):
+    def resolve_evidence(self, job, disposition, note, *, dry_run=False):
         """HUMAN OPERATOR ONLY: disposition is evidence triage, never merge or payout authority."""
         if disposition not in {"useful", "duplicate", "unclear", "rejected", "cancelled"} or not isinstance(note, str) or not 1 <= len(note.strip()) <= 2000:
             raise Denied("Provide a bounded human disposition and explanation")
@@ -229,14 +229,31 @@ class Coordinator:
                 raise Denied("Unknown evidence campaign")
             if campaign["disposition"] is not None:
                 if campaign["disposition"] == disposition and campaign["disposition_note"] == note:
-                    return {"status": "already_resolved"}
-                raise Denied("A recorded disposition cannot be overwritten")
+                    if not dry_run:
+                        return {"status": "already_resolved"}
+                else:
+                    raise Denied("A recorded disposition cannot be overwritten")
             result = db.execute("SELECT id,state FROM results WHERE job_id=?", (job,)).fetchone()
-            if disposition == "useful" and (result is None or result["state"] != "ready_for_maintainer"):
+            if campaign["disposition"] is None and disposition == "useful" and (result is None or result["state"] != "ready_for_maintainer"):
                 raise Denied("Useful disposition requires the assigned review first")
+            jobs = [job] + ([] if result is None else [r[0] for r in db.execute("SELECT id FROM jobs WHERE target_id=?", (result["id"],))])
+            if dry_run:
+                already_resolved = campaign["disposition"] is not None
+                return {"status": "preview", "outcome": "already_resolved" if already_resolved else "resolved",
+                    "proposal": {"job_id": job, "disposition": disposition, "note": note},
+                    "result_state": None if result is None else result["state"],
+                    "reviews": [] if result is None else [dict(r) for r in db.execute(
+                        "SELECT mode,verdict FROM reviews WHERE result_id=?", (result["id"],))],
+                    "effects": {
+                        "jobs_to_cancel": 0 if already_resolved else sum(db.execute(
+                            "SELECT count(*) FROM jobs WHERE id=? AND state IN ('queued','leased')", (jid,)).fetchone()[0] for jid in jobs),
+                        "recorded_leases_to_cancel": 0 if already_resolved else sum(db.execute(
+                            "SELECT count(*) FROM assignments WHERE job_id=? AND state='leased'", (jid,)).fetchone()[0] for jid in jobs),
+                        "new_terminal_decision": not already_resolved},
+                    "correctness_verified": False, "approval_recorded": False,
+                    "advisory": "Snapshot only; no state reserved. Recheck effects before applying. Terminal decisions are immutable."}
             db.execute("UPDATE evidence_campaigns SET disposition=?,disposition_note=?,resolved_at=? WHERE job_id=?",
                        (disposition, note, self.now(), job))
-            jobs = [job] + ([] if result is None else [r[0] for r in db.execute("SELECT id FROM jobs WHERE target_id=?", (result["id"],))])
             for jid in jobs:
                 db.execute("UPDATE assignments SET state='cancelled' WHERE job_id=? AND state='leased'", (jid,))
                 db.execute("UPDATE jobs SET state='cancelled' WHERE id=? AND state IN ('queued','leased')", (jid,))

@@ -1,9 +1,11 @@
 # Proposal: preserve utility without changing a review conclusion
 
-Status: proposed maintainer action under the existing v1 policy. No production
-behavior, frozen policy, campaign disposition or contributor grant is changed by
-this document. Human approval of usefulness does not authorize recording a different
-terminal classification.
+Status: applied after explicit maintainer approval of the classification and exact
+note through the native triage handoff on 2026-09-09. The decision was previewed,
+revalidated and recorded under the existing v1 policy. Signed evidence, the
+inconclusive review and contributor grants remained unchanged. The historical
+proposal below records why qualitative utility alone did not authorize a different
+terminal classification. No policy or checker change was needed.
 
 ## Problem and current behavior
 

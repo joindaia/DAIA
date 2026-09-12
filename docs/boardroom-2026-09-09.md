@@ -5,6 +5,33 @@ or evidence that different models are independent people. The user authorized a
 multi-model boardroom, adversarial challenges, hourly orchestration and continued
 implementation. Test and pilot results remain separate from these judgments.
 
+## Product-focus follow-up
+
+The maintainer challenged continued small reliability fixes as insufficient product
+progress. A new GPT-5.6 Sol / high product reviewer and the existing adversarial
+reviewer both recommended a complete native triage handoff as the next bounded
+slice. Both challenged a standalone preview command as mere operator polish: its
+packet must be used in a real native question, then the chosen action revalidated.
+General durable human-input suspension/resumption was deferred until an explicit
+lifecycle/privacy design; preparing more campaigns does not resolve the present gate.
+
+The implementation uses `resolve-evidence --dry-run` through the existing resolver,
+preserving the v1 supporting-review requirement. The adversarial review required
+recorded-state cancellation counts, no lease-expiry processing, exact notes,
+zero-effect idempotent previews and explicit snapshot limits. The first live preview
+left the logical database snapshot unchanged and was presented through a native
+choice. The maintainer explicitly chose `unclear` with the utility note. A refreshed
+preview matched, and the original resolver applied the decision. Verification found
+one new resolution event, no unresolved campaign, and unchanged signed evidence,
+review, grants and assignments. No next campaign was admitted by that action.
+Model agreement is design input, not permission to choose for the maintainer.
+
+The [immediate roadmap sequence](roadmap.md#immediate-product-sequence) now governs
+hourly selection: name the milestone and unmet acceptance check, finish that slice,
+then advance the next reviewed product slice. Demonstrated security/data-loss defects
+may interrupt; routine hardening must not become an indefinite substitute for the
+scheduled useful cycle, human consultation and isolated execution milestones.
+
 | Participant | Configured model / reasoning | Role and contribution |
 |---|---|---|
 | Engineering | GPT-5.6 Sol / high | Traced consent and scheduling; implemented and tested explicit finite renewal |

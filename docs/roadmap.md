@@ -2,6 +2,26 @@
 
 No dates, unmeasured budgets, or research-success probabilities are promised.
 
+## Immediate product sequence
+
+This ordered sequence governs the next work. The longer-term architecture sections
+below are dependencies and options, not a requirement to build every subsystem first.
+
+| Milestone | Evidence required | Current status |
+|---|---|---|
+| One useful scheduled two-host cycle | Actual scheduled wakes, assigned producer/reviewer receipts, human triage and one independently checked, manually merged improvement | Interactive receipts exist; remote schedule reported enabled; scheduled cycle and manual merge unverified |
+| Repeatable human decisions | Exact proposal and consequences shown in a native question; approved choice revalidated and recorded without changing the review | Implemented and tested; first live preview, native choice and verified resolution completed |
+| Durable general human consultation | Save a question, release work rather than hold a lease, explicitly share an answer, resume with newly frozen context | Planned; requires lifecycle and privacy review before implementation |
+| Safe executable contributions | Untrusted code runs only in an isolated evaluator, with independent trusted results | Planned; source evidence remains inert |
+| Wider participation and rewards | Provider/licensing/privacy review, measured useful contribution and explicit allocation policy | Planned; no public service or payouts |
+
+Each development wake must name the milestone and its next unmet acceptance check.
+Finish the current slice before selecting another. When a human answer or worker is
+pending, complete independent work within that same slice. After that, advance the
+next reviewed product slice instead of searching indefinitely for small hardening
+changes. Security or data-loss defects still interrupt this order when demonstrated.
+Do not treat test counts, empty polling or a configured schedule as product completion.
+
 The [2026-09-09 heuristic boardroom](boardroom-2026-09-09.md) records the current
 multi-model discussion, adversarial corrections and ordered continuation. Native
 scheduled prompts, finite consent renewal and the bounded source-evidence workload

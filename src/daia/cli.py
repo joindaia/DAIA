@@ -79,6 +79,7 @@ def main():
     resolve.add_argument("--job", required=True)
     resolve.add_argument("--disposition", choices=["useful", "duplicate", "unclear", "rejected", "cancelled"], required=True)
     resolve.add_argument("--note", required=True)
+    resolve.add_argument("--dry-run", action="store_true", help="Preview the exact human decision and cancellation effects without applying it")
     sub.add_parser("serve")
     mcp = sub.add_parser("serve-mcp")
     mcp.add_argument("--tailnet-url", help="Exact private Tailscale Serve MCP URL; listener stays loopback")
@@ -138,7 +139,7 @@ def main():
         print(json.dumps(service.admit_evidence(document)))
     elif args.command == "resolve-evidence":
         try:
-            result = service.resolve_evidence(args.job, args.disposition, args.note)
+            result = service.resolve_evidence(args.job, args.disposition, args.note, dry_run=args.dry_run)
         except Denied:
             parser.exit(1, "Evidence disposition refused. Check the campaign, required review, existing decision and note.\n")
         except (OSError, sqlite3.DatabaseError):

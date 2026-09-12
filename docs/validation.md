@@ -83,6 +83,28 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Native human triage handoff, 2026-09-09
+
+`resolve-evidence --dry-run` uses the existing resolver's validation and transaction
+to preview an exact proposal, review verdicts and cancellation counts without
+updating rows, logging events or expiring leases. It preserves the original review
+gate and exact note. The packet is advisory, not recorded approval or a reservation.
+Eight new tests cover queued work, overdue producer/reviewer leases, each review
+verdict, gate parity, unchanged logical database snapshots, cancellation counts,
+idempotent/conflicting decisions, a real CLI preview, missing database and intervening
+human resolution. The combined preview/operator/evidence suite returned **43 passed**;
+the full native Windows suite **163 passed, 1 skipped**, with the existing upstream
+warning. An adversarial reviewer independently repeated all eight new tests with no findings.
+
+The first live preview left the logical database snapshot unchanged and fed a native
+human choice. After explicit approval, a fresh preview matched the proposal and the
+existing resolver recorded `unclear` with the exact regression-utility note. Verification
+found one appended resolution event and unchanged results, reviews, assignments,
+jobs and grants. The prior inconclusive review and unverified correctness remain;
+the campaign's admission blocker is cleared. This records useful test coverage,
+not a verified defect, merge or reward. No new campaign or consent was created.
+General durable human waiting/resumption is not implemented by this triage workflow.
+
 ### Operator write-outcome diagnostics, 2026-09-09
 
 After successful database initialization, resolution and revocation could still

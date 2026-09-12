@@ -74,6 +74,44 @@ closing a campaign cancels queued/leased work and fences old assignments. Histor
 receipts and exposure remain. This local operator boundary is not a cryptographic
 proof that a human typed the command.
 
+## Native human decision handoff
+
+Before asking for a terminal choice, preview the exact proposed action:
+
+```powershell
+.\.venv\Scripts\python -m daia.cli --db .runtime/pilot.sqlite3 resolve-evidence --job JOB_ID --disposition unclear --note "Useful for test coverage; the defect remains unconfirmed." --dry-run
+```
+
+The example is not a default disposition or authorization. The operator selects
+the proposal from the actual evidence. The private JSON packet contains the exact
+note, current result state and review verdicts, and counts of queued/leased jobs
+and recorded leased assignments that resolution would cancel. Counts match the
+resolver's recorded states, including overdue leases not yet expired in the database.
+No contributor identities, keys, source artifacts or review prose are included.
+
+The preview uses the same validation and review gate as applying the decision.
+It does not expire leases, change rows/events or register approval. An exact retry
+of an already recorded decision previews zero changes; a conflicting decision is
+refused. The packet is an advisory snapshot, not a reservation or permission token.
+
+Present the proposal and consequences in an ordinary native host question, with
+explicit choices to apply that classification and note or keep the campaign open.
+Preserve human-perceived utility separately from the review conclusion. Explain
+that closure is immutable, preserves signed evidence and only clears this campaign's
+admission blocker: it does not admit work, change consent, certify a defect, merge,
+deploy or award money. Do not treat silence or a different utility judgment as approval.
+Remember a pending question instead of asking it on every unchanged wake.
+
+After explicit approval, refresh the preview. If the proposal or material effects
+changed, present the changed decision again. Otherwise run the exact same command
+without `--dry-run`; the resolver checks the current gate inside its transaction.
+Verify the recorded disposition and preserved review. A preview cannot prevent all
+changes between the check and apply, and is not cryptographic proof of human approval.
+
+This is repeatable triage for an existing evidence campaign. General durable
+`needs_human_input`, waiting and answer-based resumption are still planned; no new
+MCP tool or indefinite lease extension is introduced by this operator workflow.
+
 Human-perceived utility and the review's conclusion can differ. The existing note
 can preserve useful regression coverage while a human explicitly closes triage as
 `unclear`; the result and signed review remain unchanged. Do not substitute that
