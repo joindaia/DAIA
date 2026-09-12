@@ -83,6 +83,21 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Backup CLI failure diagnostics, 2026-09-09
+
+Expected backup filesystem, SQLite and validation failures now return exit status 1
+with a fixed diagnostic instead of a traceback containing local paths. Three real
+CLI subprocess cases cover missing/corrupt sources and an occupied destination;
+source and existing destination bytes remain unchanged. An injected staging-cleanup
+error after publication confirms that a valid output is preserved and the message
+does not imply that no snapshot exists. Exception text is not printed. The underlying
+backup function and verification rules are unchanged.
+The four cases failed before the CLI change. The backup suite then returned
+**12 passed**, independently repeated by the adversarial reviewer with no findings.
+The full native Windows suite returned **121 passed, 1 skipped**, with the existing
+upstream deprecation warning. Source privacy and whitespace checks passed. All failure
+injection used disposable databases; no live restoration or campaign action occurred.
+
 ### Human utility and unchanged triage gate, 2026-09-09
 
 The [triage proposal](evidence-triage-proposal.md) preserves the existing positive-review

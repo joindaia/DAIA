@@ -12,6 +12,13 @@ missing source database. The copy is staged privately, closed, reopened for SQLi
 integrity, foreign-key and audit-log hash checks, flushed, then published without replacing an existing
 file. Busy copying times out after about ten seconds; retry when writes settle.
 
+Expected filesystem, SQLite and validation failures make the backup CLI exit with
+status 1 and a fixed diagnostic, without printing private paths or exception text.
+Check the source database, storage permissions and destination. Preserve any output
+for inspection and use a new filename when retrying: publication may have succeeded
+before a cleanup failure, so a failed command does not establish that no file exists.
+The library function still raises its original exceptions for operator tooling.
+
 The audit check streams events in order, verifies the zero-hash origin, each previous
 link and each canonical event digest. Malformed event JSON or inconsistent hashes
 reject the snapshot with a fixed error message; the source is never repaired. This

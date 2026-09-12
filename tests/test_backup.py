@@ -159,3 +159,63 @@ def test_snapshot_rejects_foreign_key_damage(network, tmp_path):
     with pytest.raises(ValueError, match="foreign-key"):
         backup_database(service.store.path, target)
     assert not target.exists()
+
+
+@pytest.mark.parametrize("failure", ["missing", "corrupt", "occupied"])
+def test_backup_cli_reports_expected_failures_without_private_paths(network, tmp_path, failure):
+    service, _ = network
+    source = Path(service.store.path)
+    target = tmp_path / "private-path-canary" / "copy.sqlite3"
+    if failure == "missing":
+        source = tmp_path / "missing-source.sqlite3"
+    elif failure == "corrupt":
+        source = tmp_path / "corrupt-source.sqlite3"
+        source.touch(mode=0o600)
+        source.write_bytes(b"not a database")
+    else:
+        target.parent.mkdir(mode=0o700)
+        target.write_bytes(b"preserve existing output")
+    before = source.read_bytes() if source.exists() else None
+    result = subprocess.run([sys.executable, "-m", "daia.cli", "--db", str(source),
+                             "backup", "--output", str(target)], capture_output=True, text=True, timeout=20)
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "Traceback" not in result.stderr
+    assert str(tmp_path) not in result.stderr
+    assert "private-path-canary" not in result.stderr
+    if failure == "occupied":
+        assert "Choose a new filename" in result.stderr
+        assert target.read_bytes() == b"preserve existing output"
+    else:
+        assert "Backup could not be confirmed" in result.stderr
+        assert not target.exists()
+    assert (source.read_bytes() if source.exists() else None) == before
+    assert not list(target.parent.glob(".daia-backup-*"))
+
+
+def test_backup_cli_preserves_published_output_on_late_failure(network, tmp_path, monkeypatch, capsys):
+    import daia.store as store
+    from daia.cli import main
+    service, _ = network
+    target = tmp_path / "private" / "published.sqlite3"
+    cleanup = store.TemporaryDirectory.cleanup
+
+    def cleanup_then_fail(temporary):
+        cleanup(temporary)
+        raise PermissionError("private-storage-canary")
+
+    monkeypatch.setattr(store.TemporaryDirectory, "cleanup", cleanup_then_fail)
+    monkeypatch.setattr(sys, "argv", ["daia", "--db", service.store.path, "backup", "--output", str(target)])
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 1
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "Backup could not be confirmed" in output.err
+    assert "Preserve any output" in output.err
+    assert "private-storage-canary" not in output.err
+    assert str(tmp_path) not in output.err
+    assert target.exists()
+    with sqlite3.connect(target) as db:
+        assert db.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+    assert not list(target.parent.glob(".daia-backup-*"))

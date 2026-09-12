@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -87,7 +88,12 @@ def main():
     if args.command == "demo":
         return demo()
     if args.command == "backup":
-        backup_database(args.db, args.output)
+        try:
+            backup_database(args.db, args.output)
+        except (OSError, ValueError, sqlite3.DatabaseError):
+            # Publication can precede a cleanup failure; preserve any output for inspection.
+            parser.exit(1, "Backup could not be confirmed. Check source integrity and storage permissions. "
+                        "Preserve any output. Choose a new filename before retrying.\n")
         print("Private snapshot verified and written. Restoration requires offline maintainer review.")
         return
     service = Coordinator(Store(args.db))
