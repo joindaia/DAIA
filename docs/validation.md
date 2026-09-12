@@ -468,3 +468,33 @@ operator opt-in, real CLI preparation/admission, and two stdio MCP helper proces
 The original deterministic demo passed. Source privacy: 75 files, no findings.
 No live campaign was admitted, resolved or relabeled; no contributor identity,
 consent or schedule was changed. Actual scheduled pilot receipts remain unverified.
+
+## Static website and development workflow (2026-09-09)
+
+The Python pilot commit passed both GitHub CI jobs in
+archived project reference.
+The next increment adds a static Astro 7.3.2 website, a Node 24 website CI job,
+bounded issue/PR templates, dependency update proposals, and a phased research and
+paid-work plan. It changes no coordinator, contributor, consent or campaign state.
+
+Local website validation used official checksum-verified Node 24.21.0: clean `npm ci`,
+`npm run build` (three static pages) and `npm audit` passed; the audit reported zero
+known vulnerabilities. The npm install reported an unapproved optional esbuild
+postinstall; the installed platform binary and production build worked without an
+additional script approval. This is not a guarantee against undiscovered issues.
+
+Playwright Chromium checks passed for the workflow buttons, keyboard Tab/Enter,
+FAQ expansion, participation navigation, research route and reduced-motion display.
+No horizontal overflow was observed at 1440px desktop, 390px mobile, or on the 320px
+research page; reduced motion disabled animation and retained readable content.
+The checked browser session reported no errors. A static-output check verified all
+33 local links/fragments across three pages. Desktop and mobile screenshots were
+inspected locally and kept out of Git. No external fonts, analytics or signup service
+are used. The local preview is not deployed and keeps indexing disabled.
+
+GitHub workflow YAML parsing, actionlint and `git diff --check` passed. Source privacy
+checked 94 files with no findings before this validation note. Branch protection is
+not assumed: CI supplies evidence; the maintainer still controls integration.
+The three-round/two-low-intervention targets in the mission are future acceptance
+gates, not measured autonomy. Issues #9, #10 and #11 track actual pilot completion,
+the research goal and possible paid work; they are not admitted worker jobs.

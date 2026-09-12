@@ -2,6 +2,18 @@
 
 No dates, unmeasured budgets, or research-success probabilities are promised.
 
+## Project goal
+
+First make DAIA a reliable, increasingly autonomous software-development platform.
+Then demonstrate isolated proof verification on smaller mathematical tasks and
+coordinate an attempt at a still-open Millennium Prize Problem. Any actually received
+prize would be shared under a contributor allocation policy agreed before the campaign,
+including a disclosed platform share. This is a research goal, not promised income.
+See [mission and measurable gates](research-mission.md).
+Authorized bug bounties and customer job requests are possible paid routes alongside
+the research goal, after the platform can deliver and verify bounded work. Start with
+a sample contract and shadow cost record; see [paid-work scope](paid-work.md).
+
 ## Immediate product sequence
 
 This ordered sequence governs the next work. The longer-term architecture sections

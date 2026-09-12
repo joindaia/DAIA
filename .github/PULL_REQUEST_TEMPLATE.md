@@ -1,6 +1,8 @@
 ## Objective and scope
 
 Link the admitted issue/contract and frozen baseline. State whether this affects a protected boundary.
+Name the bounded acceptance criteria and the work type: source analysis or a trusted local code change.
+Source-analysis pilot reviews are technical feedback, not independent verification or merge authority.
 
 ## Evidence
 
@@ -12,4 +14,5 @@ Explain changes to assignment eligibility, owner conflicts, leases, signatures, 
 
 ## Maintainer decision
 
-Agent review is not merge or deployment authorization. Human approval is required.
+Agent and pilot review are evidence, not merge or deployment authorization. A human maintainer
+must decide whether to merge after reviewing the criteria and evidence.

@@ -14,3 +14,14 @@ Do not include real tokens, private keys, local databases, personal paths, custo
 List only relevant software versions and operating-system family.
 
 ## Acceptance criteria
+
+State the smallest observable condition that demonstrates the defect is fixed.
+
+## Scope and contribution type
+
+- In scope:
+- Out of scope:
+- [ ] Source analysis only: report a bounded finding; do not treat pilot review as independent approval.
+- [ ] Trusted local code change: a maintainer or trusted local contributor will implement and verify it.
+
+Human maintainers retain triage, review and merge authority.

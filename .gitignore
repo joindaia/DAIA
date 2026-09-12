@@ -31,3 +31,9 @@ Thumbs.db
 .idea/
 .codex/
 .claude/
+
+# Static website build and local browser verification
+node_modules/
+.astro/
+.playwright-cli/
+output/playwright/

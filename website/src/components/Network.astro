@@ -1,0 +1,83 @@
+---
+// An original vector field: distributed points forming one shared structure.
+const rings = Array.from({ length: 21 }, (_, index) => {
+    const angle = (index / 20) * Math.PI;
+    return { rx: 335 * Math.sin(angle), y: 385 - 305 * Math.cos(angle) };
+});
+const points = Array.from({ length: 55 }, (_, i) => {
+    const angle = i * 2.399963;
+    const r = Math.sqrt((i + 0.5) / 55);
+    return {
+        x: 430 + Math.cos(angle) * r * 328,
+        y: 385 + Math.sin(angle) * r * 298,
+        r: i % 6 === 0 ? 4 : 2,
+    };
+});
+---
+
+<svg class="network-art" viewBox="0 0 860 800" fill="none" aria-hidden="true">
+    <defs>
+        <radialGradient id="network-glow"
+            ><stop stop-color="#b8dc6d" stop-opacity=".17"></stop><stop
+                offset="1"
+                stop-color="#14251e"
+                stop-opacity="0"></stop></radialGradient
+        >
+        <linearGradient
+            id="network-stroke"
+            x1="130"
+            y1="130"
+            x2="740"
+            y2="690"
+            gradientUnits="userSpaceOnUse"
+            ><stop stop-color="#d9f279" stop-opacity=".7"></stop><stop
+                offset="1"
+                stop-color="#82b99a"
+                stop-opacity=".05"></stop></linearGradient
+        >
+    </defs>
+    <circle cx="430" cy="385" r="410" fill="url(#network-glow)"></circle>
+    <g stroke="url(#network-stroke)" stroke-width=".9">
+        {
+            rings.map(({ rx, y }) => (
+                <ellipse cx="430" cy={y} rx={rx} ry={rx * 0.16} />
+            ))
+        }
+        {
+            Array.from({ length: 15 }, (_, i) => (
+                <ellipse
+                    cx="430"
+                    cy="385"
+                    rx={30 + i * 22}
+                    ry="305"
+                    transform={`rotate(${i * 12} 430 385)`}
+                />
+            ))
+        }
+    </g>
+    <g fill="#d9f279"
+        >{
+            points.map((point, i) => (
+                <circle
+                    class={i % 6 === 0 ? "signal" : ""}
+                    cx={point.x}
+                    cy={point.y}
+                    r={point.r}
+                    style={`--delay:${i * -0.31}s`}
+                    opacity={i % 6 === 0 ? 0.95 : 0.42}
+                />
+            ))
+        }</g
+    >
+    <path
+        d="M87 526 159 526M123 490v72M697 151h48M721 127v48"
+        stroke="#d9f279"
+        stroke-opacity=".5"></path>
+    <circle
+        cx="430"
+        cy="385"
+        r="346"
+        stroke="#c3d2bf"
+        stroke-opacity=".11"
+        stroke-dasharray="2 11"></circle>
+</svg>

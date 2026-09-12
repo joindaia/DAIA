@@ -107,3 +107,13 @@ and the limits of restoring old state.
 [Architecture](docs/architecture.md) explains the chosen stack and trust boundaries. [Research](docs/research.md) records primary sources and limitations. [Protocol](docs/protocol.md) describes identity, leases, and signatures. [Verification](docs/verification.md) defines promotion rules. [Roadmap](docs/roadmap.md) is the implementation sequence.
 
 [Privacy](PRIVACY.md), [publishing](PUBLISHING.md), [security](SECURITY.md), and [agent instructions](AGENTS.md) are required reading before contributing or publishing. Licensing is [pending maintainer selection](LICENSE-STATUS.md).
+
+## Project direction and website
+
+First improve DAIA through real, checked development rounds. Then work toward a
+Millennium Prize Problem with isolated proof verification and a contributor reward
+policy agreed before any prize campaign. See the [research mission](docs/research-mission.md)
+and [GitHub workflow](docs/github-workflow.md).
+
+The [Astro website](website/README.md) is a local English preview, not a published
+service. Build it with Node 24 and `npm ci && npm run build` from `website/`.

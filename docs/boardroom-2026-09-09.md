@@ -176,3 +176,19 @@ is acceptable for technical feedback, never independent approval. Existing froze
 campaigns retain their rules and disposition requirement; no new root or reset is
 needed. One live lease per root and finite consent remain. General human-question
 storage, automatic merge and rewards remain outside this increment.
+
+## Development workflow, website and research goal
+
+The maintainer made real DAIA development the near-term purpose, requested GitHub CI
+without premium branch protection, and approved a static website preview. A separate
+GPT-5.6 Terra/high participant implemented the scoped CI/templates/documentation work;
+it validated YAML and the diff. The orchestrator built and browser-checked the website
+and retained plain English copy focused on concrete tasks and outcomes.
+
+For the subsequent Millennium Prize goal, GPT-5.6 Sol/high challenged the meaning of
+"largely autonomous": three rounds can hide heavy intervention. The mission now sets
+an explicit intervention threshold, real transport recovery, exact-commit CI evidence,
+and isolated proof-checking gates. It also separates a proof claim from publication,
+acceptance, award and funds received. Its principal attribution warning was adopted:
+freeze contribution credit before promising results, rather than rewarding only the
+last artifact or raw activity. These are readiness targets, not observed results.

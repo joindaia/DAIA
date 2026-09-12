@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -36,5 +37,25 @@ jobs:
         run: uv run --frozen --extra dev --extra mcp python -m compileall -q src scripts tests
       - name: Source and history privacy tripwire
         run: uv run --frozen --extra dev --extra mcp python scripts/privacy_guard.py --history
+  website:
+    name: Website build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0, verified 2026-09-09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0, verified 2026-09-09
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Install website dependencies
+        run: npm ci
+      - name: Build website
+        run: npm run build
 # Deliberately no secrets, deployment, artifact uploads, self-hosted runner or pull_request_target.
 # License review and a fresh vulnerability audit remain release gates.
