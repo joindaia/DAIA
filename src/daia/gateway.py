@@ -6,6 +6,7 @@ import socket
 import stat
 import sqlite3
 import signal
+from contextlib import contextmanager
 
 from .crypto import strict_json
 from .mcp_server import build_mcp_app, public_origin
@@ -36,6 +37,7 @@ def configured_app(config, database):
                          certificate_agents=policy["certificate_agents"], public_url=policy["resource"])
 
 
+@contextmanager
 def bind_private_socket(path):
     if os.name != "posix":
         raise ValueError("Unix socket required")
@@ -54,6 +56,7 @@ def bind_private_socket(path):
             raise ValueError("Untrusted socket ancestor")
     # Bind refuses every existing socket, file or symlink. Never unlink another service.
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM})
     previous = os.umask(0o117)
     created = None
     try:
@@ -64,14 +67,17 @@ def bind_private_socket(path):
                 or info.st_uid != os.geteuid() or info.st_gid != os.getegid()):
             raise ValueError("Invalid socket permissions")
         listener.listen(128)
-        return listener
-    except Exception:
-        listener.close()
-        if created is not None:
-            remove_own_socket(path, created)
-        raise
-    finally:
         os.umask(previous)
+        yield listener, path, created, previous_mask
+    finally:
+        signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM})
+        try:
+            listener.close()
+            if created is not None:
+                remove_own_socket(path, created)
+        finally:
+            os.umask(previous)
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
 
 
 def remove_own_socket(path, identity):
@@ -83,24 +89,21 @@ def remove_own_socket(path, identity):
         pass
 
 
-def run_bound(app, listener, path):
+def run_bound(app, path):
     import uvicorn
-    info = Path(path).lstat()
-    identity = (info.st_dev, info.st_ino)
-    try:
-        with listener:
-            server = uvicorn.Server(uvicorn.Config(app, proxy_headers=False, access_log=False, log_level="warning"))
-            # Uvicorn replays SIGTERM after graceful shutdown. Keep that replay
-            # graceful too, so our owned socket is removed before process exit.
-            previous = signal.signal(signal.SIGTERM, server.handle_exit)
-            try:
-                server.run(sockets=[listener])
-            finally:
-                signal.signal(signal.SIGTERM, previous)
+    # Binding and cleanup hold SIGTERM blocked; the mask is relaxed only while
+    # a graceful server handler is installed. Absolute path/inode never change.
+    with bind_private_socket(path) as (listener, bound_path, identity, previous_mask):
+        server = uvicorn.Server(uvicorn.Config(app, proxy_headers=False, access_log=False, log_level="warning"))
+        previous_handler = signal.signal(signal.SIGTERM, server.handle_exit)
+        try:
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+            server.run(sockets=[listener])
             if not server.started:
                 raise ValueError("ASGI startup failed")
-    finally:
-        remove_own_socket(path, identity)
+        finally:
+            signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM})
+            signal.signal(signal.SIGTERM, previous_handler)
 
 
 def main():
@@ -111,8 +114,7 @@ def main():
     args = parser.parse_args()
     try:
         app = configured_app(args.config, args.db)
-        listener = bind_private_socket(args.socket)
-        run_bound(app, listener, args.socket)
+        run_bound(app, args.socket)
     except (OSError, ValueError, TypeError, RecursionError, sqlite3.DatabaseError):
         parser.exit(1, "Closed gateway refused startup. Check policy, existing database and private socket permissions.\n")
 

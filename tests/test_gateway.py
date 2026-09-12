@@ -37,13 +37,15 @@ def test_socket_permissions_and_existing_path(tmp_path):
     parent.mkdir(mode=0o755)
     path = parent / "mcp.sock"
     with pytest.raises(ValueError):
-        bind_private_socket(path)
+        with bind_private_socket(path):
+            pass
     parent.chmod(0o750)
     with bind_private_socket(path):
         assert stat.S_IMODE(path.stat().st_mode) == 0o660
         with pytest.raises(OSError):
-            bind_private_socket(path)
-    assert path.exists()  # Deliberate restart cleanup; no blind unlink.
+            with bind_private_socket(path):
+                pass
+    assert not path.exists()
 
 
 @pytest.mark.skipif(os.name != "posix", reason="Unix deployment only")
@@ -153,7 +155,7 @@ def test_lifespan_failure_is_failure_and_cleans_own_socket(tmp_path):
         await receive()
         await send({"type": "lifespan.startup.failed", "message": "synthetic startup failure"})
     with pytest.raises(SystemExit) as error:
-        run_bound(failing, bind_private_socket(path), path)
+        run_bound(failing, path)
     assert error.value.code != 0
     assert not path.exists()
     with bind_private_socket(path):
@@ -163,3 +165,42 @@ def test_lifespan_failure_is_failure_and_cleans_own_socket(tmp_path):
         path.write_text("replacement must survive")
         remove_own_socket(path, identity)
         assert path.read_text() == "replacement must survive"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX signal masking")
+@pytest.mark.parametrize("phase", ["bound", "cleanup"])
+def test_sigterm_in_socket_transition_cannot_leave_own_path(tmp_path, phase):
+    import signal
+    parent = tmp_path / "run"
+    parent.mkdir(mode=0o750)
+    path = parent / "mcp.sock"
+    code = '''
+import os, signal, sys
+import daia.gateway as gateway
+path, phase = sys.argv[1:]
+if phase == "cleanup":
+    original = gateway.remove_own_socket
+    def interrupted(path, identity):
+        os.kill(os.getpid(), signal.SIGTERM)
+        original(path, identity)
+    gateway.remove_own_socket = interrupted
+with gateway.bind_private_socket(path):
+    if phase == "bound":
+        os.kill(os.getpid(), signal.SIGTERM)
+    assert phase != "bound" or signal.SIGTERM in signal.sigpending()
+'''
+    result = subprocess.run([sys.executable, "-c", code, str(path), phase],
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode == -signal.SIGTERM
+    assert not path.exists()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="Unix socket paths")
+def test_socket_cleanup_uses_captured_absolute_path(tmp_path, monkeypatch):
+    from daia.gateway import bind_private_socket
+    parent = tmp_path / "run"
+    parent.mkdir(mode=0o750)
+    monkeypatch.chdir(tmp_path)
+    with bind_private_socket("run/mcp.sock"):
+        monkeypatch.chdir(parent)
+    assert not (parent / "mcp.sock").exists()

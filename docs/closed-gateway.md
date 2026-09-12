@@ -171,3 +171,12 @@ The suspected empty/unrelated database acceptance did not reproduce: the existin
 Coordinator constructor already queries initialized network metadata before binding.
 New subprocess tests confirm refusal without creating a socket. This is a startup
 sentinel check, not a comprehensive database integrity or migration audit.
+
+The follow-up lifecycle review also identified signal-delivery windows around binding
+and cleanup. The socket context now blocks SIGTERM before binding and until a graceful
+server handler is installed; shutdown blocks it again until the original captured
+socket has been removed. Deferred signals are delivered only after cleanup. Tests
+send actual SIGTERM in the pre-handler and cleanup windows, verify the resulting
+termination leaves no socket, and verify cleanup after a working-directory change.
+Only the captured absolute path and inode are used; replacement paths remain intact.
+SIGKILL, kernel failure and power loss still require stale-socket recovery.
