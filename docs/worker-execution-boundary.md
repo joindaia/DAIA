@@ -92,3 +92,17 @@ forwarded only after the task exits, so a slow caller cannot suspend the task
 deadline check. This is an output bound, not a memory or process-count limit for
 the job itself. Standard output is untrusted task output. Input screening is not a secret detector.
 Do not use this primitive alone as evidence that the full worker gate has passed.
+
+## Existing desktop worker: negative boundary check
+
+A diagnostic run of the existing worker, using its ordinary tools without requested
+escalation, reported successful access to a synthetic canary inside the operator's
+private credential directory. The result was written during that diagnostic run;
+no credential contents were requested or recorded. This establishes a failed
+boundary for that worker configuration, not a successful isolation test.
+
+Its native hourly work schedule has been paused. Identity, consumed budget and
+consent expiry were not changed. Do not resume scheduled job consumption or migrate
+this worker into the public cohort until its entire tool surface has an enforced
+separate execution boundary and the canary test fails as intended. Reconnecting MCP
+or moving its project folder does not by itself provide that separation.

@@ -45,3 +45,11 @@ Run the applicable checks before opening a pull request. Reference-code changes 
 `python -m pytest -q`, `python -m daia.cli demo`, and the privacy guard described in
 [CONTRIBUTING.md](../CONTRIBUTING.md). Website changes run `npm ci` and `npm run build` from
 `website/`. Report actual results and do not represent unrun host, CI or pilot checks as complete.
+
+
+PR checks run on the exact proposed head commit. GitHub's temporary test merge can
+contain account email metadata absent from the source history; it is not the
+published DAIA history. Push checks still run on the actual main commit after a
+merge. Before merging, recheck the base and head and resolve any changes against
+the current main revision; a green head check alone does not test a concurrent
+change to main. The privacy scanner itself has no new email exemptions.
