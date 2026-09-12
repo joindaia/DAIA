@@ -138,8 +138,9 @@ files and 2,703 runtime files, both at sequence 1. These are the artifacts deplo
 is recorded in the security milestone; a recovery operator must select the
 intended approved release rather than assume this snapshot is the newest one.
 
-The package still does not include server private keys or a complete independently
-hosted encrypted backup. Verified runtime bytes do not prove operating-system
+That initial package did not include server private keys. A subsequent encrypted
+capture is described below; a separately hosted disaster-recovery copy remains
+unfinished. Verified runtime bytes do not prove operating-system
 compatibility, restored service configuration or successful startup on a new host.
 A new-host rebuild, freshness reconciliation, pending receipt replay across that
 rebuild and provider-console recovery still need to pass before the administrative
@@ -185,3 +186,166 @@ the off-host source/runtime artifacts. No real contributor data or listener was
 used. It establishes service-level receipt replay after process restart; it does
 not exercise helper endpoint migration, the TLS/proxy service chain, recovery of
 post-snapshot changes, or a newly provisioned host. Those remain separate gates.
+
+
+## Encrypted server-key and configuration capture
+
+A later admission-closed capture includes the TLS server private key and certificate,
+client CA and revocations, current integrity manifests and minimum sequence,
+admission policy, effective backend/proxy units, and a consistent SQLite backup.
+The database passed its integrity check before packaging. The service was not
+stopped, admission was not changed, and no copy was activated as a coordinator.
+
+The fourteen-file package was encrypted off-host using OpenSSL CMS with AES-256-GCM
+and a dedicated RSA recovery recipient. Its private key is stored separately in
+operator-only credentials outside Git and outside the backup. Recovery files have
+mode 0600 within private directories. No plaintext server-key archive was written
+to local disk. An in-memory decrypt matched the captured archive byte for byte;
+a damaged encrypted envelope was rejected. The recovered server private key also
+matched the captured server certificate's public key.
+
+An authorized operator can decrypt a copy with:
+
+```sh
+openssl cms -decrypt -binary -inform DER -in vps-recovery.cms \
+  -recip recovery-recipient.pem -inkey recovery-recipient.key -out recovery.tar
+```
+
+Use a private recovery directory and restrictive umask; the decrypted archive
+contains secrets. Validate its expected contents before extraction and remove
+plaintext recovery material when no longer needed. Preserve the recipient key
+independently: the encrypted package alone cannot restore its own decryption key.
+
+This is a verified encrypted off-VPS capture, not a clean-host rebuild, a complete
+independent disaster-recovery location or a freshness guarantee for later writes.
+Source/runtime artifacts remain in the separately verified recovery set. Provider
+console recovery, an approved pull updater and the full restore/reconciliation
+exercise are still required before closing administrative SSH.
+
+
+The encrypted snapshot was subsequently decrypted into a temporary private
+recovery directory and passed DAIA's backup validator, including foreign-key and
+audit-chain checks. Schema and row-content digests matched all eleven tables of
+the live closed database at reconciliation time. Temporary plaintext copies were
+removed; the private report records the comparison time rather than promising
+continued freshness.
+
+Captured release trust metadata matched the independently held signing authority.
+The referenced off-host source tree (125 files, sequence 2) and runtime tree
+(2,703 files, sequence 1) both passed full signed-manifest verification against the
+captured minimum sequence of 1 and current expiry checks. These checks confirm
+that the recovery materials agree; they do not test startup on a clean host.
+
+
+## Restored backend and TLS proxy startup on the matching OS
+
+The encrypted configuration/database capture and independently verified off-host
+source/runtime artifacts were transferred into a disposable root on the existing
+matching-OS VPS. A transient systemd unit ran the restored backend and Nginx as an
+unprivileged identity, with a private network, private devices, no capabilities,
+a read-only system tree and bounded runtime, memory and process count. Only that
+root's prepared runtime directory was bound at `/run`; the live service sockets
+were not shared. The host `/usr` supplied the matching OS dependencies read-only.
+
+Both restored processes started. A direct unsigned Unix-socket request received
+HTTP 403. The loopback TLS proxy presented the exact captured server certificate
+and refused a request without a client certificate. This probe pinned the exact
+certificate bytes; it did not test public certificate-chain validation or DNS.
+Admission stayed empty and the restored backend stayed in maintenance mode.
+Temporary root contents, including copied server keys, were removed afterward.
+
+The initial attempt failed because the socket runtime directory was absent inside
+the systemd root. Preparing ownership and mode 0750 alone was insufficient when
+`/run` was replaced during namespace setup. Explicitly binding the dedicated test
+runtime directory fixed startup. A real rebuild must recreate runtime directories
+through the service configuration rather than copy a running socket from backup.
+
+This establishes startup and unauthenticated-request rejection for the restored
+backend/proxy pair on a matching OS. It does not establish new-host provisioning,
+provider-console recovery, authorized-client migration or pending receipt replay
+through this particular restored pair. Earlier synthetic migration and receipt
+probes cover their own scopes; they do not complete this combined restore gate.
+
+
+## Synthetic helper migration through the restored TLS setup
+
+A subsequent matching-OS root used the restored source/runtime and captured TLS
+server certificate/key for a combined helper exercise. The test created a separate
+synthetic coordinator database and client CA inside its private temporary space.
+Only the test's policy, client trust/CRL and socket destination were changed to
+admit that synthetic identity. Neither the live admission policy nor any real
+contributor state was changed. The copied production snapshot was not activated
+for contributor work.
+
+The source endpoint stayed in maintenance mode with its own database. After a
+recorded submission and a checked snapshot, a helper retaining the original signed
+pending submission migrated to the restored TLS endpoint. The helper used the
+normal hostname, SNI and certificate validation against the matching OS's public
+CA roots; only TCP routing mapped that hostname to the isolated loopback proxy.
+The copied server certificate/key were unchanged. Within the same combined run,
+a TLS connection using the helper's normal trust context also compared the peer
+certificate bytes with the captured certificate and required an exact match.
+
+The MCP response explicitly reported migration maintenance as the submission
+error; pending state remained unchanged. A generic transport exception alone was
+not accepted as evidence for this refusal. Before any helper reconstruction, both
+in-memory and persisted state were compared against the pre-attempt snapshot.
+Only clearing the completed lease was permitted, and only after an observed
+successful status response explicitly reported no lease. Every other field,
+including pending receipt hash and previous receipt, had to remain identical. Opening
+only the disposable destination allowed an exact retry after advancing the helper's
+test clock past its finite local consent deadline. The returned hash matched the
+original receipt with `already_recorded`; identity, signing key, usage, deadline,
+maximum jobs and stopped state remained unchanged. A new-work request remained
+expired with spare consent budget (one of two synthetic jobs used), and an
+instrumented helper transport confirmed zero remote calls for that request. Only
+the helper clock was advanced; this does not test coordinator-side grant expiry.
+Reconciled rollback returned to the original transport without restoring
+old pending data or changing those invariants. Destination metrics matched the
+source, including exactly one result.
+
+The transient system root and test credentials were removed after the successful
+exercise. Writable `/tmp` and `/run` were explicit binds of that root's own prepared
+paths, never the live runtime directories. This closes the synthetic combined
+migration/receipt/rollback check for the restored software and TLS server setup.
+It does not establish clean-host provisioning, real-cohort reconciliation, or
+whole-worker isolation, and does not authorize public admission.
+
+
+The restored-database helper regression test now repeats the durable-state check
+with a simulated submission refusal and spare local consent budget. It compares
+both memory and disk before reconstruction and forbids any remote operation for
+an expired new-work request. The helper and job-authorization suites passed with
+51 tests; two Windows file-sharing tests were skipped on the Linux runner.
+Temporary in-memory mutations that removed the expiry guard or cleared the
+pending receipt hash each made the strengthened test fail. These mutations did
+not change repository source. This automated regression does not replace the
+separate restored TLS rehearsal or Windows integration checks.
+
+
+## Real source snapshot transferred without activation
+
+After explicit authorization, an encrypted source-coordinator backup was decrypted
+inside a private temporary directory and streamed over host-key-verified SSH into
+a separate root-owned recovery directory on the destination VPS. The directory
+mode was 0700 and the database mode 0600. The destination SHA-256 matched the
+source snapshot bytes exactly; SQLite integrity and foreign-key checks passed for
+all eleven tables. The local plaintext temporary copy was removed. The encrypted
+backup and private verification records remain outside the repository.
+
+The current local coordinator code and the deployed VPS runtime then opened separate
+temporary copies of that same snapshot. For every non-revoked agent under a
+non-revoked contributor, they computed authenticated-status-equivalent data with
+migration history enabled and expiry processing disabled. Four agents were checked.
+The complete ordered status collection matched by digest, and byte hashes confirmed
+that the snapshots and temporary copies were unchanged. This exercised the actual
+coordinator implementations directly; it did not authenticate remote MCP requests
+or prove that the agents' installed helpers can connect through the public gateway.
+
+The live MCP service remained active in its existing maintenance configuration,
+with an empty agent allowlist and no certificate bindings. Its staging database
+was not replaced. This transfer was a rehearsal snapshot, not a final synchronized
+cutover: source writers were not frozen for ongoing service migration. A final
+handoff must freeze all source writers, take and verify a fresh snapshot, reconcile
+helper state and certificates, and keep the old source frozen after destination
+writes begin. Whole-worker and provider-isolation acceptance remains outstanding.
