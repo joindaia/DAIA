@@ -174,3 +174,28 @@ submission being acknowledged, not durable storage on a compromised server.
 Verified capability tuples are retained by the helper check and empty signed scopes
 are refused. The future execution/broker integration must enforce those capabilities
 per operation; this check alone does not grant or constrain operating-system tools.
+
+## Closed backend deployment
+
+The closed VPS backend now runs reviewed main commit
+`f9be1acd901e6dbd4e539b7f7f23a2b0075f0232`, with a separately signed source
+manifest at sequence 2. Source and runtime dependency declarations were unchanged
+from the previous deployed release. The existing verified runtime and minimum
+sequence floor of 1 were retained; this update does not claim a new anti-rollback
+floor. Startup verification passed after activation.
+
+Admission remained empty and maintenance mode remained enabled. A private checked
+database snapshot and the previous verifier/manifest configuration were retained
+before activation. All database table contents matched before and after activation.
+An unsigned Unix-socket request was refused with HTTP 403. After restarting the
+proxy, the public endpoint refused a request without a client certificate with
+HTTP 400, and the website remained HTTP 200. This is a closed service update, not
+contributor cutover or proof of complete worker isolation.
+
+The deployment exposed a service-ordering requirement: stopping `daia-mcp` also
+stops `daia-proxy` through its `Requires` relationship. Starting the backend alone
+does not restart that dependent proxy. Every activation and rollback procedure
+must explicitly start the proxy after backend readiness, then verify both units
+and the public TLS rejection. During this update the missed proxy start caused a
+brief TLS connection failure; starting it restored the expected rejection. Backend
+readiness alone must not be recorded as successful end-to-end service recovery.

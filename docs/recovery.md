@@ -134,8 +134,9 @@ The deployed source and runtime have subsequently been copied off-host into this
 private recovery package. Only regular files named in the signed manifests were
 accepted; duplicate paths, links, unexpected files and digest mismatches were
 rejected. The complete restored trees passed release verification: 117 source
-files and 2,703 runtime files, both at sequence 1. These are the currently deployed
-artifacts, not a deployment of the latest main branch.
+files and 2,703 runtime files, both at sequence 1. These are the artifacts deployed at capture time. The later closed backend update
+is recorded in the security milestone; a recovery operator must select the
+intended approved release rather than assume this snapshot is the newest one.
 
 The package still does not include server private keys or a complete independently
 hosted encrypted backup. Verified runtime bytes do not prove operating-system
