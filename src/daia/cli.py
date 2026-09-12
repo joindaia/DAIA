@@ -89,6 +89,7 @@ def main():
     resolve.add_argument("--dry-run", action="store_true", help="Preview the exact human decision and cancellation effects without applying it")
     sub.add_parser("serve")
     mcp = sub.add_parser("serve-mcp")
+    mcp.add_argument("--allowed-agents", type=Path, help="Close MCP registration; allow only agent IDs in this operator JSON file (empty denies all)")
     mcp.add_argument("--tailnet-url", help="Exact private Tailscale Serve MCP URL; listener stays loopback")
     revoke = sub.add_parser("revoke")
     revoke.add_argument("root_id")
@@ -184,8 +185,12 @@ def main():
     else:
         import uvicorn
         if args.command == "serve-mcp":
-            from .mcp_server import build_mcp_app
-            app = build_mcp_app(service, tailnet_url=args.tailnet_url)
+            from .mcp_server import build_mcp_app, load_allowed_agents
+            try:
+                allowed = load_allowed_agents(args.allowed_agents) if args.allowed_agents is not None else None
+            except (OSError, ValueError, TypeError, RecursionError):
+                parser.exit(1, "Agent allowlist could not be loaded. Service not started.\n")
+            app = build_mcp_app(service, tailnet_url=args.tailnet_url, allowed_agents=allowed)
         else:
             from .http import create_app
             app = create_app(service)
