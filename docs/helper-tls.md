@@ -1,9 +1,9 @@
 # Contributor client certificates
 
 The local helper can optionally load a client certificate for mutual TLS. This is
-transport groundwork for the closed cohort, not a deployed public gateway. Current
-endpoint restrictions remain: loopback or the configured private-tailnet form. No
-public domain is enabled by this change.
+transport support for the closed cohort, not evidence of a deployed public gateway.
+Original invites use loopback or the configured private-tailnet form. The explicit
+operator migration below can select a canonical HTTPS endpoint with client TLS.
 
 An operator-provided invite may include `tls` with exactly three nonempty path
 strings: `ca_file`, `certificate`, and `private_key`. Relative paths resolve beside
@@ -75,9 +75,8 @@ Neither action extends consent. Ordinary reconnects use the saved transport over
 
 Unit tests cover preservation, mismatch, unreachable destination and failed save.
 A real SDK HTTP-to-mutual-TLS test exercises migration, restart and rollback using
-an ephemeral loopback routing exception in the test only. Public-host routing,
-closed-gateway integration and populated off-host recovery still need combined
-acceptance before live cutover.
+an ephemeral loopback routing exception in the test only. The combined local gateway rehearsal below covers public-host routing and restored
+state. Populated off-host recovery still requires acceptance before live cutover.
 
 A populated local database backup/restore regression also records a result while
 simulating loss of its confirmation, migrates the unchanged helper state to the
@@ -91,8 +90,11 @@ and the backend restarts against that copy while the source retains its original
 file. The actual helper migrates through the canonical public URL, restarts,
 recovers the signed receipt and switches back with unchanged key, usage and deadline.
 Only TCP routing for the reserved example hostname is redirected to loopback; URL,
-Host, TLS SNI and certificate validation remain enabled. The exercise passed in
-42.13s on the local extracted Nginx runtime. Switchback is separated by five seconds
+Host, TLS SNI and certificate validation remain enabled. The exercise also runs with both endpoints in maintenance mode. It verifies that
+a refused submission survives a helper restart with unchanged pending content,
+usage and deadline, then restarts only the destination in writable mode before
+recovering the receipt. This variant passed in 48.01s on the local extracted Nginx
+runtime. Switchback is separated by five seconds
 to drain preceding SDK requests from the rate limiter. Backend restart requires a
 new MCP session; stored receipts survive independently of session IDs.
 
