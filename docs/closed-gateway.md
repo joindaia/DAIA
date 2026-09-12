@@ -257,3 +257,19 @@ A negative control with sixty-second idle limits failed with a read timeout.
 These checks cover clients that stop sending. They do not establish resistance to
 continuous slow trickles, connection floods or a production capacity limit. Per-IP
 concurrency and rate-limit acceptance remain separate work before public exposure.
+
+### Concurrent active requests
+
+The real proxy exercise opens twenty authenticated SSE streams from one loopback
+IP, each in its own MCP session. Initialization, notification and GET requests are
+paced below five requests per second. While those streams remain open, a further
+initialization must receive HTTP 429. Closing the streams must allow initialization
+again within three seconds. The isolated VPS exercise passed in 32.20s, including
+the earlier receipt, idle-client and revocation checks. A negative control raising
+only the connection limit to twenty-one failed because the extra request returned
+HTTP 200 instead of 429.
+
+This validates the configured per-IP limit for active requests, not twenty machines
+or a measured service capacity. Participants sharing a public IP also share this
+limit. Request-rate bursts, distributed floods, incomplete pre-header connections
+and continuous slow uploads are not covered by this check.

@@ -167,6 +167,31 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
         # Timed-out clients must not prevent a normal authenticated request.
         with transport() as client:
             assert client.post("/mcp", json=init, headers=headers).status_code == 200
+        # Pace below 5 requests/s so a 429 here measures concurrent requests,
+        # not the independent request-rate limiter. Each session has one SSE GET.
+        with ExitStack() as streams:
+            for _ in range(20):
+                client = streams.enter_context(transport())
+                opened = client.post("/mcp", json=init, headers=headers)
+                assert opened.status_code == 200
+                bound = {**session_headers, "Mcp-Session-Id": opened.headers["mcp-session-id"]}
+                notified = client.post("/mcp", json={"jsonrpc": "2.0", "method": "notifications/initialized"}, headers=bound)
+                assert notified.status_code == 202
+                stream = streams.enter_context(client.stream("GET", "/mcp", headers=bound))
+                assert stream.status_code == 200
+                time.sleep(0.7)
+            with transport() as overflow:
+                assert overflow.post("/mcp", json=init, headers=headers).status_code == 429
+        # Closing the held streams must release the slots for an admitted client.
+        deadline = time.monotonic() + 3
+        with transport() as recovered:
+            while True:
+                status = recovered.post("/mcp", json=init, headers=headers).status_code
+                assert time.monotonic() < deadline
+                if status == 200:
+                    break
+                assert status == 429 and time.monotonic() < deadline
+                time.sleep(0.25)
         with transport() as active:
             with active.stream("GET", "/mcp", headers=session_headers, timeout=8) as stream:
                 assert stream.status_code == 200
