@@ -308,3 +308,116 @@ import unrelated credentials or begin real assignments.
 The saved script was executed through native Windows PowerShell: version returned
 v0.42.1 with exit 0, SSH forwarding returned false with exit 0, and a deliberately
 invalid CLI command returned exit 1. No VM was created during these checks.
+
+
+### Booted microVM and gateway findings (2026-09-12)
+
+The earlier account gate is resolved. A DAIA-owned Docker account successfully
+logged in through the native password-stdin route. No model-provider credentials
+were imported. A mountless shell guest booted on sbx v0.42.1 with its own kernel
+7.0.12, two CPUs and 2 GiB memory. Its template digest was
+`sha256:5fc81bc7a127e59d81b244a06831ae3212a0310b2e5a0349c54e29249e45e919`.
+No workspace or published ports were configured, and SSH forwarding remained off.
+
+The default MCP gateway was nevertheless reachable from the guest with network
+`deny **` active: initialization returned HTTP 200 and `tools/list` exposed
+`code-mode`, `mcp-add`, `mcp-config-set`, `mcp-exec` and `mcp-find`. Adding an
+explicit deny for `mcp-gateway.docker.internal` did not prevent initialization
+after guest restart. `policy ls --wide` confirmed both deny rules were stored.
+A separate mountless guest created with `--static-mcp ""` exposed the same tool
+set. An empty static set is therefore not a gateway-disable mechanism in this
+version. Both test guests were stopped afterward; stopping preserves their state.
+
+These probes invoked no gateway tools and demonstrate neither host-code execution
+nor credential theft. Listings alone do not prove invocation permission. However,
+network denial and empty static configuration do not establish the required
+absence of a host gateway. Docker documents MCP authorization as a separate
+[organization Cedar policy layer](https://docs.docker.com/ai/sandboxes/governance/access-controls/mcp/),
+without a local network-style preset. The installed CLI exposes only network deny
+and check subcommands; no organization profiles were available in this account.
+Do not resume workers on the strength of a successful VM boot. Enforced MCP
+capability restrictions, external egress enforcement and provider-account scoping
+remain release gates.
+
+### Received reference kit: isolated contract run
+
+The supplied research kit's 24 contract tests and one positive-fixture test passed
+inside the existing Linux bubblewrap primitive. The fixture checks that the
+original version-comparison implementation fails and that a supplied reference
+patch passes six regressions. Only copied source files and the installed packaging
+26.3 package were supplied as read-only input; scratch storage was ephemeral and
+no network, operator home or credentials were mounted. This differs from the
+kit's pinned packaging 25.0 environment, so it is not an exact dependency replay.
+
+These are tests of the kit's reference contract, not production DAIA signing,
+provider authentication, the Windows microVM, or a real agent-generated patch.
+The external VM runner has not been executed. Its stdin write occurs before its
+process-wait timeout; that runner needs bounded input delivery before it can serve
+as the trusted controller for a guest that refuses input. Continue to require the
+full negative-boundary and useful-native-agent acceptance tests above.
+
+
+### Fixed nonempty MCP set: management-tool denial
+
+A subsequent guest used an explicit fixed set containing one operator-prepared
+remote loopback fixture with an empty `tools/list`. Unlike the empty flag, this
+removed `mcp-add`, `mcp-config-set` and `mcp-find` from the gateway session.
+Only `code-mode` and `mcp-exec` remained. Direct calls to all three missing tools
+returned JSON-RPC unknown-tool errors. Calls through `mcp-exec` returned explicit
+not-found errors, and requesting `mcp-add` through `code-mode` also failed.
+
+`scripts/probe_static_mcp.py` repeats the exact listing and ten denial checks
+inside that prepared guest. It supplies no server configuration or executable
+JavaScript. The saved probe passed on sbx v0.42.1. It fails on an unexpected gateway
+URL or response, and uses explicit checks that remain enabled with Python `-O`.
+The outer trusted launcher still needs to bound the total process lifetime.
+
+This is evidence for session-level management-tool exclusion only. The fixture
+was a remote no-tool service, not a registered host command. The surviving
+`code-mode` execution environment, session credential binding, another-session
+access, and external network enforcement are not established by these checks.
+A fixed set is a candidate integration route, not approval for real worker jobs.
+
+
+Review correction: the four code-mode responses contained refusal text but no
+`isError: true` flag. They therefore did not establish protocol-level failure.
+The original ten-check success was too broad. The probe now requires an explicit
+error flag and exact error content, rejects paginated listings, correlates both
+JSON and SSE replies, and uses distinct request IDs. On the observed v0.42.1
+responses, it must fail at the first code-mode check rather than report ten
+verified denials. Six direct/indirect management-tool errors were observed.
+
+No executable JavaScript was supplied. Client responses do not establish whether
+an executor was created internally. The behavior of sessions with real tools
+remains unverified.
+
+
+The hardened probe was run against the live guest and exited 1 with
+`Code-mode exclusion not established`, as expected from the missing error flags.
+Seven JSON/SSE response-fixture regression tests pass, including wrong IDs,
+pagination, missing error flags and explicit false error flags. These tests verify
+the probe's refusal to overclaim; they are not gateway integration acceptance.
+
+A separate network probe first reached an empty synthetic service from Windows.
+The guest's HTTP request via `host.docker.internal` then returned an explicit
+403 local-policy block. The alternate gateway hostname disconnected, and a raw
+TCP connection to the host alias connected but returned no bytes. Those latter
+outcomes are inconclusive; they do not establish a general TCP or private-network
+boundary. The service and guest were stopped after the probe.
+
+
+A receiver-observed follow-up used a new loopback canary with accept/request
+counters. Windows controls before and after the guest attempts both read the
+expected canary bytes. The receiver recorded exactly those two connections and
+control requests, with no connection for guest HTTP, direct-socket HTTP or raw
+non-HTTP bytes sent through the Docker host alias. HTTP returned a policy 403;
+the direct socket attempts received zero bytes. This establishes non-arrival at
+that tested service during the experiment, not a general IPv6, private-address,
+DNS-rebinding or permitted-internet boundary.
+
+The probe's response regression suite now has twelve passing cases. It also
+requires initialization to return a session and negotiated protocol, rejects an
+unexpected session replacement, permits empty bodies only for notifications, and
+matches indirect error content exactly. The live strict probe still stops at the
+code-mode error-flag check. These improvements strengthen evidence handling; they
+do not turn that integration failure into acceptance.
