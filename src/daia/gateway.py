@@ -15,7 +15,7 @@ from .store import Store
 from .nginx_gateway import certificate_bridge
 
 
-def configured_app(config, database):
+def configured_app(config, database, *, maintenance=False):
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     with os.fdopen(os.open(config, flags), "rb") as source:
         info = os.fstat(source.fileno())
@@ -35,7 +35,7 @@ def configured_app(config, database):
     # Existing database only: a misspelled deployment path must not initialize new state.
     return certificate_bridge(build_mcp_app(Coordinator(Store(str(database), create=False)),
                          allowed_agents=policy["allowed_agents"],
-                         certificate_agents=policy["certificate_agents"], public_url=policy["resource"]))
+                         certificate_agents=policy["certificate_agents"], public_url=policy["resource"], maintenance=maintenance))
 
 
 @contextmanager
@@ -112,9 +112,10 @@ def main():
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--db", type=Path, required=True)
     parser.add_argument("--socket", type=Path, required=True)
+    parser.add_argument("--maintenance", action="store_true", help="Read status only during migration; reject work mutations")
     args = parser.parse_args()
     try:
-        app = configured_app(args.config, args.db)
+        app = configured_app(args.config, args.db, maintenance=args.maintenance)
         run_bound(app, args.socket)
     except (OSError, ValueError, TypeError, RecursionError, sqlite3.DatabaseError):
         parser.exit(1, "Closed gateway refused startup. Check policy, existing database and private socket permissions.\n")

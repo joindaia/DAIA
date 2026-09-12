@@ -475,11 +475,12 @@ class Coordinator:
             self._event(db, "submission_recorded", receipt)
             return {"receipt_hash": receipt, "result_id": result_id, "status": state}
 
-    def contribution_status(self, root, agent, migration_check=False):
+    def contribution_status(self, root, agent, migration_check=False, *, expire=True):
         """Own grant and recoverable lease only; never reveals other contributors."""
         with self.store.connect() as db:
             self._agent(db, root, agent)
-            self._expire(db)
+            if expire:
+                self._expire(db)
             grant = self._root(db, root)
             active = db.execute("SELECT * FROM assignments WHERE root_id=? AND state='leased'", (root,)).fetchone()
             history = {}

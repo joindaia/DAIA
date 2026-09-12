@@ -99,3 +99,23 @@ new MCP session; stored receipts survive independently of session IDs.
 This is an isolated same-host rehearsal with synthetic credentials and state.
 Off-host transfer, real-agent coordination and failure recovery remain unverified;
 no public route or live coordinator was changed.
+
+### Freeze MCP writes for migration
+
+Both `daia serve-mcp` and the `daia.gateway` launcher accept `--maintenance`.
+Restart the source with this flag before taking the final database snapshot;
+start the restored destination with the same flag. Authenticated status requests
+still work, including the migration history check, but do not expire leases or
+alter stored work. All other contributor tool calls refuse with a migration
+maintenance error. Existing identity and admission checks still apply.
+
+This freezes writes through that MCP process only. Stop any other writer,
+including operator commands and alternate HTTP services, before taking the
+snapshot. Complete and verify the helper endpoint migrations while both copies
+are frozen, then restart only the destination without `--maintenance`. Keep the
+source frozen. A status response during maintenance describes the saved lease;
+it does not promise that the lease is still valid for work.
+
+Do not make the old snapshot writable after the destination has accepted work.
+Returning service then requires a fresh verified snapshot of the destination;
+the helper's endpoint switch-back alone does not synchronize databases.

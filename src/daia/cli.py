@@ -90,6 +90,7 @@ def main():
     sub.add_parser("serve")
     mcp = sub.add_parser("serve-mcp")
     mcp.add_argument("--allowed-agents", type=Path, help="Close MCP registration; allow only agent IDs in this operator JSON file (empty denies all)")
+    mcp.add_argument("--maintenance", action="store_true", help="Read status only during migration; reject work mutations")
     mcp.add_argument("--tailnet-url", help="Exact private Tailscale Serve MCP URL; listener stays loopback")
     revoke = sub.add_parser("revoke")
     revoke.add_argument("root_id")
@@ -190,7 +191,7 @@ def main():
                 allowed = load_allowed_agents(args.allowed_agents) if args.allowed_agents is not None else None
             except (OSError, ValueError, TypeError, RecursionError):
                 parser.exit(1, "Agent allowlist could not be loaded. Service not started.\n")
-            app = build_mcp_app(service, tailnet_url=args.tailnet_url, allowed_agents=allowed)
+            app = build_mcp_app(service, tailnet_url=args.tailnet_url, allowed_agents=allowed, maintenance=args.maintenance)
         else:
             from .http import create_app
             app = create_app(service)

@@ -65,7 +65,8 @@ def public_origin(url: str) -> str:
 def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
                   allowed_agents: frozenset[str] | None = None,
                   certificate_agents: dict[str, str] | None = None,
-                  public_url: str | None = None):
+                  public_url: str | None = None,
+                  maintenance: bool = False):
     from mcp.server import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
     from mcp.server.auth.provider import AccessToken, TokenVerifier
@@ -123,7 +124,7 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
                                          required_scopes=["work:contribute"],
                                          validate_token_resource=True))
 
-    def root(agent_id: str | None = None):
+    def root(agent_id: str | None = None, *, status=False):
         access = get_access_token()
         if access is None or not access.subject:
             raise Denied("Authenticated contributor required")
@@ -131,6 +132,8 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
             raise ToolError("Agent not admitted")
         if certificate_agents is not None and access.client_id != "daia-cert:" + str(agent_id):
             raise ToolError("Agent not admitted")
+        if maintenance and not status:
+            raise ToolError("Coordinator in migration maintenance; retry later")
         return access.subject
 
     if allowed_agents is None:
@@ -147,7 +150,8 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
     @server.tool()
     async def contribution_status(agent_id: str, migration_check: bool = False) -> dict:
         """Inspect your grant and recover your live lease without claiming new work."""
-        return service.contribution_status(root(agent_id), agent_id, migration_check=migration_check)
+        return service.contribution_status(root(agent_id, status=True), agent_id,
+                                           migration_check=migration_check, expire=not maintenance)
 
     @server.tool()
     async def request_work(agent_id: str) -> dict:

@@ -467,3 +467,45 @@ def test_certificate_gateway_rejects_tcp_even_with_header(network, contributor):
     with running_server(app) as url:
         assert httpx.post(url, headers={"Authorization": "Bearer " + grant["token"],
                          "x-daia-client-cert-sha256": "a" * 64}, json={}).status_code == 403
+
+
+def test_migration_maintenance_blocks_writes_and_status_expiry(network, contributor):
+    service, now = network
+    grant, aid, key = contributor()
+    service.seed()
+    lease = service.request_work(grant['root_id'], aid)
+    now[0] += 1000
+
+    def snapshot():
+        with service.store.connect() as db:
+            return list(db.iterdump())
+
+    before = snapshot()
+
+    async def exercise(url):
+        async with httpx2.AsyncClient(headers={'Authorization': 'Bearer ' + grant['token']}) as http:
+            async with streamable_http_client(url, http_client=http) as streams:
+                async with ClientSession(streams[0], streams[1]) as session:
+                    await session.initialize()
+                    status = await call(session, 'contribution_status', agent_id=aid, migration_check=True)
+                    assert len(status['history_hash']) == 64
+                    assert status['lease']['assignment_id'] == lease['assignment_id']
+                    actions = {
+                        'registration_challenge': {'public_key': public_hex(key)},
+                        'register_agent': {'challenge_id': '0' * 32, 'signature': '0' * 128},
+                        'request_work': {'agent_id': aid},
+                        'heartbeat': {'agent_id': aid, 'assignment_id': lease['assignment_id']},
+                        'release_work': {'agent_id': aid, 'assignment_id': lease['assignment_id']},
+                        'submission_envelope': {'agent_id': aid, 'assignment_id': lease['assignment_id'], 'artifact': '{}', 'verdict': 'candidate'},
+                        'submit_result': {'agent_id': aid, 'assignment_id': lease['assignment_id'], 'artifact': '{}', 'verdict': 'candidate', 'signature': '0' * 128},
+                    }
+                    for name, args in actions.items():
+                        result = await session.call_tool(name, args)
+                        assert result.is_error, name
+                        assert 'migration maintenance' in str(result.content), name
+
+    with running_server(build_mcp_app(service, maintenance=True)) as url:
+        asyncio.run(exercise(url))
+    assert snapshot() == before
+    service.contribution_status(grant['root_id'], aid)
+    assert snapshot() != before  # Normal operation still expires this stale lease.
