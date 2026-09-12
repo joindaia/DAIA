@@ -130,10 +130,18 @@ authority; both manifest signatures and expiry/sequence bounds passed. The clien
 CA matched the local authority and its revocation list passed signature and expiry
 checks. Admission remained empty and the existing services stayed active.
 
-This capture does not include server private keys, release/runtime artifact bytes,
-or a complete independently hosted encrypted backup. Manifest signature checks do
-not establish that recoverable artifact bytes exist. A new-host rebuild, freshness
-reconciliation, pending receipt replay across that rebuild and provider-console
-recovery still need to pass before the administrative SSH path can be removed.
+The deployed source and runtime have subsequently been copied off-host into this
+private recovery package. Only regular files named in the signed manifests were
+accepted; duplicate paths, links, unexpected files and digest mismatches were
+rejected. The complete restored trees passed release verification: 117 source
+files and 2,703 runtime files, both at sequence 1. These are the currently deployed
+artifacts, not a deployment of the latest main branch.
+
+The package still does not include server private keys or a complete independently
+hosted encrypted backup. Verified runtime bytes do not prove operating-system
+compatibility, restored service configuration or successful startup on a new host.
+A new-host rebuild, freshness reconciliation, pending receipt replay across that
+rebuild and provider-console recovery still need to pass before the administrative
+SSH path can be removed.
 The private capture report records exact snapshot hashes and table counts; none of
 the snapshots, identities, local paths or security configuration belongs in Git.
