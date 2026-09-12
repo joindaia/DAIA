@@ -128,3 +128,32 @@ invalid/duplicate certificate headers and immutable policy. A separate real TCP 
 rejects even a correctly formed identity header. Public URL configuration, launcher,
 proxy, certificate lifecycle and helper migration are still unimplemented. The
 private profile and existing live pilot remain unchanged.
+
+## Closed backend launcher
+
+The subsequent launcher increment is `python -m daia.gateway --config POLICY.json
+--db EXISTING.sqlite3 --socket /run/daia-gateway/mcp.sock`. This starts only the
+backend on a prebound Unix socket; it does not install or expose a TLS proxy.
+
+The policy must contain exactly `resource`, `allowed_agents` and `certificate_agents`.
+The resource is a canonical lowercase `https://DNS-NAME/mcp` URL with implicit port
+443 and no query, fragment or user information. Public resource mode requires both
+certificate binding and closed admission; private tailnet mode cannot be combined
+with it. Public mode accepts only that exact Host and HTTPS Origin, without loopback
+aliases. There is no public bind or host/port fallback option in the launcher.
+
+Prepare the socket directory as the nonroot service user with its dedicated gateway
+connect group and mode 0750. The launcher requires matching effective UID/GID, rejects
+symlinked paths and untrusted writable ancestors (root-owned sticky temporary parents
+are permitted for isolated tests), and binds a new socket with mode 0660. It refuses
+any existing path rather than unlinking another process's socket. After a deliberate
+stop, the operator must verify the process is gone and remove the stale socket before
+restarting. This conservative lifecycle still needs service-manager integration.
+
+The database must already exist; a misspelled path cannot create fresh coordinator
+state. The gateway-to-backend hop is HTTP over the private socket, while the canonical
+client-facing resource is HTTPS. Forwarded-header interpretation is disabled. The
+proxy must replace Host with the configured canonical name and must replace the
+certificate assertion after certificate verification. Group membership, proxy
+configuration, revocation, ingress limits and real helper migration remain deployment
+work. This launcher alone is not a secure public service.

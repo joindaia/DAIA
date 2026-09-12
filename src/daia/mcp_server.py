@@ -47,9 +47,25 @@ def validate_allowed_agents(agents) -> frozenset[str]:
     return frozenset(agents)
 
 
+def public_origin(url: str) -> str:
+    """Accept one canonical HTTPS DNS resource; no implicit normalization."""
+    parsed = urlsplit(url)
+    if (parsed.scheme != "https" or parsed.username or parsed.password
+            or parsed.query or parsed.fragment or parsed.path != "/mcp"
+            or not parsed.hostname or len(parsed.hostname) > 253
+            or not all(re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label)
+                       for label in parsed.hostname.split("."))
+            or "." not in parsed.hostname or parsed.hostname.replace(".", "").isdigit()
+            or parsed.port not in {None, 443}
+            or url != "https://" + parsed.hostname + "/mcp"):
+        raise ValueError("Expected a canonical HTTPS MCP resource")
+    return "https://" + parsed.hostname
+
+
 def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
                   allowed_agents: frozenset[str] | None = None,
-                  certificate_agents: dict[str, str] | None = None):
+                  certificate_agents: dict[str, str] | None = None,
+                  public_url: str | None = None):
     from mcp.server import MCPServer
     from mcp.server.mcpserver.exceptions import ToolError
     from mcp.server.auth.provider import AccessToken, TokenVerifier
@@ -69,12 +85,18 @@ def build_mcp_app(service: Coordinator, *, tailnet_url: str | None = None,
     if allowed_agents is not None:
         allowed_agents = validate_allowed_agents(allowed_agents)
 
-    resource = tailnet_url or "http://127.0.0.1:8000/mcp"
+    if public_url is not None and (tailnet_url is not None or certificate_agents is None):
+        raise ValueError("Public resource requires the closed certificate profile")
+    resource = public_url or tailnet_url or "http://127.0.0.1:8000/mcp"
     origins = ["http://127.0.0.1:8000", "http://localhost:8000"]
     hosts = ["127.0.0.1:*", "localhost:*"]
     if tailnet_url:
         origins.append(pilot_origin(tailnet_url))
         hosts.append(urlsplit(tailnet_url).netloc)
+
+    if public_url is not None:
+        origins = [public_origin(public_url)]
+        hosts = [urlsplit(public_url).netloc]
 
     class DevelopmentTokens(TokenVerifier):
         async def verify_token(self, token: str):
