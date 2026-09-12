@@ -197,3 +197,44 @@ The helper invite and saved signing state were inaccessible inside the namespace
 identity, consumed budget and consent deadline were unchanged after submission.
 The test relay is for known small fixture messages only. It is not the production
 bounded relay, nor a full Codex/Claude session or research-access acceptance test.
+
+## Full-worker microVM implementation target
+
+The next full-worker prototype targets one disposable, mountless Docker Sandboxes
+microVM per public-source assignment. The native agent, subprocesses, MCP servers,
+package installation and browser must all remain inside that guest. The existing
+assignment helper belongs outside it. Existing bubblewrap tests prove individual
+component boundaries, not this full-worker architecture.
+
+The initial route exports only a bounded result and source patch for a fresh
+credential-free evaluator. The worker receives no host mounts, personal profile,
+SSH forwarding, host-side MCP servers or GitHub credential. A separate controller
+owns assignment binding, signing, consent and lease maintenance. Security updates
+remain a separately authorized operation over exact artifact bytes.
+
+Documentation verified on 2026-09-12:
+
+- [Installation prerequisites](https://docs.docker.com/ai/sandboxes/install/):
+  Linux requires KVM; Windows requires Windows 11 and Windows Hypervisor Platform.
+  A running hypervisor alone does not establish that all prerequisites are met.
+- [Mountless creation](https://docs.docker.com/reference/cli/sbx/create/): omit
+  the workspace path. Stop/restart is not job cleanup: guest state persists until
+  removal, as described in the [architecture](https://docs.docker.com/ai/sandboxes/architecture/).
+- [Network deny rules](https://docs.docker.com/reference/cli/sbx/policy/deny/network/):
+  an allowed hostname is not checked against CIDR rules for its resolved address.
+  Therefore a domain allowlist plus private-IP denies is insufficient evidence.
+- [Upstream proxy configuration](https://docs.docker.com/ai/sandboxes/configuration/upstream-proxy/)
+  is experimental and includes direct and bypass routes. Explicit proxy settings
+  alone do not establish externally enforced, fail-closed egress.
+
+The current development preflight found no sbx command on either inspected PATH,
+no KVM device in the WSL environment, and a Windows hypervisor reported present.
+No runtime was installed or provider login performed. Check native Windows
+Hypervisor Platform availability next; do not fall back to host task execution.
+The supplied research test package has not yet arrived or been independently run.
+
+Release evidence must include both a genuinely useful native-agent patch and an
+executed hostile workload unable to reach host secrets, private networks or
+unwanted cloud-account operations, even with positive reviews. Provider login and
+refresh behind an inference-only policy, actual external egress enforcement,
+watchdog cleanup, and independent updater authorization remain unproven.
