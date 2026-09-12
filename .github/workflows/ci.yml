@@ -42,6 +42,8 @@ jobs:
         run: uv run --frozen --extra dev --extra mcp python -m pytest -q
       - name: Deterministic demonstration
         run: uv run --frozen --extra dev --extra mcp python -m daia.cli demo
+      - name: Signed receipt recovery after process restart
+        run: uv run --frozen --extra dev --extra mcp python -B scripts/probe_recovery.py
       - name: Compile syntax
         run: uv run --frozen --extra dev --extra mcp python -m compileall -q src scripts tests
       - name: Source and history privacy tripwire

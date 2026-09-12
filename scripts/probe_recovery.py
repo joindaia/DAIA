@@ -20,6 +20,7 @@ def resume(folder):
     assert service.network_id == pending['network_id']
     args = pending['submission']
     before = service.contribution_status(args[0], args[1])
+    assert before == pending['contribution_status']
     assert before['assigned'] == before['max_jobs'] == 1
     receipt = service.submit(*args)
     assert receipt == {'receipt_hash': pending['receipt_hash'], 'status': 'already_recorded'}
@@ -59,7 +60,8 @@ def main():
         receipt = service.submit(*args)
         assert receipt['status'] == 'in_review'
         pending = {'submission': args, 'clock': clock, 'network_id': service.network_id,
-                   'receipt_hash': receipt['receipt_hash']}
+                   'receipt_hash': receipt['receipt_hash'],
+                   'contribution_status': service.contribution_status(grant['root_id'], agent)}
         (folder / 'pending.json').write_text(json.dumps(pending))
         backup_database(folder / 'source.sqlite3', folder / 'restored.sqlite3')
         # No process serving the source remains, and the child cannot reopen it.
