@@ -180,3 +180,26 @@ send actual SIGTERM in the pre-handler and cleanup windows, verify the resulting
 termination leaves no socket, and verify cleanup after a working-directory change.
 Only the captured absolute path and inode are used; replacement paths remain intact.
 SIGKILL, kernel failure and power loss still require stale-socket recovery.
+
+## Nginx certificate forwarding increment
+
+The closed launcher now accepts `X-DAIA-Client-Cert` from its trusted Unix-socket
+proxy. It parses one URL-encoded PEM certificate, bounded to 8192 encoded bytes,
+derives the SHA-256 fingerprint, and discards every incoming fingerprint assertion
+before passing the derived identity to the certificate-bound adapter. Missing,
+malformed, oversized or duplicate certificate fields fail closed. This parser does
+not validate a chain: Nginx must require and verify client certificates first.
+
+Nginx's built-in fingerprint variable is SHA-1, so it must not populate the existing
+SHA-256 policy field. The escaped certificate variable supplies the leaf certificate
+instead ([official Nginx SSL variables](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables)).
+The lower-level adapter retains its fingerprint assertion interface for trusted
+integrations; the closed launcher always performs the certificate translation.
+
+`deploy/nginx-closed-mcp.conf.example` is an inactive HTTP-context template listening
+only on loopback. It requires a client CA and CRL, disables TLS session resumption,
+overwrites certificate/forwarding headers, restricts Host/path/methods and sets initial
+body, idle-time, per-IP request and connection bounds. These numbers are starting
+settings, not capacity claims. Public deployment, actual CRL reload/revocation behavior,
+slow-client/load tests and helper migration remain unverified. No live Nginx config
+is changed by adding this template.

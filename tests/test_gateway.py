@@ -50,13 +50,28 @@ def test_socket_permissions_and_existing_path(tmp_path):
 
 @pytest.mark.skipif(os.name != "posix", reason="Unix deployment only")
 def test_real_closed_launcher(network, contributor, tmp_path):
+    from urllib.parse import quote_from_bytes
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.x509.oid import NameOID
+    import datetime
+    key = Ed25519PrivateKey.generate()
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "gateway-test")])
+    now = datetime.datetime.now(datetime.timezone.utc)
+    certificate = (x509.CertificateBuilder().subject_name(name).issuer_name(name)
+                   .public_key(key.public_key()).serial_number(1)
+                   .not_valid_before(now - datetime.timedelta(minutes=1))
+                   .not_valid_after(now + datetime.timedelta(days=1)).sign(key, None))
+    fingerprint = certificate.fingerprint(hashes.SHA256()).hex()
+    forwarded_cert = quote_from_bytes(certificate.public_bytes(serialization.Encoding.PEM))
     service, _ = network
     grant, aid, _ = contributor()
     parent = tmp_path / "run"
     parent.mkdir(mode=0o750)
     policy = tmp_path / "policy.json"
     policy.write_text(json.dumps({"resource": "https://mcp.example.org/mcp", "allowed_agents": [aid],
-                                  "certificate_agents": {"a" * 64: aid}}))
+                                  "certificate_agents": {fingerprint: aid}}))
     policy.chmod(0o600)
     path = parent / "mcp.sock"
     database = tmp_path / "network.sqlite3"
@@ -67,7 +82,7 @@ def test_real_closed_launcher(network, contributor, tmp_path):
     try:
         with httpx.Client(transport=httpx.HTTPTransport(uds=str(path)), base_url="http://mcp.example.org", timeout=2) as client:
             headers = {"Authorization": "Bearer " + grant["token"],
-                       "Accept": "application/json, text/event-stream", "x-daia-client-cert-sha256": "a" * 64}
+                       "Accept": "application/json, text/event-stream", "x-daia-client-cert": forwarded_cert, "x-daia-client-cert-sha256": "forged"}
             request = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
                 "protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": {"name": "test", "version": "1"}}}
             deadline = time.monotonic() + 15
@@ -80,9 +95,15 @@ def test_real_closed_launcher(network, contributor, tmp_path):
                     assert time.monotonic() < deadline
                     time.sleep(0.05)
             assert response.status_code == 200
+            for cert in ["", "bad", "x" * 8193]:
+                assert client.post("/mcp", json=request, headers={**headers, "x-daia-client-cert": cert}).status_code == 403
+            assert client.post("/mcp", json=request, headers=[*headers.items(), ("x-daia-client-cert", forwarded_cert)]).status_code == 403
+            no_certificate = {k: v for k, v in headers.items() if k != "x-daia-client-cert"}
+            no_certificate["x-daia-client-cert-sha256"] = fingerprint
+            assert client.post("/mcp", json=request, headers=no_certificate).status_code == 403
             assert client.post("/mcp", json=request, headers={**headers, "Host": "localhost:8000"}).status_code == 421
             assert client.post("/mcp", json=request, headers={**headers, "Authorization": "Bearer wrong"}).status_code == 401
-            assert client.post("/mcp", json=request, headers={**headers, "x-daia-client-cert-sha256": "b" * 64}).status_code == 403
+            assert client.post("/mcp", json=request, headers={**headers, "x-daia-client-cert": "malformed"}).status_code == 403
     finally:
         process.terminate()
         try:

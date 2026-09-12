@@ -12,6 +12,7 @@ from .crypto import strict_json
 from .mcp_server import build_mcp_app, public_origin
 from .service import Coordinator
 from .store import Store
+from .nginx_gateway import certificate_bridge
 
 
 def configured_app(config, database):
@@ -32,9 +33,9 @@ def configured_app(config, database):
         raise ValueError("Closed policy required")
     public_origin(policy["resource"])
     # Existing database only: a misspelled deployment path must not initialize new state.
-    return build_mcp_app(Coordinator(Store(str(database), create=False)),
+    return certificate_bridge(build_mcp_app(Coordinator(Store(str(database), create=False)),
                          allowed_agents=policy["allowed_agents"],
-                         certificate_agents=policy["certificate_agents"], public_url=policy["resource"])
+                         certificate_agents=policy["certificate_agents"], public_url=policy["resource"]))
 
 
 @contextmanager

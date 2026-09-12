@@ -1,0 +1,56 @@
+# Include inside Nginx's http context. Staging loopback only; NOT a live deployment.
+# Replace the example hostname/paths only after the gateway acceptance tests pass.
+limit_req_zone $binary_remote_addr zone=daia_mcp_requests:1m rate=5r/s;
+limit_conn_zone $binary_remote_addr zone=daia_mcp_connections:1m;
+
+server {
+    listen 127.0.0.1:8443 ssl;
+    server_name mcp.example.org;
+    ssl_certificate /etc/daia/gateway/server.pem;
+    ssl_certificate_key /etc/daia/gateway/server.key;
+    ssl_client_certificate /etc/daia/gateway/client-ca.pem;
+    ssl_crl /etc/daia/gateway/client-ca.crl;
+    ssl_verify_client on;
+    ssl_verify_depth 1;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache off;
+    ssl_session_tickets off;
+
+    access_log off;
+    client_max_body_size 16k;
+    client_body_buffer_size 16k;
+    client_header_buffer_size 1k;
+    large_client_header_buffers 2 8k;
+    client_header_timeout 10s;
+    client_body_timeout 10s;
+    keepalive_timeout 15s;
+    send_timeout 35s;
+    limit_req_status 429;
+    limit_conn_status 429;
+
+    if ($http_host != "mcp.example.org") { return 421; }
+    if ($ssl_client_verify != SUCCESS) { return 403; }
+
+    location = /mcp {
+        if ($request_uri != "/mcp") { return 404; }
+        if ($request_method !~ ^(POST|GET|DELETE)$) { return 405; }
+        limit_req zone=daia_mcp_requests burst=20 nodelay;
+        limit_conn daia_mcp_connections 20;
+        proxy_http_version 1.1;
+        proxy_set_header Host mcp.example.org;
+        proxy_set_header Connection "";
+        proxy_set_header X-DAIA-Client-Cert $ssl_client_escaped_cert;
+        proxy_set_header X-DAIA-Client-Cert-SHA256 "";
+        proxy_set_header Forwarded "";
+        proxy_set_header X-Forwarded-For "";
+        proxy_set_header X-Forwarded-Host "";
+        proxy_set_header X-Forwarded-Proto "";
+        proxy_buffering off;
+        proxy_request_buffering on;
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 35s;
+        proxy_send_timeout 35s;
+        proxy_pass http://unix:/run/daia-gateway/mcp.sock;
+    }
+    location / { return 404; }
+}
