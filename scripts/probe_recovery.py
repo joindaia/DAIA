@@ -40,6 +40,8 @@ def resume(folder):
 
 
 def main():
+    if not __debug__:
+        raise SystemExit("Recovery probe requires assertions; disable Python optimization")
     if len(sys.argv) == 3 and sys.argv[1] == '--resume':
         resume(sys.argv[2])
         return
