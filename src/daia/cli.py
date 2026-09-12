@@ -69,6 +69,11 @@ def main():
     backup.add_argument("--output", type=Path, required=True)
     invite = sub.add_parser("invite")
     invite.add_argument("--max-jobs", type=int, default=20)
+    extension = sub.add_parser("extend-grant", help="Operator-only finite same-root grant extension; requires owner authorization")
+    extension.add_argument("--root", required=True)
+    extension.add_argument("--max-jobs", type=int, required=True, help="Absolute lifetime assignment ceiling, including already used jobs")
+    extension.add_argument("--expires", type=int, required=True, help="Absolute Unix timestamp; at most seven days from application")
+    extension.add_argument("--dry-run", action="store_true", help="Preview without changing the grant; does not record owner approval")
     seed = sub.add_parser("seed")
     seed.add_argument("--number", type=int, default=10403)
     evidence = sub.add_parser("admit-evidence", help="Operator-only frozen data-only source-analysis campaign")
@@ -136,7 +141,7 @@ def main():
                         "Preserve any output; inspect it before retrying.\n")
         print("Private evidence inspection written; treat all artifacts as untrusted data.")
         return
-    if args.command in {"resolve-evidence", "revoke"}:
+    if args.command in {"resolve-evidence", "revoke", "extend-grant"}:
         try:
             service = Coordinator(Store(args.db, create=False))
         except (OSError, ValueError, sqlite3.DatabaseError):
@@ -147,6 +152,14 @@ def main():
         print("Initialized local development database.")
     elif args.command == "invite":
         print(json.dumps(service.invite(args.max_jobs)))
+    elif args.command == "extend-grant":
+        try:
+            result = service.extend_grant(args.root, args.max_jobs, args.expires, dry_run=args.dry_run)
+        except Denied:
+            parser.exit(1, "Grant extension refused. Check the existing live grant and nonshrinking finite limits.\n")
+        except (OSError, sqlite3.DatabaseError):
+            parser.exit(1, "Grant extension could not be confirmed. Inspect the saved grant privately before retrying the same absolute limits.\n")
+        print(json.dumps(result))
     elif args.command == "seed":
         print(json.dumps({"job_id": service.seed(args.number)}))
     elif args.command == "admit-evidence":

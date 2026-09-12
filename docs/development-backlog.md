@@ -31,3 +31,10 @@ Longer participation is a proposed owner choice, not a default: state a total
 additional-assignment budget and absolute end time, separately from the hourly wake
 frequency. Apply neither a server increase nor local renewal until explicitly
 authorized. Updating the schedule alone does not change either budget.
+
+The first slice now has a tested operator-only server extension and preview. It
+preserves identity and history and refuses already-expired or revoked grants. This
+is a prerequisite, not completed recurring participation. Remaining work is the
+reviewed owner-side private invite refresh and explicit local renewal, including the
+chosen longer window, before changing schedules. Until then the helper retains its
+original invite expiry and 24-hour cap. No live grant or local consent was increased.

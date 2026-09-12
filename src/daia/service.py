@@ -51,11 +51,13 @@ class Coordinator:
     def now(self):
         return int(self.clock())
 
-    def _event(self, db, kind, object_id):
+    def _event(self, db, kind, object_id, *, details=None):
         # Private, minimal hash chain. Not an independently witnessed transparency log.
         last = db.execute("SELECT event_hash FROM events ORDER BY sequence DESC LIMIT 1").fetchone()
         previous = last[0] if last else "0" * 64
         doc = {"kind": kind, "object_id": object_id, "at": self.now()}
+        if details is not None:
+            doc["details"] = details
         event_hash = digest({"previous": previous, "event": doc})
         db.execute("INSERT INTO events(event_json,previous_hash,event_hash) VALUES(?,?,?)",
                    (canonical(doc).decode(), previous, event_hash))
@@ -83,6 +85,40 @@ class Coordinator:
             if row is None or row["revoked"] or row["expires"] <= self.now():
                 raise Denied("Unauthorized")
             return row["id"]
+
+    def extend_grant(self, root, max_jobs, expires, *, dry_run=False):
+        """OPERATOR ONLY: explicit finite ceilings on an existing live contributor.
+
+        This neither authorizes local consent nor changes identity, usage or exposure.
+        Exact retries are idempotent while the grant remains live and nonrevoked.
+        """
+        if (type(max_jobs) is not int or not 0 <= max_jobs <= 10000
+                or type(expires) is not int or type(dry_run) is not bool):
+            raise Denied("Invalid grant extension")
+        with self.store.connect() as db:
+            now = self.now()
+            grant = db.execute("SELECT * FROM contributors WHERE id=?", (root,)).fetchone()
+            if (grant is None or grant["revoked"] or grant["expires"] <= now
+                    or not now < expires <= now + 604800
+                    or max_jobs < max(grant["max_jobs"], grant["assigned"])
+                    or expires < grant["expires"]):
+                raise Denied("Grant extension refused")
+            previous = {"max_jobs": grant["max_jobs"], "expires": grant["expires"]}
+            proposed = {"max_jobs": max_jobs, "expires": expires}
+            changed = previous != proposed
+            result = {"status": "preview" if dry_run else "extended" if changed else "already_extended",
+                      "root_id": root, "previous": previous, "proposed": proposed,
+                      "assigned": grant["assigned"], "remaining": max_jobs - grant["assigned"],
+                      "additional_capacity": max_jobs - grant["max_jobs"],
+                      "would_change": changed,
+                      "changed": changed and not dry_run,
+                      "local_consent_changed": False}
+            if dry_run or not changed:
+                return result
+            db.execute("UPDATE contributors SET max_jobs=?,expires=? WHERE id=?", (max_jobs, expires, root))
+            self._event(db, "contributor_grant_extended", root,
+                        details={"previous": previous, "proposed": proposed})
+            return result
 
     def _root(self, db, root):
         row = db.execute("SELECT * FROM contributors WHERE id=?", (root,)).fetchone()

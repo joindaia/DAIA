@@ -16,6 +16,16 @@ the supplied identifier. Repeating a valid revocation succeeds without another e
 including concurrent retries and expired grants. Existing event history is retained;
 this does not repair phantom or duplicate entries produced by older versions.
 
+An operator can preview and explicitly extend a still-live, nonrevoked root's
+absolute assignment ceiling and expiry through `extend-grant`. Limits never shrink;
+the existing 10,000-assignment and seven-day bounds apply. The transaction changes
+only those two columns and appends one audit event with previous/proposed bounds.
+Exact live retries are idempotent; expiry, revocation or a newer larger limit can
+invalidate a stale request. Preview changes no state. Tokens, keys, assigned work,
+cooldowns, receipts and exposure are preserved. No worker endpoint exposes extension,
+and local owner consent and original invite expiry remain independent restrictions.
+See [hourly workers](hourly-workers.md#operator-grant-extension-server-side-prerequisite).
+
 ## Assignment
 
 `request_work(agent_id)` is the only work-acquisition operation. There is no job ID, candidate ID, mode, reviewer preference, vote target, or caller-selected priority parameter. The local adapter returns one lease or a no-work/budget/cooldown response.

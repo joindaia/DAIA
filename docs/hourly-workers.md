@@ -45,10 +45,12 @@ An idle native wake can still consume host/provider usage.
 
 Longer schedules alone cannot extend consent. The current helper permits at most
 1,440 minutes per explicit local renewal, capped by original invite expiry and
-remaining server capacity. There is no implemented same-root server grant extension.
-Week-long continuation of an exhausted pilot therefore requires a reviewed feature;
-do not issue a fresh root, edit saved counters or restart with larger flags to get it.
-The proposed continuation is tracked in the [development backlog](development-backlog.md).
+remaining server capacity. An operator-only same-root server extension is implemented
+on the review branch, with preview and transactional tests. It does not refresh the
+private invite or renew local consent. Week-long participation still needs the reviewed
+owner-side handoff and longer helper window; do not issue a fresh root, edit saved
+counters or restart with larger flags to get it. See the
+[development backlog](development-backlog.md).
 
 The first setup authorizes one job in 30 minutes. Ordinary reconnect flags never
 extend saved consent. The human owner can authorize a recurring pilot with the same
@@ -64,6 +66,46 @@ revive a stopped session or expired/revoked grant, erase prior usage, or reset e
 The command is never saved in MCP configuration and must not appear in recurring
 prompts. A stopped session remains stopped. New recurring consent is an owner action,
 not an autonomous worker workaround.
+
+## Operator grant extension: server-side prerequisite
+
+`extend-grant` keeps the existing root, token, keys, used assignments, cooldown and
+exposure. It changes only the absolute server assignment ceiling and expiry, with
+one audit event containing their old and new numeric values. There is no HTTP/MCP
+extension endpoint and no worker authority to call this operator command.
+
+Before application, obtain owner authorization for the exact total and end date
+under the existing policy. Prepare a preview against the existing database:
+
+```powershell
+.\.venv\Scripts\python -m daia.cli --db .runtime/pilot.sqlite3 extend-grant --root ROOT_ID --max-jobs TOTAL_CEILING --expires UNIX_TIMESTAMP --dry-run
+```
+
+`TOTAL_CEILING` includes all previously assigned work: three consumed assignments plus
+ten additional assignments means thirteen, not ten. The expiry is an absolute Unix
+timestamp in seconds, at most seven days from application. Neither current limit may
+decrease, and the ceiling cannot exceed 10,000. The grant must still be live and
+nonrevoked. Exhaustion can be extended; expiry or revocation cannot be reversed by
+this command. If the grant expires first, stop: any future same-root recovery or token
+rotation requires separate review. Creating a new root would lose exposure history.
+
+The preview reports previous/proposed bounds, assigned/remaining counts,
+`additional_capacity`, `would_change`, and `local_consent_changed: false`. It does
+not expire leases, reserve capacity, record owner approval or change any database row.
+Refresh the preview before applying the owner's exact approved limits; if material
+effects changed, present the changed proposal. Remove `--dry-run` only for that
+approved application. An exact retry while the grant remains live returns
+`already_extended` without more capacity or another event. A stale request that
+would lower either newer bound refuses. Expected storage errors report an unconfirmed
+outcome: inspect privately before retrying the same absolute limits, not a fresh
+relative allowance.
+
+Server extension does not change the saved invite expiry, local deadline, stopped
+state, local usage or native schedule. It cannot restore eligibility for a released
+review. The current helper still enforces its original invite and 24-hour maximum.
+Until the later owner-side handoff is implemented and approved, a successful server
+extension is not evidence of longer-running agents. No live pilot extension was
+performed while developing this capability.
 
 ## Worker prompt
 

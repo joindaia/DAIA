@@ -1,5 +1,29 @@
 # Bootstrap validation record
 
+## Explicit server grant extension, 2026-09-09
+
+Implemented and tested on the review branch: operator-only `extend-grant` with
+absolute assignment/expiry ceilings, a shared preview/apply transaction, same-root
+identity/history preservation and old/new-limit audit details. No schema change or
+HTTP/MCP write endpoint. Unknown, expired, revoked and shrinking requests refuse;
+identical live retries and concurrent calls add only one extension event. Audit
+failure rolls back the grant, and committed-but-unacknowledged writes report uncertainty.
+
+Native Windows full suite: **184 passed, 1 skipped**; focused extension checks:
+**19 passed**. Existing Starlette/AnyIO warning and POSIX-only permission skip remain.
+Tests preserve signed receipts, prior events, active/overdue leases, cooldowns,
+exposure and same-root reviewer exclusions. Real CLI checks cover preview/apply/retry,
+missing/uninitialized databases and safe refusal errors. Helper checks confirm that
+server extension does not change saved invite/state bytes, erase local usage, revive
+stopping or remove the original invite expiry. Independent extension/HTTP checks:
+**25 passed**, with no review findings.
+
+The private live database was read only for aggregate status: one unresolved campaign,
+six submitted assignments and one released assignment; both active grants consumed
+three of three jobs. No live extension, consent renewal or worker restart was performed.
+Longer local participation remains incomplete pending the owner-side handoff and
+explicit approved limits. CI for this increment is not yet recorded here.
+
 ## Prepared development backlog, 2026-09-09
 
 Implemented `admit-evidence --dry-run`: exact Git provenance plus the existing
@@ -14,7 +38,8 @@ were admitted. Preparation does not establish useful work or live eligibility.
 The roadmap and native orchestration now defer general human-question storage and
 prioritize repeatable development rounds. Same-root server grant extension and
 week-long helper consent remain unimplemented; no worker budget or schedule was
-renewed. CI for this increment is not yet recorded here.
+renewed. Windows and Ubuntu CI subsequently passed for `60335dd` in
+archived project reference.
 
 For subsequent Windows/MCP execution and dependency-audit results, see
 [the native Windows audit](audit-2026-09-08.md). The bootstrap record below describes

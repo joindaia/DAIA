@@ -7,6 +7,27 @@ implementation. Test and pilot results remain separate from these judgments.
 
 ## Product-focus follow-up
 
+### Finite continuation follow-up
+
+The maintainer deferred durable human-question storage and asked for longer recurring
+participation and prepared work. The existing engineering/adversarial reviewer and
+the GPT-5.6 Sol / high product reviewer both supported a minimal server-side extension
+as a prerequisite, with absolute limits and existing transactions instead of a new
+service or grant schema. They required preserved identity, used work, exposure,
+cooldown, revocation, receipts and independent local consent; exact retries must add
+neither capacity nor audit events. The actual implementation passed independent
+extension/HTTP checks with no blocking findings.
+
+The product reviewer challenged expiry behavior: refusing expired grants means this
+path must run before existing expiry; allowing them would reactivate an old bearer
+token. The current proposal explicitly refuses expired and revoked grants under the
+existing boundary. Later same-root recovery or token rotation needs separate review;
+fresh roots are not a workaround. The helper's original invite expiry and 24-hour
+window remain enforced. No live extension, schedule restart or completed week-long
+participation is claimed. See [operator extension](hourly-workers.md#operator-grant-extension-server-side-prerequisite).
+
+### Earlier native triage follow-up
+
 The maintainer challenged continued small reliability fixes as insufficient product
 progress. A new GPT-5.6 Sol / high product reviewer and the existing adversarial
 reviewer both recommended a complete native triage handoff as the next bounded
