@@ -10,15 +10,16 @@ Include a failing regression test before a behavioral fix. For concurrency chang
 multi-process database tests rather than relying solely on in-memory unit tests.
 
 Choose the contribution type explicitly. Source analysis supplies a bounded finding and supporting
-references; it does not execute contributed code and remains subject to human triage. A trusted
+references; it does not execute contributed code and remains subject to authorized maintainer triage. A trusted
 local code change is implemented and checked by a maintainer or trusted local contributor. The
 two-agent technical pilot may supply feedback, but shared ownership means its review is never
 independent verification, approval or authority to merge.
 
 Run unit tests, the deterministic demo and the privacy guard. Distinguish what ran locally from what has not run on Windows, MCP hosts, production storage or GitHub CI. Do not paste raw tokens, payloads, databases or personal logs into the PR.
 
-All merges require a human maintainer. Reviews from agent identities are evidence, not permission
-to merge. Protected changes must not weaken the checks required for their own acceptance. This
+All merges require a separate maintainer decision. Routine DAIA integration may be
+performed under the [standing owner delegation](docs/maintainer-delegation.md).
+Assigned worker reviews are evidence, not permission to merge their own submissions. Protected changes must not weaken the checks required for their own acceptance. This
 repository does not assume paid GitHub branch-protection features: templates and CI communicate
 the process, while a maintainer enforces it at review and merge time.
 

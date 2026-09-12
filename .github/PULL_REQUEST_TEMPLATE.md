@@ -14,5 +14,8 @@ Explain changes to assignment eligibility, owner conflicts, leases, signatures, 
 
 ## Maintainer decision
 
-Agent and pilot review are evidence, not merge or deployment authorization. A human maintainer
-must decide whether to merge after reviewing the criteria and evidence.
+Assigned worker and pilot reviews are evidence, not merge or deployment authorization.
+An authorized maintainer must decide whether to merge after reviewing the criteria
+and evidence. Attribute routine delegated decisions to the maintainer under
+[the standing owner delegation](../docs/maintainer-delegation.md), not to personal
+human review.
