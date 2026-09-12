@@ -72,3 +72,60 @@ def relay(connection, helper, *, seconds=30, max_bytes=256 * 1024):
             else:
                 connection.shutdown(socket.SHUT_WR)
             closing.remove(fd)
+
+
+def main(argv=None):
+    """Trusted-launcher entrypoint: one inherited listener and two helper pipes."""
+    import argparse
+    import stat
+    from contextlib import ExitStack
+    from types import SimpleNamespace
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--listener-fd', type=int, required=True)
+    parser.add_argument('--helper-input-fd', type=int, required=True)
+    parser.add_argument('--helper-output-fd', type=int, required=True)
+    parser.add_argument('--accept-seconds', type=float, default=120)
+    parser.add_argument('--seconds', type=float, default=30)
+    parser.add_argument('--max-bytes', type=int, default=256 * 1024)
+    args = parser.parse_args(argv)
+    try:
+        if (sys.platform != 'linux' or os.geteuid() == 0 or os.getuid() != os.geteuid()
+                or os.getgid() != os.getegid()):
+            raise ValueError('Non-root Linux identity required')
+        import fcntl
+        descriptors = (args.listener_fd, args.helper_input_fd, args.helper_output_fd)
+        if len(set(descriptors)) != 3 or min(descriptors) < 3:
+            raise ValueError('Distinct inherited descriptors required')
+        if (not all(math.isfinite(x) and x > 0 for x in (args.seconds, args.accept_seconds))
+                or args.max_bytes < 1):
+            raise ValueError('Finite positive limits required')
+        for fd, access in ((args.helper_input_fd, os.O_WRONLY), (args.helper_output_fd, os.O_RDONLY)):
+            if (not stat.S_ISFIFO(os.fstat(fd).st_mode)
+                    or fcntl.fcntl(fd, fcntl.F_GETFL) & os.O_ACCMODE != access):
+                raise ValueError('Directional helper pipes required')
+        with ExitStack() as stack:
+            listener = stack.enter_context(socket.socket(fileno=args.listener_fd))
+            if (listener.family != socket.AF_UNIX
+                    or listener.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE) != socket.SOCK_STREAM
+                    or not listener.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)):
+                raise ValueError('Unix listener required')
+            helper = SimpleNamespace(
+                stdin=stack.enter_context(os.fdopen(args.helper_input_fd, 'wb', buffering=0)),
+                stdout=stack.enter_context(os.fdopen(args.helper_output_fd, 'rb', buffering=0)),
+            )
+            listener.settimeout(args.accept_seconds)
+            connection, _ = listener.accept()
+            listener.close()  # This process accepts exactly one worker connection.
+            with connection:
+                result = relay(connection, helper, seconds=args.seconds, max_bytes=args.max_bytes)
+            return 0 if result == 'complete' else 124
+    except TimeoutError:
+        return 124
+    except (OSError, ValueError):
+        print('Assignment relay refused or disconnected', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

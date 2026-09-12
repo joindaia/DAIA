@@ -84,3 +84,56 @@ def test_invalid_limits_reject_before_touching_endpoints():
     for limits in ({'seconds': float('inf')}, {'seconds': 0}, {'max_bytes': 0}, {'max_bytes': True}):
         with pytest.raises(ValueError, match='finite positive'):
             relay(None, None, **limits)
+
+
+def test_entrypoint_refuses_root_before_using_descriptors(monkeypatch):
+    from daia.assignment_relay import main
+    def forbidden_access(_): pytest.fail('descriptor access before privilege rejection')
+    monkeypatch.setattr('os.fstat', forbidden_access)
+    monkeypatch.setattr('os.geteuid', lambda: 0)
+    assert main(['--listener-fd', '30', '--helper-input-fd', '31', '--helper-output-fd', '32']) == 1
+
+
+def test_nonroot_entrypoint_inherited_channels(tmp_path):
+    import os
+    if os.geteuid() == 0:
+        pytest.skip('Entrypoint deliberately refuses root')
+    with socket.socket(socket.AF_UNIX) as listener:
+        listener.bind(str(tmp_path / 'relay.sock'))
+        listener.listen(1)
+        helper = subprocess.Popen([sys.executable, '-I', '-u', '-c',
+                                   'import sys;assert sys.stdin.buffer.read()==b"request";sys.stdout.buffer.write(b"reply")'],
+                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        fds = (listener.fileno(), helper.stdin.fileno(), helper.stdout.fileno())
+        process = subprocess.Popen([sys.executable, '-m', 'daia.assignment_relay',
+                                    '--listener-fd', str(fds[0]), '--helper-input-fd', str(fds[1]),
+                                    '--helper-output-fd', str(fds[2]), '--seconds', '2'],
+                                   pass_fds=fds, env={**os.environ, 'PYTHONPATH': 'src'},
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        helper.stdin.close(); helper.stdin = None
+        helper.stdout.close(); helper.stdout = None
+        try:
+            with socket.socket(socket.AF_UNIX) as client:
+                client.settimeout(3);client.connect(str(tmp_path / 'relay.sock'))
+                client.sendall(b'request');client.shutdown(socket.SHUT_WR)
+                data = bytearray()
+                while chunk := client.recv(32): data.extend(chunk)
+                assert bytes(data) == b'reply'
+            out, err = process.communicate(timeout=3)
+            assert process.returncode == 0 and not out and not err
+            assert helper.wait(timeout=3) == 0
+        finally:
+            for child in (process, helper):
+                if child.poll() is None: child.kill()
+                child.communicate(timeout=3)
+
+
+def test_entrypoint_refuses_setgid_before_using_descriptors(monkeypatch):
+    from daia.assignment_relay import main
+    monkeypatch.setattr('os.getuid', lambda: 1000)
+    monkeypatch.setattr('os.geteuid', lambda: 1000)
+    monkeypatch.setattr('os.getgid', lambda: 1000)
+    monkeypatch.setattr('os.getegid', lambda: 1001)
+    def forbidden_access(_): pytest.fail('descriptor access before privilege rejection')
+    monkeypatch.setattr('os.fstat', forbidden_access)
+    assert main(['--listener-fd', '30', '--helper-input-fd', '31', '--helper-output-fd', '32']) == 1

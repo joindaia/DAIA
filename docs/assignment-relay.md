@@ -24,3 +24,15 @@ Regression tests exercise real sockets and subprocess pipes: bidirectional EOF,
 a helper that stops reading, separate and combined traffic limits, and invalid
 bounds. Run `python -m pytest -q tests/test_assignment_relay.py` on Linux. These
 checks do not establish native-provider confinement or authorize cohort cutover.
+
+The trusted-launcher entrypoint `python -m daia.assignment_relay` accepts inherited
+`--listener-fd`, `--helper-input-fd` and `--helper-output-fd` descriptors. It refuses
+root/set-ID execution, requires a Unix stream listener and directional pipes, and
+accepts one connection. It has no path, URL or helper-command parameter. Exit 124
+means a connection/relay timeout; exit 1 means refused or failed transport.
+
+The launcher must pass only these descriptors, attach stdin to the null device,
+bound diagnostic capture, and close its own copies of the helper pipes after
+handoff so EOF can propagate. It must independently enforce filesystem/network
+isolation, no-new-privileges, resource limits and process cleanup. The CLI's UID
+check does not establish those OS properties by itself.
