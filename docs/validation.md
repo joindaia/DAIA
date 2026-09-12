@@ -39,6 +39,24 @@ the existing private pilot was also created successfully; the live database was 
 replaced or restored. Source privacy and whitespace checks passed. CI for this
 increment must be checked separately from the earlier source-evidence revision.
 
+## Per-assignment refusal, 2026-09-09
+
+The local helper now exposes zero-argument `release_work`, with a saved assignment-bound
+refusal. Tests cover lost status/release responses, restart, cleanup after local expiry,
+changed assignments, lost claims, pending signed receipts, stronger whole-session stop,
+legacy state files, and preserved budget/cooldown/exposure. A real stdio/HTTP release
+and helper restart passed. Native Windows verification returned **105 passed, 1 skipped**;
+the final focused contributor run returned **17 passed**. One earlier run of the existing
+stdio submission test reported `UnexpectedToolError`; the immediate rerun and subsequent
+focused/full runs passed. Its cause is not established, so it is recorded rather than
+classified as a fixed defect. Compilation, source privacy and whitespace checks passed.
+This increment does not change the running campaign's verifier or policy. Remote
+installed helpers still require a package update/restart to gain the sixth tool.
+The protocol adversarial reviewer independently repeated **105 passed, 1 skipped**,
+confirmed the refusal/failure boundaries and found no blocking defect. Its outdated
+tool-count documentation finding was corrected; historical discovery records retain
+the counts actually observed at the time.
+
 Date: 2026-09-08. This is an execution record, not a security certification.
 
 ## Executed successfully

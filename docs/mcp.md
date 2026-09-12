@@ -4,7 +4,8 @@ Status: the official Python SDK 2.2.0 adapter has passed real-socket protocol te
 Windows, including a complete three-root demonstration and authorization checks. Codex
 CLI 0.144.3 authenticated and discovered the original seven tools over a private tailnet endpoint.
 The coordinator now also exposes authenticated `contribution_status` for lease recovery.
-For desktop Codex mode, use the five-tool [local contributor helper](desktop-contributor.md).
+For desktop Codex mode, use the six-tool [local contributor helper](desktop-contributor.md),
+including per-assignment release and separate whole-session stop.
 The user subsequently completed local and second-machine CLI reviews; coordinator receipts
 match the separately issued local/remote grants and the candidate is promoted. Machine
 placement is user-reported, not cryptographic device attestation. See the

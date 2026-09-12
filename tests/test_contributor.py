@@ -190,9 +190,11 @@ def test_stop_persists_when_disconnected_and_lock_releases(tmp_path):
         async def offline(*args, **kwargs):
             raise ValueError("Disconnected")
         host.remote = offline
+        assert (await host.perform("release_work"))["status"] == "release_pending"
         assert (await host.perform("stop_contributing"))["status"] == "stopped"
         host = direct(Contributor(path), service)
         assert (await host.perform("request_work"))["status"] == "stopped"
+        assert (await host.perform("release_work"))["status"] == "stopped"
         assert (await host.perform("stop_contributing"))["lease"] is None
         assert service.contribution_status(host.identity["root_id"], host.agent)["lease"] is None
     asyncio.run(exercise())
@@ -216,7 +218,7 @@ def test_native_stdio_host_through_real_http(tmp_path):
                 result = await session.initialize()
                 assert "untrusted data" in result.instructions
                 names = {t.name for t in (await session.list_tools()).tools}
-                assert names == {"contribution_status", "request_work", "heartbeat", "submit_result", "stop_contributing"}
+                assert names == {"contribution_status", "request_work", "heartbeat", "submit_result", "release_work", "stop_contributing"}
                 assert (await call(session, "contribution_status"))["status"] == "ready"
                 lease = await call(session, "request_work")
                 assert lease["mode"] == "produce"
@@ -231,6 +233,7 @@ def test_native_stdio_host_through_real_http(tmp_path):
                 status = await call(session, "request_work")
                 assert status["status"] == "budget_exhausted"
                 assert status["receipt"] == receipt
+                assert (await call(session, "release_work"))["status"] == "budget_exhausted"
                 await call(session, "stop_contributing")
     with running_server(build_mcp_app(service)) as url:
         asyncio.run(exercise(invite_file(tmp_path, service, url)))
@@ -281,3 +284,155 @@ def test_empty_queue_tampered_envelope_and_revocation(tmp_path):
             await host.perform("request_work")
         assert (await host.perform("stop_contributing"))["status"] == "stopped"
     asyncio.run(exercise())
+
+
+def test_release_keeps_budget_cooldown_and_exposure(tmp_path):
+    now = [int(time.time())]
+    clock = lambda: now[0]
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")), clock=clock)
+    service.seed()
+    path = invite_file(tmp_path, service)
+
+    async def exercise():
+        host = direct(Contributor(path, max_jobs=3, clock=clock), service)
+        await host.perform("request_work")
+        deadline, key = host.state["deadline"], host.state["key"]
+        result = await host.perform("release_work")
+        assert result["release"] == "confirmed" and result["lease"] is None
+        assert result["jobs_used"] == 1 and not host.state["stopped"]
+        grant = service.contribution_status(host.identity["root_id"], host.agent)
+        assert grant["assigned"] == 1 and grant["cooldown_until"] == now[0] + 30
+        assert (await host.perform("request_work"))["status"] == "budget_or_cooldown"
+        now[0] += 31
+        assert (await host.perform("request_work"))["status"] == "no_eligible_work"
+        assert host.state["used"] == 1
+        del host.state["releasing"]  # Existing helper state files predate per-job refusal.
+        host.save()
+        restarted = direct(Contributor(path, max_jobs=9, clock=clock), service)
+        assert restarted.state["key"] == key and restarted.state["deadline"] == deadline
+        service.seed(35)
+        assert (await restarted.perform("request_work"))["context"]["number"] == 35
+        assert restarted.state["used"] == 2 and restarted.state["max_jobs"] == 3
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("failure", ["status_offline", "before_release", "after_release"])
+def test_release_intent_survives_failure_restart_and_local_expiry(tmp_path, failure):
+    now = [int(time.time())]
+    clock = lambda: now[0]
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")), clock=clock)
+    service.seed()
+    path = invite_file(tmp_path, service)
+
+    async def exercise():
+        host = direct(Contributor(path, max_jobs=2, minutes=1, clock=clock), service)
+        lease = await host.perform("request_work")
+        remote = host.remote
+
+        async def unreliable(name, **arguments):
+            if name == "release_work":
+                saved = json.loads(host.path.read_text())
+                assert saved["releasing"]["assignment_id"] == arguments["assignment_id"] == lease["assignment_id"]
+                if failure == "before_release":
+                    raise ValueError("Offline before release")
+            if failure == "status_offline" and name == "contribution_status":
+                raise ValueError("Offline before status")
+            result = await remote(name, **arguments)
+            if failure == "after_release" and name == "release_work":
+                raise ValueError("Lost committed release response")
+            return result
+
+        host.remote = unreliable
+        assert (await host.perform("release_work"))["status"] == "release_pending"
+        # Pending refusal also fences attempts to keep working before a reconnect.
+        if failure != "after_release":
+            assert (await host.perform("heartbeat"))["status"] == "release_pending"
+            assert (await host.perform("submit_result", artifact="must not submit", verdict="candidate"))["status"] == "release_pending"
+        now[0] += 61
+        host = direct(Contributor(path, clock=clock), service)
+        result = await host.perform("request_work")  # Cleanup only, even after local expiry.
+        assert result["status"] == "expired" and not result["release_pending"]
+        assert result["lease"] is None and result["jobs_used"] == 1
+        assert not host.state["stopped"]
+        assert service.contribution_status(host.identity["root_id"], host.agent)["assigned"] == 1
+        with service.store.connect() as db:
+            assert db.execute("SELECT state FROM assignments WHERE id=?", (lease["assignment_id"],)).fetchone()[0] == "released"
+    asyncio.run(exercise())
+
+
+def test_release_does_not_follow_a_changed_assignment(tmp_path):
+    now = [int(time.time())]
+    clock = lambda: now[0]
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")), clock=clock)
+    service.seed()
+    path = invite_file(tmp_path, service)
+
+    async def exercise():
+        host = direct(Contributor(path, max_jobs=3, clock=clock), service)
+        old = await host.perform("request_work")
+        direct(host, service, lose="release_work")
+        assert (await host.perform("release_work"))["status"] == "release_pending"
+        now[0] += 31
+        service.seed(35)
+        # Simulate outside activity with the same key; stale refusal must not target it.
+        new = service.request_work(host.identity["root_id"], host.agent)
+        assert new["assignment_id"] != old["assignment_id"]
+        host = direct(Contributor(path, clock=clock), service)
+        result = await host.perform("heartbeat")
+        assert result["release"] == "assignment_changed" and result["lease"] == new
+        assert service.contribution_status(host.identity["root_id"], host.agent)["lease"] == new
+        assert (await host.perform("stop_contributing"))["status"] == "stopped"
+        assert service.contribution_status(host.identity["root_id"], host.agent)["lease"] is None
+    asyncio.run(exercise())
+
+
+def test_release_recovers_lost_claim_but_preserves_pending_receipts(tmp_path):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    service.seed()
+    path = invite_file(tmp_path, service)
+
+    async def exercise():
+        host = direct(Contributor(path), service, lose="request_work")
+        with pytest.raises(ValueError):
+            await host.perform("request_work")
+        assert host.state["lease"] is None and host.state["claiming"]
+        direct(host, service)
+        assert (await host.perform("release_work"))["release"] == "confirmed"
+        assert host.state["used"] == 1
+        other = direct(Contributor(invite_file(tmp_path, service)), service)
+        await other.perform("request_work")
+        direct(other, service, lose="submit_result")
+        with pytest.raises(ValueError):
+            await other.perform("submit_result", artifact='{"factors":[101,103]}', verdict="candidate")
+        saved = other.path.read_bytes()
+        with pytest.raises(ValueError, match="pending receipt"):
+            await other.perform("release_work")
+        assert other.path.read_bytes() == saved
+        direct(other, service)
+        assert (await other.perform("stop_contributing"))["status"] == "stopped"
+        assert other.state["pending"] is not None and service.metrics()["results"] == 1
+    asyncio.run(exercise())
+
+
+def test_native_stdio_release_declines_one_job(tmp_path):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    service.seed()
+
+    async def exercise(path):
+        parameters = StdioServerParameters(command=sys.executable, args=[
+            "-m", "daia.contributor", "--invite", str(path)])
+        async with stdio_client(parameters) as streams:
+            async with ClientSession(*streams) as session:
+                await session.initialize()
+                lease = await call(session, "request_work")
+                assert lease["mode"] == "produce"
+                result = await call(session, "release_work")
+                assert result["release"] == "confirmed" and result["status"] == "budget_exhausted"
+        async with stdio_client(parameters) as streams:
+            async with ClientSession(*streams) as session:
+                await session.initialize()
+                status = await call(session, "contribution_status")
+                assert status["status"] == "budget_exhausted" and status["jobs_used"] == 1
+                assert status["lease"] is None and status["grant"]["assigned"] == 1
+    with running_server(build_mcp_app(service)) as url:
+        asyncio.run(exercise(invite_file(tmp_path, service, url)))

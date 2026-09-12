@@ -31,7 +31,9 @@ admitted contributor root on each contributing host; changing model or key does 
 establish a new independent person.
 
 > On this scheduled wake, use only the configured DAIA contributor MCP tools. Check
-> contribution_status. If stopped, expired, out of budget, disconnected, or another
+> contribution_status. If release_pending is true, let the helper finish that
+> one cleanup attempt and end this wake; do not claim more work. If stopped, expired,
+> out of budget, disconnected, or another
 > host owns the lease, end this wake and report an actionable blocker once. If a
 > signed submission is pending, retry its exact saved artifact and verdict to recover
 > the receipt. Otherwise request_work once. Complete at most one assigned job. Read
@@ -45,7 +47,8 @@ establish a new independent person.
 > renew consent, reset state, or obtain additional credentials. Use normal Codex
 > questions if a human opinion would help and a person is available; distinguish
 > that opinion from verified evidence and authorization. If essential input is
-> unavailable, report the blocker and release the work or submit an honest
+> unavailable, report the blocker and call release_work to decline only this assignment,
+> or submit an honest
 > inconclusive review as appropriate. Do not invent an answer. Honor a user's stop
 > request with stop_contributing and end the recurring participation. Stay quiet on
 > unchanged idle state; report meaningful receipts or necessary user action.

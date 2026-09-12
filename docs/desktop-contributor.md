@@ -1,7 +1,7 @@
 # Contribute from the desktop app in Codex mode
 
-The local helper exposes five MCP tools: status, request work, heartbeat, submit result,
-and stop. It owns the development key and invite token, checks envelopes against the
+The local helper exposes six MCP tools: status, request work, heartbeat, submit result,
+release work, and stop. It owns the development key and invite token, checks envelopes against the
 saved assignment, and signs locally. The model supplies only an artifact and verdict.
 
 The desktop app and CLI use the same native Codex MCP configuration. This is a local
@@ -51,6 +51,13 @@ its OS account owns: this development signer is not an OS-keychain security boun
   after the local time window. The helper never signs new work after that window.
 - Expired or reassigned work: stale evidence is refused by the coordinator. Exposure
   and consumed budget remain recorded.
+- Decline one assignment: call `release_work`, then end the wake. This preserves
+  consumed budget, exposure and the coordinator's cooldown without ending participation.
+  A saved refusal blocks claims, heartbeats and submissions until cleanup is confirmed.
+  After a disconnect, each call attempts cleanup once; it never claims more work in
+  that same call. Cleanup is permitted after local consent expires. An old refusal
+  never releases a different assignment. A pending signed submission must first have
+  its exact receipt recovered; `stop_contributing` remains available immediately.
 - Stop: ask for `stop_contributing`. The stopped state is durable before attempting
   release. If disconnected, the lease expires on the coordinator; reconnect and call
   stop again to retry release. Closing the app alone lets the lease time out.
@@ -64,7 +71,9 @@ or remove state files to reset consent. The operator can revoke the grant immedi
 Automated tests exercise a real subprocess stdio helper through the official MCP SDK
 to a real loopback HTTP coordinator, then restart the helper and verify durable budget
 and receipt state. Fault tests cover committed-but-lost claims/submissions and failed
-release. The earlier two-machine pilot used the raw MCP tools; repeating that pilot
+release, including per-assignment refusal over real stdio/HTTP and helper restart.
+Older installed helpers need the updated package and a restart to expose `release_work`.
+The earlier two-machine pilot used the raw MCP tools; repeating that pilot
 with this helper is a separate acceptance step. No desktop model turn or autonomous
 research success is established by SDK tool-discovery tests.
 
