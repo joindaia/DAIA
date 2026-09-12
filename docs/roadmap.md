@@ -96,8 +96,9 @@ Maintain the tested/untested distinction in README and `docs/validation.md`.
 The portable dependency lock and local vulnerability audit are complete. Two actual
 clients completed the raw-protocol pilot. The desktop/CLI signing helper now has real
 stdio-to-HTTP process tests, persistent consent, native Codex discovery and failure
-recovery checks; repeat the human two-machine pilot using this helper. License review,
-OS-bound signing, public OAuth/OIDC and production consent remain open. Native Windows
+recovery checks; repeat the human two-machine pilot using this helper. AGPL-3.0-or-later
+has been selected; distribution-specific dependency reviews, OS-bound signing, public
+OAuth/OIDC and production consent remain open. Native Windows
 instructions require no WSL or provider-token collection.
 
 Exit: an authorized human connects a host, completes bounded assigned work and reviews an independently checked result; revocation/stop prevents new work; no secrets appear in tools, logs or commits. Do not use a subscription-percentage control without actual supported metering.
@@ -122,6 +123,8 @@ Exit: one real useful change produced, independently validated, reviewed and man
 
 ## 5. Public readiness
 
-Complete the full-history privacy review and license selection. Enable appropriate repository protection, private vulnerability reporting, contributor guidelines, provider integration/terms review and a real consent policy. Document what data donor-host providers see. Publish a supported-client matrix and tested resource limits. Re-audit all release artifacts, actions logs and public account linkage.
+The sanitized source history has been reviewed and AGPL-3.0-or-later selected; see
+[the licensing decision](licensing-decision.md). Repeat privacy and dependency reviews
+for each release artifact. Enable appropriate repository protection, private vulnerability reporting, contributor guidelines, provider integration/terms review and a real consent policy. Document what data donor-host providers see. Publish a supported-client matrix and tested resource limits. Re-audit all release artifacts, actions logs and public account linkage.
 
 Only then consider broader admission, reputation calibration, a read-only UI, reusable research DAGs, scoped public attestations, independent transparency witnesses and federation. Bounty payouts, governance voting, tokens and financial claims are separate projects, not implicit features of signed agent contributions.

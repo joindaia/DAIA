@@ -7,6 +7,8 @@ name = "daia-coordinator"
 version = "0.1.0"
 description = "Evidence-gated coordination for voluntarily contributed AI-agent work"
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
   "cryptography>=50.0.1,<51",

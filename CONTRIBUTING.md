@@ -1,6 +1,12 @@
 # Contributing
 
-This is a pre-publication scaffold. A contribution license has not yet been selected; maintainers should choose and document one before accepting outside contributions. Do not assume that a public repository automatically grants an open-source license.
+DAIA is licensed under [AGPL-3.0-or-later](LICENSE-STATUS.md). By intentionally
+submitting a contribution for inclusion, you offer it under the same license and
+retain your copyright, where applicable. You must have authority to submit the
+material; identify third-party code and preserve its license and notices. Do not
+submit material with incompatible terms. There is no copyright assignment or
+blanket permission for maintainers to sell proprietary exceptions. A public
+pseudonym is welcome; keep private identity and account details out of commits.
 
 Start with a bounded issue stating the objective, acceptance criteria, baseline, scope and evidence
 plan. Use the development-task template for a proposed improvement and the bug template for a

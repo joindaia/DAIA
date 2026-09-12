@@ -59,7 +59,7 @@ py -3.13 -m venv .venv
 On Linux/macOS, substitute `python3` and `.venv/bin/python`. Installation requires
 internet access. Native Windows execution and a dependency vulnerability audit now have
 [recorded results](docs/audit-2026-09-08.md). `uv.lock` pins the portable dependency graph
-and distribution hashes. License review and a fresh vulnerability audit remain release gates.
+and distribution hashes. Fresh dependency-license and vulnerability audits remain release gates.
 
 The demo uses three temporary, independently admitted contributor roots and disposable keys:
 
@@ -106,7 +106,7 @@ and the limits of restoring old state.
 
 [Architecture](docs/architecture.md) explains the chosen stack and trust boundaries. [Research](docs/research.md) records primary sources and limitations. [Protocol](docs/protocol.md) describes identity, leases, and signatures. [Verification](docs/verification.md) defines promotion rules. [Roadmap](docs/roadmap.md) is the implementation sequence.
 
-[Privacy](PRIVACY.md), [publishing](PUBLISHING.md), [security](SECURITY.md), and [agent instructions](AGENTS.md) are required reading before contributing or publishing. Licensing is [pending maintainer selection](LICENSE-STATUS.md).
+[Privacy](PRIVACY.md), [publishing](PUBLISHING.md), [security](SECURITY.md), and [agent instructions](AGENTS.md) are required reading before contributing or publishing. The [license decision](LICENSE-STATUS.md) explains the AGPL scope and its limits.
 
 ## Project direction and website
 
