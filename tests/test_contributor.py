@@ -713,14 +713,21 @@ def test_endpoint_migration_preserves_state_and_rollback(tmp_path, network, monk
         assert all(p.stat().st_mode & 0o777 == 0o600 for p in backups)
 
 
+@pytest.mark.parametrize("rollback", [False, True])
 @pytest.mark.parametrize("failure", ["network", "history", "source_changed", "unreachable", "save"])
-def test_endpoint_migration_failure_keeps_original(tmp_path, network, monkeypatch, failure):
+def test_endpoint_migration_failure_keeps_original(tmp_path, network, monkeypatch, failure, rollback):
     service, _ = network
     path = invite_file(tmp_path, service)
     host = direct(Contributor(path, clock=service.clock), service)
     asyncio.run(host.register())
     target = {"url": "https://mcp.example.org/mcp", "tls": {}}
     monkeypatch.setattr(contributor_module, "closed_transport", lambda config, directory: (config, object()))
+    if rollback:
+        host.transport = {"url": "https://current.example.org/mcp", "tls": {}}
+        host.state.update(transport=host.transport, previous_transport=target)
+        host.save()
+    host.tls_context = object()
+    original_transport, original_context = host.transport, host.tls_context
     count = 0
     async def status(name, **args):
         nonlocal count
@@ -737,9 +744,13 @@ def test_endpoint_migration_failure_keeps_original(tmp_path, network, monkeypatc
     before = host.path.read_bytes()
     if failure == "save":
         monkeypatch.setattr(host, "save", lambda: (_ for _ in ()).throw(OSError("disk failed")))
-    with pytest.raises((ValueError, OSError)):
-        asyncio.run(host.migrate_endpoint(target, tmp_path))
-    assert host.path.read_bytes() == before and host.transport is None
+    error = OSError if failure == "save" else ValueError
+    message = {"unreachable": "unreachable", "save": "disk failed"}.get(failure, "Coordinator state differs")
+    with pytest.raises(error, match=message):
+        asyncio.run(host.migrate_endpoint(None if rollback else target, tmp_path, rollback=rollback))
+    assert count == (2 if failure == "unreachable" else 3)
+    assert host.path.read_bytes() == before and host.transport == original_transport
+    assert host.tls_context is original_context
     assert host.state == json.loads(before)
 
 
