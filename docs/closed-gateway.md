@@ -200,8 +200,8 @@ integrations; the closed launcher always performs the certificate translation.
 only on loopback. It requires a client CA and CRL, disables TLS session resumption,
 overwrites certificate/forwarding headers, restricts Host/path/methods and sets initial
 body, idle-time, per-IP request and connection bounds. These numbers are starting
-settings, not capacity claims. Public deployment, actual CRL reload/revocation behavior,
-slow-client/load tests and helper migration remain unverified. No live Nginx config
+settings, not capacity claims. Public deployment, slow-client/load tests and helper migration remain unverified.
+The isolated CRL reload checks are described below. No live Nginx config
 is changed by adding this template.
 
 ### Full proxy integration exercise
@@ -212,10 +212,34 @@ on the VPS: an admitted client claimed work, submitted a signed result and recov
 the same receipt; spoofed forwarding headers were replaced, missing and unadmitted
 client certificates were refused, and oversized bodies and unexpected query strings
 were rejected. An updated CRL followed by proxy reload refused the revoked certificate
-on new TLS connections. This does not prove revocation of an already-open connection
-or active stream, nor does it exercise the stdio helper's endpoint migration.
+on new TLS connections. The stdio helper's endpoint migration remains untested by this exercise.
 
 Linux CI installs Nginx and requires the integration test to run; environments without
 Nginx skip it explicitly. The test does not start a public service or modify the VPS's
-live configuration. Active-stream revocation, slow-client/concurrency stress and live
-helper migration remain separate acceptance checks.
+live configuration. Slow-client/concurrency stress and live helper migration remain separate acceptance
+checks.
+
+### Closing streams after certificate revocation
+
+Use `deploy/nginx-gateway-main.conf.example` for a dedicated gateway Nginx instance,
+with the HTTP site template included from it. Its main-context
+`worker_shutdown_timeout 5s` bounds old worker shutdown after a successful reload.
+Do not substitute this configuration for the existing website service. The gateway
+account needs its own private writable runtime directory and socket access.
+
+The regression test first reproduced an open authenticated SSE stream surviving a
+CRL reload beyond eight seconds, although new TLS requests were already refused.
+With the main template, the same real proxy test passed on disposable VPS state:
+new requests were refused and the old stream closed within the eight-second test
+bound. This is measured acceptance evidence, not an instantaneous revocation claim.
+
+A reload drains all old worker connections, including admitted clients. They must
+reconnect; previously stored results remain recoverable through the receipt protocol.
+An interrupted operation may have committed before its connection closed. Do not
+interpret disconnection as rollback or renew consent to retry it.
+
+Revocation operations must validate configuration, confirm the reload was accepted,
+and confirm both new-connection refusal and old-stream closure. Sending SIGHUP alone
+is insufficient: a rejected reload leaves the old configuration active. This patch
+adds the configuration and test, not a deployed revocation management service.
+See [Nginx worker shutdown documentation](https://nginx.org/en/docs/ngx_core_module.html#worker_shutdown_timeout).

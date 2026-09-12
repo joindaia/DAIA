@@ -1,3 +1,4 @@
+# Use with nginx-gateway-main.conf.example (bounded stream shutdown).
 # Include inside Nginx's http context. Staging loopback only; NOT a live deployment.
 # Replace the example hostname/paths only after the gateway acceptance tests pass.
 limit_req_zone $binary_remote_addr zone=daia_mcp_requests:1m rate=5r/s;

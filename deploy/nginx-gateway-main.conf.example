@@ -1,0 +1,15 @@
+# Dedicated gateway instance; do not replace the website Nginx configuration.
+# Run as the gateway account with a private writable runtime directory.
+daemon off;
+master_process on;
+worker_processes 1;
+worker_shutdown_timeout 5s;
+pid /run/daia-proxy/nginx.pid;
+error_log stderr;
+events { worker_connections 256; }
+http {
+    access_log off;
+    client_body_temp_path /run/daia-proxy/body;
+    proxy_temp_path /run/daia-proxy/proxy;
+    include /etc/daia/gateway/site.conf;
+}

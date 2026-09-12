@@ -88,7 +88,8 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
         site = site.replace("127.0.0.1:8443", f"127.0.0.1:{port}").replace("/etc/daia/gateway", str(tmp_path)).replace("/run/daia-gateway/mcp.sock", str(sock))
         (tmp_path / "site.conf").write_text(site)
         config = tmp_path / "nginx.conf"
-        config.write_text(f"daemon off; master_process on; error_log stderr; pid {tmp_path}/nginx.pid; events {{}} http {{ access_log off; client_body_temp_path {tmp_path}/body; proxy_temp_path {tmp_path}/proxy; include {tmp_path}/site.conf; }}")
+        main = (root / "deploy/nginx-gateway-main.conf.example").read_text()
+        config.write_text(main.replace("/run/daia-proxy", str(tmp_path)).replace("/etc/daia/gateway/site.conf", str(tmp_path / "site.conf")))
         command = [shutil.which("nginx"), "-c", str(config), "-p", str(tmp_path) + "/"]
         subprocess.run(command + ["-t"], check=True, capture_output=True)
         proxy = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -130,16 +131,29 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path):
         for identity in [None, "outsider"]:
             with transport(identity) as client:
                 assert client.post("/mcp", json=init, headers=headers).status_code in {400, 403}
-        crl(revoke=True)
-        proxy.send_signal(signal.SIGHUP)
-        deadline = time.monotonic() + 10
-        while True:
-            with transport() as client:
-                status = client.post("/mcp", json=init, headers=headers).status_code
-            if status in {400, 403}:
-                break
-            assert status == 200 and time.monotonic() < deadline
-            time.sleep(0.1)
+        with transport() as active:
+            with active.stream("GET", "/mcp", headers=session_headers, timeout=8) as stream:
+                assert stream.status_code == 200
+                crl(revoke=True)
+                reload_started = time.monotonic()
+                proxy.send_signal(signal.SIGHUP)
+                deadline = time.monotonic() + 10
+                while True:
+                    with transport() as client:
+                        status = client.post("/mcp", json=init, headers=headers).status_code
+                    if status in {400, 403}:
+                        break
+                    assert status == 200 and time.monotonic() < deadline
+                    time.sleep(0.1)
+                # An already-authorized idle stream must not retain old TLS authority.
+                # A forced worker close may finish chunking or abort it; a read timeout
+                # instead means the old authenticated stream remained open too long.
+                try:
+                    for chunk in stream.iter_raw():
+                        assert time.monotonic() - reload_started < 8
+                except httpx.RemoteProtocolError:
+                    pass
+                assert time.monotonic() - reload_started < 8
     finally:
         for process in [proxy, backend]:
             if process is not None:
