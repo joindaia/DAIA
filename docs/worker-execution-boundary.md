@@ -86,5 +86,9 @@ DAIA_RUN_ISOLATION_TESTS=1 PYTHONPATH=src python -m pytest tests/test_isolation.
 
 It is not yet connected to the desktop worker. It does not supply a model API or
 research broker, persistent result export, or a per-task memory/process cgroup.
-Standard output is untrusted task output. Input screening is not a secret detector.
+Combined stdout and stderr are buffered up to one MiB. Exceeding that limit
+terminates the namespace with exit 125 and discards the captured output. Output is
+forwarded only after the task exits, so a slow caller cannot suspend the task
+deadline check. This is an output bound, not a memory or process-count limit for
+the job itself. Standard output is untrusted task output. Input screening is not a secret detector.
 Do not use this primitive alone as evidence that the full worker gate has passed.

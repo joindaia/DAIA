@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from .crypto import fingerprint, public_hex, sign, strict_json
+from .crypto import fingerprint, public_hex, sign, strict_json, digest, digest_bytes, verify
 from .mcp_server import pilot_origin, public_origin
 from .signer import validate_envelope
 from .job_authorization import verify_job, load_job_authority
@@ -132,6 +132,22 @@ class Contributor:
         self.state["deadline"] = min(self.state["deadline"], self.consent_expiry)
         self.key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(self.state["key"]))
         self.agent = fingerprint(public_hex(self.key))
+        # Upgrade pending evidence from older helpers using locally saved bytes.
+        # Never ask the coordinator to supply the expected receipt for its own reply.
+        if self.state['pending'] and not self.state.get('pending_receipt_hash'):
+            pending, lease = self.state['pending'], self.state['lease']
+            try:
+                envelope = {k: lease[k] for k in ('network_id', 'assignment_id', 'job_id',
+                            'nonce', 'mode', 'target_id', 'policy_hash', 'context_hash')}
+                envelope.update(action='submit', agent_id=self.agent,
+                                artifact_hash=digest_bytes(pending['artifact'].encode('utf-8')),
+                                verdict=pending['verdict'])
+                if (pending['assignment_id'] == lease['assignment_id']
+                        and verify(public_hex(self.key), envelope, pending['signature'])):
+                    self.state['pending_receipt_hash'] = digest(
+                        {'envelope': envelope, 'signature': pending['signature']})
+            except (KeyError, TypeError, ValueError):
+                pass  # Incomplete historical evidence needs operator reconciliation.
         self.original_tls_context = self.tls_context
         self.transport = None
         if self.state.get("transport") is not None:
@@ -366,7 +382,7 @@ class Contributor:
             policy = self.job_authority
             if not isinstance(policy, dict) or set(policy) != {'public_key', 'capabilities', 'jobs'}:
                 raise ValueError()
-            verify_job(lease, policy['jobs'][lease['job_id']], public_key=policy['public_key'],
+            return verify_job(lease, policy['jobs'][lease['job_id']], public_key=policy['public_key'],
                        agent_id=self.agent, network_id=self.identity['network_id'],
                        allowed_capabilities=policy['capabilities'], now=int(self.clock()))
         except (KeyError, TypeError, ValueError):
@@ -535,17 +551,20 @@ class Contributor:
                                   artifact=artifact.encode("utf-8"), verdict=verdict, now=int(self.clock()))
                 pending["signature"] = sign(self.key, envelope)
                 self.state["pending"] = pending
+                self.state['pending_receipt_hash'] = digest(
+                    {'envelope': envelope, 'signature': pending['signature']})
                 self.save()
             receipt = await self.remote("submit_result", **pending)
             if self.transport is not None or self.job_authority is not None:
                 receipt = self.model_response(receipt)
                 if (set(receipt) not in ({'status', 'receipt_hash'},
                                         {'status', 'receipt_hash', 'result_id'})
+                        or receipt.get('receipt_hash') != self.state.get('pending_receipt_hash')
                         or receipt['status'] not in {'already_recorded', 'in_review',
                             'rejected', 'disputed', 'ready_for_maintainer',
                             'pilot_ready_for_maintainer', 'promoted'}):
                     raise ValueError('Coordinator response refused')
-            self.state.update(receipt=receipt, pending=None, lease=None)
+            self.state.update(receipt=receipt, pending=None, lease=None, pending_receipt_hash=None)
             self.save()
             return receipt
 

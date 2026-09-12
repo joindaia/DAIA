@@ -197,3 +197,29 @@ def test_malformed_receipt_preserves_pending_for_exact_retry(tmp_path, network):
     result = asyncio.run(host.perform('submit_result', artifact=artifact, verdict='candidate'))
     assert result['status'] == 'already_recorded'
     assert host.state['pending'] is None and host.state['used'] == 1
+
+
+
+def test_forged_well_shaped_receipt_cannot_clear_pending(tmp_path, network):
+    service, _ = network
+    host, _, _ = approved_fixture(tmp_path, network)
+    original = host.remote
+    async def remote(name, **args):
+        if name == 'submit_result':
+            return {'status': 'already_recorded', 'receipt_hash': '0' * 64}
+        return await original(name, **args)
+    host.remote = remote
+    artifact = '{"factors":[101,103]}'
+    with pytest.raises(ValueError, match='Coordinator response refused'):
+        asyncio.run(host.perform('submit_result', artifact=artifact, verdict='candidate'))
+    assert service.metrics()['results'] == 0
+    assert host.state['pending'] is not None and host.state['lease'] is not None
+    # Simulate an older helper file, retaining its signed lease and artifact.
+    expected = host.state.pop('pending_receipt_hash')
+    host.save()
+    host = direct(Contributor(host.invite_file, clock=service.clock,
+                              job_authority=host.job_authority), service)
+    assert host.state['pending_receipt_hash'] == expected
+    result = asyncio.run(host.perform('submit_result', artifact=artifact, verdict='candidate'))
+    assert result['receipt_hash'] == expected
+    assert host.state['pending'] is None and host.state['used'] == 1

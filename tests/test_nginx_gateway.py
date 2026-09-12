@@ -240,7 +240,7 @@ def test_real_nginx_to_closed_backend(network, contributor, tmp_path, monkeypatc
             invite.write_text(json.dumps({**grant, "network_id": service.network_id, "url": source_url}))
             helper = Contributor(invite, max_jobs=2, clock=service.clock)
             helper.state.update(key=signing_key.private_bytes_raw().hex(), registered=True,
-                                used=1, pending=dict(args))
+                                used=1, pending=dict(args), lease=lease)
             helper.save()
             helper = Contributor(invite, clock=service.clock)
             assert helper.agent == aid

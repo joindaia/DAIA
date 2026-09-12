@@ -93,3 +93,16 @@ def test_cli_does_not_inherit_host_stdin(tmp_path):
                             text=True, timeout=8)
     assert result.returncode == 0, result.stderr
     assert result.stdout == ''
+
+
+@pytest.mark.skipif(os.environ.get('DAIA_RUN_ISOLATION_TESTS') != '1',
+                    reason='Explicit real namespace integration test')
+def test_cli_bounds_combined_output(tmp_path):
+    snapshot = tmp_path / 'input'; snapshot.mkdir()
+    program = "import os; data=b'x'*8192\nwhile True: os.write(1,data); os.write(2,data)"
+    result = subprocess.run([sys.executable, '-m', 'daia.isolation',
+                             '--input', str(snapshot), '--', '/usr/bin/python3', '-c', program],
+                            capture_output=True, timeout=8)
+    assert result.returncode == 125
+    assert b'output limit' in result.stderr
+    assert len(result.stdout) + len(result.stderr) <= 1024 * 1024 + 100

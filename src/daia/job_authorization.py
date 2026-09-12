@@ -48,7 +48,7 @@ def verify_job(lease, authorization, *, public_key, agent_id, network_id,
                 or not now < lease['expires'] <= lease['hard_deadline'] <= expiry):
             raise ValueError()
         capabilities = payload['capabilities']
-        if (not isinstance(capabilities, list)
+        if (not isinstance(capabilities, list) or not capabilities
                 or any(not isinstance(item, str) for item in capabilities)
                 or len(set(capabilities)) != len(capabilities)
                 or not set(capabilities) <= set(allowed_capabilities)):

@@ -147,3 +147,12 @@ def test_signing_cli_writes_private_approval_without_overwriting(tmp_path):
     second = subprocess.run(command, capture_output=True, text=True, timeout=10)
     assert second.returncode == 1
     assert output.read_bytes() == approved
+
+
+
+def test_empty_signed_capabilities_are_refused():
+    key, lease, authorization = fixture()
+    authorization['payload']['capabilities'] = []
+    authorization['signature'] = sign(key, authorization['payload'])
+    with pytest.raises(ValueError, match='Job authorization refused'):
+        check(key, lease, authorization)

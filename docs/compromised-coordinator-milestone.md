@@ -161,3 +161,16 @@ The complete local suite passed with 320 tests and six platform/integration skip
 The real HTTPS exercise then passed again with these response changes in 76.71
 seconds on the disposable VPS fixture. This does not establish complete worker
 isolation or authorize admitting the live cohort.
+
+Receipt recovery now compares the returned hash with the digest of the locally
+validated submission envelope and signature, saved before transmission. A forged
+but correctly shaped hash cannot clear pending state. Older helper state can be
+upgraded from its saved lease, artifact and valid signature without requesting an
+expected hash from the coordinator. If those historical bytes are missing, keep
+pending evidence and reconcile under operator authority; do not invent a new
+signature or trust a server-supplied replacement hash. Matching hashes identify the
+submission being acknowledged, not durable storage on a compromised server.
+
+Verified capability tuples are retained by the helper check and empty signed scopes
+are refused. The future execution/broker integration must enforce those capabilities
+per operation; this check alone does not grant or constrain operating-system tools.

@@ -8,6 +8,8 @@ import argparse
 import os
 from pathlib import Path
 import stat
+import selectors
+import time
 import subprocess
 import sys
 
@@ -61,15 +63,44 @@ def main():
         argv = sandbox_command(args.input, command)
     except (ValueError, OSError) as error:
         parser.exit(1, str(error) + '\n')
-    # No inherited input descriptor; output remains an untrusted caller stream.
-    # bwrap must fail rather than run unconfined.
+    # Bound combined output before forwarding it. The caller must still treat
+    # those bytes as untrusted; this CLI is not a desktop-session boundary.
+    process = subprocess.Popen(argv, env={'PATH': '/usr/bin:/bin'}, close_fds=True,
+                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, start_new_session=True)
+    deadline = time.monotonic() + args.timeout
+    remaining_output = 1024 * 1024
+    captured_out, captured_err = bytearray(), bytearray()
     try:
-        result = subprocess.run(argv, env={'PATH': '/usr/bin:/bin'}, close_fds=True,
-                                stdin=subprocess.DEVNULL, start_new_session=True, timeout=args.timeout)
-    except subprocess.TimeoutExpired:
-        # bwrap's die-with-parent tears down its PID namespace and descendants.
-        parser.exit(124, 'Isolated task exceeded its wall-clock limit\n')
-    raise SystemExit(result.returncode)
+        with selectors.DefaultSelector() as streams:
+            streams.register(process.stdout, selectors.EVENT_READ, captured_out)
+            streams.register(process.stderr, selectors.EVENT_READ, captured_err)
+            while streams.get_map():
+                remaining_time = deadline - time.monotonic()
+                if remaining_time <= 0:
+                    parser.exit(124, 'Isolated task exceeded its wall-clock limit\n')
+                for key, _ in streams.select(min(remaining_time, 0.1)):
+                    chunk = os.read(key.fileobj.fileno(), 8192)
+                    if not chunk:
+                        streams.unregister(key.fileobj)
+                        continue
+                    if len(chunk) > remaining_output:
+                        parser.exit(125, 'Isolated task exceeded its output limit\n')
+                    remaining_output -= len(chunk)
+                    key.data.extend(chunk)
+        try:
+            code = process.wait(timeout=max(0, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired:
+            parser.exit(124, 'Isolated task exceeded its wall-clock limit\n')
+    finally:
+        if process.poll() is None:
+            process.kill()  # Destroy the bwrap PID namespace, including descendants.
+        process.wait()
+        process.stdout.close()
+        process.stderr.close()
+    sys.stdout.buffer.write(captured_out)
+    sys.stderr.buffer.write(captured_err)
+    raise SystemExit(code)
 
 
 if __name__ == '__main__':
