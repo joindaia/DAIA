@@ -145,3 +145,25 @@ rebuild and provider-console recovery still need to pass before the administrati
 SSH path can be removed.
 The private capture report records exact snapshot hashes and table counts; none of
 the snapshots, identities, local paths or security configuration belongs in Git.
+
+## Runtime compatibility probe
+
+The off-host runtime failed to start on Ubuntu 24.04 because its Python 3.14
+standard library was absent (`No module named 'encodings'`). The runtime artifact
+contains a copied interpreter and third-party packages; it is not a standalone
+operating-system image. Rebuilds must provision a compatible Python standard
+library and native libraries before attempting service startup. The private
+recovery package now records the deployed OS and relevant installed package
+versions; this is an inventory, not an authenticated OS package mirror.
+
+The off-host artifacts were then transferred into a disposable root on the
+matching Ubuntu 26.04 VPS baseline. A transient systemd unit used a dynamic user,
+a private network, private devices, no capabilities and bounded runtime, memory
+and task count. It bound the host `/usr` read-only and the restored artifacts at
+their expected paths. The restored interpreter successfully imported the gateway,
+SQLite and TLS modules; host home and shadow files were absent. The transient
+root was removed after the check. No database or coordinator listener was opened.
+
+This verifies interpreter and import compatibility against the matching host OS,
+not a clean-host provisioning exercise or successful full gateway startup. The
+existing production units, admission policy and contributor state were untouched.
