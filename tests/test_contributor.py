@@ -1,6 +1,8 @@
 """Contributor restart and loss recovery, plus the actual stdio -> HTTP SDK path."""
 import asyncio
+import errno
 import json
+import subprocess
 import sys
 import time
 import tomllib
@@ -299,6 +301,45 @@ def test_project_configuration_preserves_settings(tmp_path):
     assert parsed["mcp_servers"]["other"]["command"] == "other"
     with pytest.raises(ValueError, match="different DAIA"):
         configure(tmp_path, invite, max_jobs=2)
+
+
+def test_busy_cli_reports_contention_without_changing_private_state(tmp_path):
+    service = Coordinator(Store(str(tmp_path / "state.sqlite3")))
+    path = invite_file(tmp_path, service)
+    host = Contributor(path)
+    saved = host.path.read_bytes()
+    with exclusive_host(path.with_suffix(".contributor.lock")):
+        result = subprocess.run([sys.executable, "-m", "daia.contributor", "--invite", str(path)],
+                                stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 1
+    assert result.stdout == ""
+    assert "already has an active contributor host" in result.stderr
+    assert "Keep the saved state" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert str(path) not in result.stderr
+    assert host.identity["token"] not in result.stderr
+    assert host.state["key"] not in result.stderr
+    assert host.path.read_bytes() == saved
+    with exclusive_host(path.with_suffix(".contributor.lock")):
+        assert Contributor(path).state == host.state
+
+
+def test_other_lock_errors_are_not_reported_as_contention(tmp_path, monkeypatch):
+    if sys.platform == "win32":
+        import msvcrt as locking_module
+        operation = "locking"
+    else:
+        import fcntl as locking_module
+        operation = "flock"
+
+    def fail(*arguments):
+        raise OSError(errno.EIO, "Injected I/O failure")
+
+    monkeypatch.setattr(locking_module, operation, fail)
+    with pytest.raises(OSError) as error:
+        with exclusive_host(tmp_path / "host.lock"):
+            pytest.fail("Lock failure must not admit a helper")
+    assert error.value.errno == errno.EIO
 
 
 def test_empty_queue_tampered_envelope_and_revocation(tmp_path):

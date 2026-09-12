@@ -83,6 +83,28 @@ Private-root admission is simulated in tests; independent people, providers, and
 
 ## Validation updates
 
+### Contributor lock diagnostics, 2026-09-09
+
+Recognized nonblocking lock-contention errors now produce a fixed, actionable startup
+message. Unexpected lock errors and invalid private state retain generic handling.
+No private exception text is printed, and lock ownership, consent and process lifetime
+are unchanged. A real second CLI process is refused while the first holds the lock;
+the regression checks unchanged saved state, no secret/path disclosure, and reconnect
+after release. An injected I/O error also verifies that unrelated failures are not
+misclassified as another active helper. The contention test failed on the prior
+generic diagnostic and passed after the change. Independent adversarial review ran
+the real contention and release tests successfully and found no blocker.
+
+The first full native run encountered a Windows access-denied error at `os.replace`
+in an existing release/restart test: 107 passed, 1 failed, 1 skipped. The persistence
+code was unchanged. A subsequent targeted run covering that release test and both
+diagnostic regressions returned 5 passed. The destination was writable when inspected;
+the cause of the earlier error remains unknown. This is not described as a fixed
+filesystem defect or proof of recovery from arbitrary write failures.
+The subsequent full native Windows run returned **108 passed, 1 skipped**, with the
+existing upstream deprecation warning. Compilation, source privacy and whitespace
+checks passed. No live helper was restarted and no campaign, grant or policy changed.
+
 ### Helper evidence pilot follow-up, 2026-09-09
 
 A contributor on the second machine, as reported by the operator, returned a signed

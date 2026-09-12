@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 from contextlib import contextmanager
+import errno
 import json
 import os
 from pathlib import Path
@@ -28,6 +29,10 @@ INSTRUCTIONS = (
 )
 
 
+class ContributorBusy(ValueError):
+    """The existing invite is already locked by another helper."""
+
+
 @contextmanager
 def exclusive_host(path):
     """OS releases the lock on crash. No stale PID or lockfile recovery ceremony."""
@@ -38,14 +43,18 @@ def exclusive_host(path):
             import msvcrt
             try:
                 msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
-            except OSError:
-                raise ValueError("This invite already has an active contributor host") from None
+            except OSError as error:
+                if error.errno not in {errno.EACCES, errno.EAGAIN}:
+                    raise
+                raise ContributorBusy("This invite already has an active contributor host") from None
         else:
             import fcntl
             try:
                 fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except OSError:
-                raise ValueError("This invite already has an active contributor host") from None
+            except OSError as error:
+                if error.errno not in {errno.EACCES, errno.EAGAIN}:
+                    raise
+                raise ContributorBusy("This invite already has an active contributor host") from None
         yield
 
 
@@ -346,6 +355,10 @@ def main():
                       f"{renewed['jobs_added']} jobs added, deadline {renewed['deadline']}.")
                 return
             build_server(host).run(transport="stdio")
+    except ContributorBusy:
+        print("This invite already has an active contributor host. Close its other desktop/CLI "
+              "session, then reconnect. Keep the saved state; do not reset consent.", file=sys.stderr)
+        raise SystemExit(1) from None
     except (ValueError, OSError, KeyError):
         print("DAIA host could not start. Check the private invite, local state, and active host.", file=sys.stderr)
         raise SystemExit(1) from None
