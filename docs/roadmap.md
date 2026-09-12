@@ -8,8 +8,9 @@ Implemented: bounded certificate workload, durable local leases, grant expiry, o
 signed registration/results, blinded reproduction, adversarial evidence, deterministic checks,
 local REST adapter and regression tests. MCP 2.2.0 protocol tests and Codex CLI discovery now
 pass on Windows. The two-client tailnet pilot subsequently completed signed reviews and
-promotion, with host placement reported by the user. New Windows/Ubuntu CI execution remains
-unverified. Maintain the tested/untested distinction in README and `docs/validation.md`.
+promotion, with host placement reported by the user. The desktop-helper change subsequently
+passed Windows and Ubuntu CI in archived project reference.
+Maintain the tested/untested distinction in README and `docs/validation.md`.
 
 ## 1. Real agent interoperability — next engineering milestone
 
