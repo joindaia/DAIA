@@ -19,6 +19,20 @@ def _check_secret(secret: str) -> None:
 
 
 class LocalModelUpstream:
+    _host = "daia-upstream"
+    _target = "/v1/responses"
+
+    def _new_socket(self):
+        return socket.socket(socket.AF_UNIX)
+
+    def _connect(self, sock):
+        sock.connect(self._path)
+        return sock
+
+    def _headers(self):
+        return {"Authorization": "Bearer " + self._secret,
+                "Content-Type": "application/json", "Connection": "close"}
+
     def __init__(self, path: str, secret: str, *, seconds: float, requests: int):
         _check_secret(secret)
         if not 0 < seconds <= 300 or type(requests) is not int or not 0 < requests <= 100:
@@ -61,9 +75,9 @@ class LocalModelUpstream:
             if self._revoked or left <= 0 or self._remaining == 0 or self._active is not None:
                 raise Denied("upstream binding unavailable")
             self._remaining -= 1  # Failed attempts consume budget too.
-            sock = socket.socket(socket.AF_UNIX)
+            sock = self._new_socket()
             self._active = sock
-        conn = http.client.HTTPConnection("daia-upstream", timeout=min(5, left))
+        conn = http.client.HTTPConnection(self._host, timeout=min(5, left))
         # A socket timeout only limits inactivity; a trickling peer can keep
         # resetting it. Revoke at the assignment deadline even during I/O.
         watchdog = threading.Timer(left, self.revoke)
@@ -71,16 +85,14 @@ class LocalModelUpstream:
         watchdog.start()
         try:
             sock.settimeout(min(5, left))
-            sock.connect(self._path)
+            sock = self._connect(sock)
             conn.sock = sock
             with self._lock:
                 if self._revoked or time.monotonic() >= self._deadline:
                     raise Denied("upstream binding unavailable")
             # Never hold the state lock over blocking I/O: revoke must be able
             # to shut down a blocked request as well as a blocked response.
-            conn.request("POST", "/v1/responses", body=body, headers={
-                "Authorization": "Bearer " + self._secret,
-                "Content-Type": "application/json", "Connection": "close"})
+            conn.request("POST", self._target, body=body, headers=self._headers())
             response = conn.getresponse()
             if response.status != 200 or response.getheader("Content-Type") != "text/event-stream":
                 raise Denied("upstream response rejected")
@@ -107,4 +119,6 @@ class LocalModelUpstream:
             conn.close()
             sock.close()
             with self._lock:
+                if self._active is not None:
+                    self._active.close()
                 self._active = None

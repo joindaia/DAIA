@@ -439,3 +439,28 @@ the state lock needed by revocation. Cleanup cancels and joins the watchdog.
 The same regression now passes, and the combined request/channel/upstream suite
 passes 81 tests. This establishes interruption of continuous local-provider
 response traffic, not real HTTPS streaming or a subscription lifecycle test.
+
+
+## Fixed HTTPS transport prototype
+
+`CodexHTTPSUpstream` adds a fixed `chatgpt.com` TLS peer and
+`POST /backend-api/codex/responses` target. The original pinned client declares
+this base URL in [model-provider-info](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/model-provider-info/src/lib.rs).
+The controller supplies a public IP literal, token and account binding; the worker
+can supply none of these. No DNS resolution, environment HTTP proxy, redirect,
+automatic retry or arbitrary request-header forwarding occurs in the adapter.
+Host trust roots and launcher environment remain trusted configuration.
+
+A local TLS fixture with a synthetic certificate and token verifies successful
+certificate/hostname checking and exact destination/path/headers; separate trials
+reject an untrusted certificate, hostname mismatch, redirects and auth failures.
+Only test wiring redirects the requested public socket to the loopback fixture.
+These tests make no real provider request. The shared adapter retains bounded
+responses, deadline interruption, rotation and revocation.
+
+This is not ready for personal credentials: it currently accepts only bounded
+Content-Length SSE, not real chunked streaming; provider header compatibility,
+reasoning continuity, actual account-capability negatives and native subscription
+authentication remain unverified. The existing RequestGate must precede it, and
+the isolated runtime must enforce public destination policy outside the process.
+The transport is not proof of provider approval or exhaustive account confinement.
