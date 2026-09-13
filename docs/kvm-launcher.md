@@ -494,3 +494,36 @@ interrupted-cleanup gap in the legacy evaluator harness.
 See [seed extraction evidence](research/repository-evaluator-seed-2026-09-13.json).
 The start/service harness still needs repository packaging and supervised storage;
 this extraction alone is not a participant installer or crash-cleanup guarantee.
+
+
+## Supervised networkless evaluator launcher
+
+`run_evaluator_lab.py --bundle "$APPROVED_BUNDLE" --output "$NEW_PRIVATE_REPORT"`
+now starts the evaluator using the repository KVM launcher and report wrapper.
+It requires the preconfigured lab administrator and existing runtime identity.
+Build the read-only bundle using `prepare_kvm_bundle.py` with the approved base
+hash and the evaluator seed hash/nonce. The output report path must not exist.
+No model/research gateway starts. `--network-none` is passed through the wrapper
+to the launcher, which gives QEMU `-nic none` and no guest forwarders.
+
+Service-owned tmpfs mounts bound the work directory to 512 MiB/4096 inodes and
+other temporary directories to 16 MiB/256 inodes each. The existing restricted
+identity, private network/IPC, zero capabilities, KVM-only device allowance,
+3 GiB memory, zero swap, 64 tasks and 210-second service cap are retained.
+The supervisor captures the untrusted report privately and confirms service
+teardown before checking that the host-side work directory is empty/removing it.
+It does not rely on guest or Python cleanup to destroy private mount contents.
+
+The real evaluator passed ten cases on the exact previously stored artifact,
+with the original implementation failing. A second run was killed as an entire
+service group with SIGKILL only after a nonempty overlay was observed through
+the active service's mount namespace. The supervisor exited nonzero and reported
+cleanup; an external check confirmed no work directory and no remaining cgroup
+processes. No successful result was asserted for the killed run. Nine focused
+regressions passed, including actual QEMU argument selection without forwarders.
+See [supervised evaluator evidence](research/supervised-evaluator-cleanup-2026-09-13.json).
+
+This replaces the legacy evaluator start path for subsequent lab work. Initial
+service installation, clean participant setup and supervisor/host-crash testing
+remain separate work. A valid guest report is correlation evidence, not by itself
+a general proof that adversarial candidate code is correct.

@@ -57,6 +57,7 @@ def verify_bundle(bundle):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle', required=True)
+    parser.add_argument('--network-none', action='store_true')
     args = parser.parse_args()
     if sys.platform != 'linux' or os.getuid() == 0:
         raise ValueError('Restricted nonroot Linux service required')
@@ -78,7 +79,7 @@ def main():
         command = ['/usr/bin/qemu-system-x86_64', '-no-user-config', '-nodefaults',
                    '-machine', 'q35', '-accel', 'kvm', '-cpu', 'host', '-m', '2048',
                    '-smp', '2', '-display', 'none', '-nic',
-                   'user,restrict=on,ipv6=off,' + forwards, '-monitor', 'none', '-no-reboot',
+                   ('none' if args.network_none else 'user,restrict=on,ipv6=off,' + forwards), '-monitor', 'none', '-no-reboot',
                    '-drive', f'file={disk},if=virtio,format=qcow2',
                    '-drive', f'file={bundle}/network-seed.iso,media=cdrom,readonly=on',
                    '-serial', f'file:{work}/serial.txt']
@@ -97,7 +98,7 @@ def main():
     finally:
         disk.unlink(missing_ok=True)
     report = {'exit': 0, 'guest': markers[0], 'uid_nonroot': True,
-              'private_network': True, 'bundle_verified': True,
+              'private_network': True, 'network_none': args.network_none, 'bundle_verified': True,
               'overlay_removed': not disk.exists(), 'guest_claims_verified': False}
     (work / 'report.json').write_text(json.dumps(report))
     print(json.dumps({'exit': 0, 'bundle_verified': True, 'overlay_removed': report['overlay_removed']}))

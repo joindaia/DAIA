@@ -45,6 +45,7 @@ def failure_context(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle', required=True)
+    parser.add_argument('--network-none', action='store_true')
     args = parser.parse_args()
     bundle = Path(args.bundle)
     failure = 'launcher_failed'
@@ -55,7 +56,8 @@ def main():
         with tempfile.TemporaryFile(dir='/tmp') as errors:
             try:
                 result = subprocess.run([sys.executable, '-I', str(bundle / 'launcher.py'),
-                                         '--bundle', str(bundle)], timeout=195,
+                                         '--bundle', str(bundle)] +
+                                        (['--network-none'] if args.network_none else []), timeout=195,
                                         stdout=subprocess.DEVNULL, stderr=errors)
             finally:
                 errors.seek(0, 2)
