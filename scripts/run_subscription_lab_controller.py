@@ -58,24 +58,29 @@ for name in ('crash-before-first-response','crash-ready'):(rundir/name).unlink(m
 if options.crash_before_first_response:(rundir/'crash-before-first-response').touch(mode=0o600)
 model_socket=rundir/'model.sock';assert not model_socket.exists()
 gateway=pwd.getpwnam('daia-egress')
+run_state=new_run_directory(root/'runs')
+authority_dir=run_state/'model-authority'
 shutil.copyfile(bundle/'model-bridge.py',p/'model-bridge.py');(p/'model-bridge.py').chmod(0o444)
 shutil.copyfile(repo/'scripts/probe_subscription_channel_server.py',p/'public-server.py');(p/'public-server.py').chmod(0o444)
-for name in ['model_request.py','model_response.py','model_channel.py','model_upstream.py','codex_https.py']:
+for name in ['model_request.py','model_response.py','model_channel.py','model_upstream.py','codex_https.py','request_ledger.py']:
  shutil.copyfile(repo/'src/daia'/name,p/name);(p/name).chmod(0o444)
-shutil.copyfile(options.request_template,p/'model-template.json');(p/'model-template.json').chmod(0o444)
+approved_model=json.loads(options.request_template.read_text());approved_model['model']='gpt-5.3-codex-spark'
+(p/'model-template.json').write_text(json.dumps(approved_model,sort_keys=True));(p/'model-template.json').chmod(0o444)
 jail=root/'gateway-root'
-for name in ['etc','usr','run/daia-lab','var/lib/daia-lab/templates']:(jail/name).mkdir(parents=True,exist_ok=True)
+for name in ['etc','usr','run/daia-lab','run/daia-authority','proc/sys/kernel/random','var/lib/daia-lab/templates']:(jail/name).mkdir(parents=True,exist_ok=True)
 for name,target in [('lib','usr/lib'),('lib64','usr/lib64')]:
  if not (jail/name).is_symlink():(jail/name).symlink_to(target)
 shutil.copyfile('/etc/resolv.conf',jail/'etc/resolv.conf');os.chmod(jail/'etc/resolv.conf',0o444)
+(jail/'proc/sys/kernel/random/boot_id').touch(exist_ok=True)
 gunit='daia-egress-'+uuid.uuid4().hex
 args=['systemd-run','--unit='+gunit,'--collect','--quiet']
-for k,v in {'RootDirectory':str(jail),'BindReadOnlyPaths':'/usr /etc/ssl /var/lib/daia-lab/templates','BindPaths':str(rundir),'User':'daia-egress','Group':str(worker.pw_gid),'NoNewPrivileges':'yes','ProtectSystem':'strict','ProtectHome':'yes','InaccessiblePaths':'/mnt','ReadWritePaths':str(rundir),'PrivateTmp':'yes','ExecStopPost':'/usr/bin/rm -f /run/daia-lab/model.sock','MemoryMax':'128M','MemorySwapMax':'0','TasksMax':'16','RuntimeMaxSec':'240','CapabilityBoundingSet':'','PrivateNetwork':'no','RestrictAddressFamilies':'AF_UNIX AF_INET AF_INET6'}.items():args+=['-p',k+'='+v]
+for k,v in {'RootDirectory':str(jail),'BindReadOnlyPaths':'/usr /etc/ssl /var/lib/daia-lab/templates /proc/sys/kernel/random/boot_id','BindPaths':str(rundir)+' '+str(authority_dir)+':/run/daia-authority','User':'daia-egress','Group':str(worker.pw_gid),'NoNewPrivileges':'yes','ProtectSystem':'strict','ProtectHome':'yes','InaccessiblePaths':'/mnt','ReadWritePaths':str(rundir)+' /run/daia-authority','PrivateTmp':'yes','ExecStopPost':'/usr/bin/python3 -I '+str(p/'public-server.py')+' --revoke-only','MemoryMax':'128M','MemorySwapMax':'0','TasksMax':'16','RuntimeMaxSec':'240','CapabilityBoundingSet':'','PrivateNetwork':'no','RestrictAddressFamilies':'AF_UNIX AF_INET AF_INET6'}.items():args+=['-p',k+'='+v]
 import socket
 profile=options.auth_home/'auth.json'
 forbidden_auth_uids={pwd.getpwnam(n).pw_uid for n in ('daia-controller','daia-runtime','daia-egress','daia-research')}
 auth_data,auth_owner=read_auth(options.auth_home,forbidden_uids=forbidden_auth_uids)
 t=auth_data['tokens']
+provider_account=t['account_id']
 addresses=sorted({x[4][0] for x in socket.getaddrinfo('chatgpt.com',443,family=socket.AF_INET,type=socket.SOCK_STREAM)})
 assert addresses and all(ipaddress.ip_address(a).is_global for a in addresses)
 args += ['-p','IPAddressDeny=any','-p','IPAddressAllow='+addresses[0]+'/32']
@@ -118,11 +123,7 @@ def model_cleanup():
  subprocess.run(['systemctl','stop',gunit],capture_output=True,timeout=15)
  model_socket.unlink(missing_ok=True);authfile.unlink(missing_ok=True)
 atexit.register(model_cleanup)
-subprocess.run(dependent(args)+['/usr/bin/python3','-I',str(p/'public-server.py')],check=True)
-for _ in range(100):
- if model_socket.exists():break
- time.sleep(.05)
-assert model_socket.exists(),'model service not ready'
+model_service_args=args
 
 researcher=pwd.getpwnam('daia-research')
 researchdir=pathlib.Path('/run/daia-research');researchdir.mkdir(mode=0o750,exist_ok=True);os.chown(researchdir,researcher.pw_uid,worker.pw_gid)
@@ -149,19 +150,31 @@ for _ in range(100):
  time.sleep(.05)
 assert (researchdir/'gateway.sock').exists()
 
-run_state=new_run_directory(root/'runs')
 private=run_state/'assignment';coordinator_dir=run_state/'coordinator'
 write_outcome('/run/daia-subscription-run.json',{'state_directory':str(run_state), 'automatic_resume_authorized':False})
 service=Coordinator(Store(str(coordinator_dir/'network.sqlite3')));service.admit_evidence({'objective': 'Find the numeric-version comparison bug in this frozen public fixture.', 'baseline_commit': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'source': {'path': 'src/version_check.py', 'start_line': 1, 'text': 'def newer(a, b): return a > b\n'}})
 with running_server(build_mcp_app(service)) as url:
  invite=invite_file(private,service,url);host=Contributor(invite,minutes=5)
  lease=asyncio.run(host.perform('request_work'))
- write_outcome(run_state/'run.json',{'assignment_id':lease['assignment_id'], 'automatic_resume_authorized':False})
  before={k:host.state[k] for k in ['key','used','deadline','max_jobs']}
  # Freeze before helper/VM startup. Neither connection nor heartbeat resets it.
  remaining=min(150,lease['hard_deadline']-host.clock(),host.state['deadline']-host.clock())
  if remaining<=0:raise RuntimeError('Assignment transport already expired')
  transport_deadline=time.monotonic()+remaining
+ from subscription_lab_authority import prepare as prepare_authority
+ authority_binding=prepare_authority(run_state,lease=lease,
+     consent_deadline=host.state['deadline'],template=(p/'model-template.json').read_bytes(),
+     account=provider_account,seconds=remaining)
+ del provider_account
+ os.chown(authority_dir,gateway.pw_uid,gateway.pw_gid)
+ for entry in authority_dir.iterdir():os.chown(entry,gateway.pw_uid,gateway.pw_gid)
+ write_outcome(run_state/'run.json',{'assignment_id':lease['assignment_id'],
+     'model_authority_binding':authority_binding,'automatic_resume_authorized':False})
+ subprocess.run(dependent(model_service_args)+['/usr/bin/python3','-I',str(p/'public-server.py')],check=True)
+ for _ in range(100):
+  if model_socket.exists():break
+  time.sleep(.05)
+ assert model_socket.exists(),'model service not ready'
  cfg=private/'helper.json';cfg.write_text(json.dumps({'invite':'/state/'+invite.name,'assignment':lease['assignment_id'],'authority':approve(host,lease,['read_input','heartbeat','submit_result'])}));cfg.chmod(0o600)
  os.chown(private,controller.pw_uid,controller.pw_gid)
  for entry in private.iterdir():os.chown(entry,controller.pw_uid,controller.pw_gid);entry.chmod(0o600)

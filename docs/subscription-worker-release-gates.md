@@ -523,3 +523,42 @@ These are synthetic tests with no external provider calls. The live supervisor
 still does not configure the ledger, and complete controller/host recovery remains
 open. Persisted ledger revocation is local DAIA authority removal, not provider-side
 OAuth token revocation. No broader consent or provider use was introduced.
+
+
+### Original-assignment authority connected to the supervised lab
+
+The lab controller now creates the six-request ledger after obtaining the actual
+assignment and before starting the model gateway. Its private binding digest covers
+the lease, original consent deadline, effective fixed model template, provider and
+account. Only the digest is retained in the ledger metadata; no provider credential
+is stored there. The model service receives its own private authority directory and
+a read-only view of the kernel boot identifier, not the helper's state directory.
+The original controller/helper time limits remain in place.
+
+The actual model server now requires the retained authority; there is no missing-file
+fallback to an in-memory budget. The service's ExecStopPost mode revokes that ledger
+and removes its socket without loading provider credentials. The reproducible
+`scripts/probe_authority_service_cleanup.py` starts a private-network service, proves
+its child reserved one request, kills that child with SIGKILL, then confirms zero
+remaining authority and socket removal by the real stop handler. No provider is
+contacted by that probe. Thirty-eight affected preparation and boundary tests passed.
+
+One actual native Codex/Spark subscription task then completed with five provider
+requests, 23 channel denials, native refresh/restart with unchanged account/deadline,
+one stored result and normal supervised cleanup. Post-run inspection confirmed that
+the persistent ledger matches the recorded assignment binding, has private permissions
+and model-service ownership, and is zero with a successful stop-handler marker.
+These persistence checks were inspected separately after the run; the supervisor's
+normal success report still primarily checks process and endpoint cleanup.
+
+A fresh networkless evaluator tested the exact stored source, hash
+`5ef4ed11594272559631333856d2b55e7dca9e7cdeb9d4b5eeda31e9dac2c242`:
+ten cases passed and the original fixture failed. Candidate code ran under a separate
+UID; the trusted parent compared results. No provider credentials were present in
+the evaluator and its overlay was removed. [Evidence](research/wired-request-authority-2026-09-13.json).
+
+This establishes the ledger's use in the existing lab, not successful recovery of
+an entire controller or host. A stopped gateway deliberately leaves its authority
+revoked. Safely resuming unfinished work, retaining prior credential-reflection
+patterns, automated post-stop authority verification, clean participant installation
+and the broader worker/network acceptance gates remain open. No limits were increased.

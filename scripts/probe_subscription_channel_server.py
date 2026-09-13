@@ -17,9 +17,22 @@ from daia.model_channel import AssignmentModelChannel
 from daia.codex_https import CodexHTTPSUpstream
 from daia.model_response import completed_output
 root=Path('/run/daia-lab')
+authority_root=Path('/run/daia-authority')
+authority_binding=json.loads((authority_root/'binding.json').read_text())['binding']
+request_authority=(str(authority_root/'requests.json'),authority_binding)
+if sys.argv[1:] == ['--revoke-only']:
+ from daia.request_ledger import revoke
+ try:
+  revoke(*request_authority)
+  # The ledger's fsync is authoritative; this marker is only an audit summary.
+  (authority_root/'revoked.json').write_text(json.dumps({'persisted':True}))
+ finally:
+  (root/'model.sock').unlink(missing_ok=True)
+ raise SystemExit(0)
+if sys.argv[1:]:raise SystemExit('Unsupported model service mode')
 template=json.loads(Path('/var/lib/daia-lab/templates/model-template.json').read_text());template['model']='gpt-5.3-codex-spark'
 credentials=json.loads((root/'subscription-auth.json').read_text());(root/'subscription-auth.json').unlink()
-binding=CodexHTTPSUpstream(credentials['address'],credentials['access_token'],credentials['account_id'],seconds=150,requests=6)
+binding=CodexHTTPSUpstream(credentials['address'],credentials['access_token'],credentials['account_id'],seconds=150,requests=6,request_authority=request_authority)
 credentials.clear();counts={'forwarded':0,'denied':0,'attempts':0,'statuses':[]}
 original_getresponse=http.client.HTTPConnection.getresponse
 def observed_response(connection):
