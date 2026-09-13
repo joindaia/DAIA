@@ -948,3 +948,23 @@ This verifies helper pending-state recovery with a surviving coordinator. It doe
 not simulate power loss, filesystem corruption, a coordinator database failure,
 or one end-to-end guest recreation following the KVM controller crash. Those
 failure scopes must not be inferred from this narrower, deterministic test.
+
+
+### Ordinary subscription execution with supervisor dependencies
+
+The combined real-subscription fixture also completed successfully under the
+new controller-unit arrangement. The four child services used controller binding
+and stop ordering; parent ExecStopPost covered parent-owned transient paths. The
+native client completed in four provider calls with the unchanged six-request
+budget. Native refresh/restart, public research/dependency use, unchanged worker
+tests, refused modified retry and exact receipt recovery left one stored result
+with unchanged identity and consent. Controller exit was zero and the overlay,
+all three endpoint paths and transient credential/diagnostic files were absent
+after the supervised run. See the
+[bounded lifecycle record](research/supervised-subscription-run-2026-09-13.json).
+
+This closes the normal-success regression left open by the hard-crash experiment.
+No independent evaluator was run for this particular lifecycle regression; the
+earlier separately evaluated source artifacts remain distinct evidence. The
+private lab harness still needs production packaging, broader live account/network
+negatives and full interrupted-work recovery across a newly created worker.

@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-13",
+  "native_version": "0.153.4",
+  "model": "gpt-5.3-codex-spark",
+  "real_subscription": true,
+  "controller_exit": 0,
+  "supervised_cleanup_complete": true,
+  "overlay_removed": true,
+  "results": 1,
+  "model_channel_counts": {
+    "forwarded": 4,
+    "denied": 23,
+    "attempts": 4
+  },
+  "rotation": {
+    "native_refresh_completed": true,
+    "account_unchanged": true,
+    "native_restart_completed": true,
+    "deadline_preserved": true,
+    "rotation_after_provider_requests": 1
+  },
+  "research": {
+    "documentation_bytes": 771979,
+    "documentation_sha256": "8404db538b6fb48de1d1d0af2fc057f556b84b2cf6bbd9ed44f54a63762c41c1",
+    "dependency": "packaging",
+    "version": "25.0",
+    "wheel_sha256": "29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484",
+    "dependency_import_and_checks": true
+  },
+  "source_sha256": "88e6978e344fe9a8a08e5f14845eb009ffbf00095e985ab3126ea97e85a9886a",
+  "unchanged_worker_test": true,
+  "exact_retry": true,
+  "changed_retry_denied": true,
+  "consent_and_identity_unchanged": true,
+  "independent_evaluation_this_run": false,
+  "scope": "Ordinary successful execution under the controller dependency and supervisor cleanup arrangement; lifecycle regression, not new independent correctness evidence."
+}
