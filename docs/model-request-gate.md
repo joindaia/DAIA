@@ -172,3 +172,25 @@ operations. Hiding discovery is not the authorization boundary: operations must
 remain denied even when an attacker already knows every method and endpoint name.
 A complete worker-visible inventory must include all network routes, MCP servers,
 provider-side tools and account functions; that inventory remains outstanding.
+
+## Live enumeration with external credential injection
+
+A fresh KVM guest performed all 23 hostile and enumeration probes against the
+external channel, then the pinned original Codex executed the shell-canary task.
+External counts: 23 denied, two forwarded. A distinct synthetic provider process
+verified the injected bearer credential on both received requests. The credential
+was generated outside the VM and not placed in its seed or environment. The provider
+used a separate Unix socket, not a guest-forwarded network endpoint.
+
+Native exit was zero, the tool and turn completed, and the overlay was removed.
+Runtime: 47.349 seconds. This combines live guest-side enumeration, filtering,
+local credential injection and positive native tool execution. The earlier ten-case
+combined run also passed. Local 69-case suite passes with socket permissions; a
+rerun without those permissions failed at socket setup, not protocol assertions.
+
+The provider is a separate process under the same restricted external service
+identity, not an internet provider or a separately attested trust domain. No real
+OAuth credential, ChatGPT account function, refresh or revocation endpoint was used.
+Exhaustion and active revocation remain unit/socket evidence until added to this
+same guest trial. No exhaustive credential-extraction or sandbox-escape claim is
+made from the absence of credentials in the prepared guest input.
