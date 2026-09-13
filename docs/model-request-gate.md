@@ -821,3 +821,41 @@ This establishes development and idempotent delivery across a real managed-auth
 refresh and auth-client restart. It does not establish a guest restart, public
 research/download in the same run, provider-side revocation, comprehensive account
 confinement, or a packaged production controller. Submission remains harness-driven.
+
+
+### Research, dependency use and real subscription in the same worker
+
+A third fixed guest endpoint now reaches a separate credential-free public-egress
+service under its own runtime identity and private service root. Its only allowed
+hostnames were docs.python.org, pypi.org and files.pythonhosted.org; it reused
+public_egress resolution/address checks and host-interface exclusions. The model
+and assignment endpoints retained their existing bindings. The research service
+had no model-secret directory mount and could not read saved assignment state.
+
+The native agent invoked the [guest research fixture](../scripts/probe_public_research.py),
+which fetched Python stdtypes documentation and packaging 25.0 metadata/wheel over
+end-to-end TLS. The wheel matched the digest in the retrieved metadata and was
+imported directly inside the VM for two version comparisons. The agent inspected
+the downloaded documentation, patched the source using only the standard library
+and ran the unchanged tests. This is real download and dependency use, not a
+general package-manager or arbitrary installation-hook test. The helper selected
+the URLs in advance; no claim of unconstrained autonomous research is made.
+
+The same run completed native credential refresh after the first provider call,
+then finished within four provider calls and three terminal commands. Twenty-three
+model-channel negatives and six research CONNECT negatives were refused. The
+latter covered loopback, metadata, CGNAT, IPv6 loopback and the two provider hosts;
+these were authority refusals, not live DNS-rebinding probes. Separately, all 29
+public-egress unit tests passed, including mixed-address resolution and numeric
+pinning. Those fixture tests do not replace live private-network canaries.
+
+Exact receipt recovery retained one in-review result with unchanged consent. A
+database check matched the stored source to the guest output, and those unchanged
+bytes passed ten independent regressions in a fresh networkless evaluator while
+the original failed. Both overlays were removed. Worker runtime was 65.992 seconds.
+See the [bounded result record](research/live-subscription-research-2026-09-13.json).
+
+Remaining gates include comprehensive live host/private-network/account negatives,
+guest restart and crash cleanup across all three channels, provider-side revocation
+semantics, installation hooks, and a reproducible packaged controller. This trial
+does not authorize an open cohort or weaken any existing admission policy.
