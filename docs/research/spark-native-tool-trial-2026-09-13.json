@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-13",
+  "model": "gpt-5.3-codex-spark",
+  "client_version": "0.153.4",
+  "real_subscription": true,
+  "worker": {
+    "native_exit": 0,
+    "turn_completed": true,
+    "provider_requests": 6,
+    "commands_completed": 5,
+    "all_command_exits_zero": true,
+    "test_file_unchanged": true,
+    "negative_channel_cases_denied": 23,
+    "overlay_removed": true,
+    "runtime_seconds": 57.946,
+    "nonfatal_error_item_observed": true
+  },
+  "evaluation": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "14bb78ddf61af2c0ba8b550b6b299af5b50bf8795671e67a85ea5c010763d7b4",
+    "model_source_changed": false,
+    "format_normalized": false,
+    "provider_credentials_present": false
+  },
+  "evaluator_network": false,
+  "evaluator_overlay_removed": true,
+  "evaluator_runtime_seconds": 38.148,
+  "source": "from itertools import zip_longest\n\n\ndef _parse_version(version):\n    parts = [int(part) for part in version.split('.')]\n    while len(parts) > 1 and parts[-1] == 0:\n        parts.pop()\n    return parts\n\n\ndef newer(a, b):\n    a_parts = _parse_version(a)\n    b_parts = _parse_version(b)\n\n    for a_part, b_part in zip_longest(a_parts, b_parts, fillvalue=0):\n        if a_part > b_part:\n            return True\n        if a_part < b_part:\n            return False\n    return False\n",
+  "limitations": [
+    "Controlled numeric-version fixture; not a DAIA repository improvement or productivity benchmark.",
+    "No public research, dependency download or DAIA receipt in this run.",
+    "Refresh, revocation and complete provider-account/network confinement still require combined live tests.",
+    "Trusted reasoning registration and relay are experimental; the live launcher remains a private lab harness."
+  ]
+}

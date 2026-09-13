@@ -158,3 +158,19 @@ def test_message_phase_is_explicit(role, phase, allowed):
     else:
         with pytest.raises(Denied):
             gate.validate("POST", "/v1/responses", encode(body))
+
+
+@pytest.mark.parametrize("content", [None, []])
+def test_empty_provider_content_is_not_required_in_client_history(content):
+    gate = RequestGate(encode(request()))
+    item = {"type": "reasoning", "summary": [], "encrypted_content": "bound"}
+    gate.record_provider_output([dict(item, content=content)])
+    body = request(); body["input"] = [item]
+    gate.validate("POST", "/v1/responses", encode(body))
+
+
+def test_nonempty_provider_content_is_not_silently_discarded():
+    gate = RequestGate(encode(request()))
+    with pytest.raises(Denied):
+        gate.record_provider_output([{"type": "reasoning", "summary": [],
+            "encrypted_content": "bound", "content": [{"type": "unknown"}]}])

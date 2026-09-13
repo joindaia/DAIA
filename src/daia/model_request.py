@@ -152,6 +152,8 @@ class RequestGate:
                 item = dict(item)
                 if "id" in item:
                     _require(type(item.pop("id")) is str)
+                if "content" in item:
+                    _require(item.pop("content") in (None, []))
                 admitted.add(_reasoning_digest(item))
         _require(len(admitted) <= 64)
         self._reasoning = admitted

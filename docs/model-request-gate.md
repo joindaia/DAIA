@@ -604,3 +604,42 @@ Validation: 129 focused model-gateway tests passed; the full suite passed with
 could not run socket-based fixtures and was terminated; the successful run used
 local socket permissions. No full account-confinement, refresh, or combined DAIA
 receipt claim follows from these results.
+
+
+### Successful native Spark tool round (2026-09-13)
+
+The earlier preflight failure led to a reproducible relay defect: an upstream
+that rejects a request while the guest is still uploading can leave a buffered
+403 reply, but the old relay exits immediately on a broken write. The lab relay
+now stops uploading and drains the response. The regression fails with the old
+stop-on-write-error behavior. A fresh credential-free KVM preflight subsequently
+received all 23 expected rejections, with zero model calls and overlay removal.
+The checked-in relay is `scripts/model_channel_bridge.py`; it has a fixed local
+socket destination and no worker-selected endpoint.
+
+The provider reasoning item included an additional `content` field. Registration
+now permits dropping that field only when empty (null or an empty list), on the
+trusted provider side. Nonempty content remains denied. Completed output items
+are registered after the full provider stream has passed validation, rather than
+relying only on the final completion's output array. Exact reasoning/summary
+binding and the per-assignment limit remain in effect.
+
+With these changes, the original native Codex client using a real Spark
+subscription completed a coding round in a fresh KVM: five successful terminal
+commands inspected files, applied a patch and ran the supplied four-case test.
+The test file was unchanged. Six provider requests were forwarded; 23 hostile
+channel probes were refused. The client completed with exit zero in a run lasting
+57.946 seconds. Its event stream also contained a nonfatal error item, so this is
+not a claim of an error-free client startup.
+
+The exact resulting source, without edits or patch-format normalization, passed
+ten separately supplied regressions in another fresh VM with no network device
+or provider credentials. The original source failed. Evaluation took 38.148
+seconds; both overlays were removed. The evidence file
+[records the source and its hash](research/spark-native-tool-trial-2026-09-13.json).
+
+Current regression result: 524 passed, 10 skipped, one existing warning.
+This establishes real subscription-driven file editing and test execution for a
+controlled fixture. Public research, dependency downloads, the DAIA receipt,
+refresh/revocation, and complete account/network confinement are still not proven
+as one combined workflow. The public cohort gate remains closed.
