@@ -45,9 +45,9 @@ combine writable host bind mounts with the temporary work mount.
 - Export only bounded result bytes before teardown. The host cannot read the
   service-private `report.json` afterward. Preserve helper/receipt recovery state
   outside the guest work mount, without exposing it to task code.
-- Test forced controller/worker death and recovery with this storage layout.
-  Normal service exit and an unchanged underlying host directory do not alone
-  establish every crash, leaked namespace or orphan-process scenario.
+- Integrate full assignment and pending-result recovery with this storage layout.
+  The forced service-death trial below covers process and temporary-storage cleanup,
+  not restored task execution or every leaked-namespace scenario.
 
 The probe performs no provider requests, changes no production configuration and
 creates no persistent mounts. It requires the trusted lab administrator only to
@@ -75,3 +75,22 @@ remains unchanged. See the [extended results](research/worker-storage-extended-2
 This trial does not claim complete IPC isolation, cover every writable kernel
 interface, or establish forced-crash recovery. It also does not rerun a real
 subscription or arbitrary dependency-installation task with this storage profile.
+
+
+## Forced service death and fresh storage
+
+The [crash probe](../scripts/probe_storage_crash.py) uses the same trusted boot
+bundle and four bounded mounts. It waits for the matching guest boot result,
+checks that a real QEMU process is still running and that synthetic state exists
+in all four mounts, then sends SIGKILL to the service main process. The service
+manager removes the remaining processes without relying on Python cleanup.
+
+In the [observed run](research/worker-storage-crash-2026-09-13.json), the cgroup
+became empty and every recorded process disappeared in 0.064 seconds. The
+underlying host work directory stayed empty. A new service with the same storage
+profile found four empty, distinct filesystems and successfully wrote fresh data.
+
+This is a fresh service test, not a second VM boot or a resumed DAIA assignment.
+It uses no credentials or model requests. Full assignment/receipt recovery,
+provider binding cleanup and a useful task under the packaged storage profile
+remain integration requirements.
