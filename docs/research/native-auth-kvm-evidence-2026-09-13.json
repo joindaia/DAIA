@@ -40,5 +40,19 @@
     "fixture seed reused; fresh overlay created",
     "no real login, subscription, TLS, account confinement or exhaustive extraction proof",
     "positive task is shell canary, not independently evaluated development patch"
-  ]
+  ],
+  "on_demand_refresh_trial": {
+    "runtime_seconds": 47.254,
+    "server_sha256": "3e4f25d06f2d1a614d00e37bf02ebacaa0cd4634d7e7ff9d81771dc1844956c0",
+    "native_refresh_calls": 2,
+    "adapter_attempts": 3,
+    "forwarded": 2,
+    "denied": 24,
+    "provider_authenticated_requests": 2,
+    "tool_and_turn_completed": true,
+    "overlay_removed": true,
+    "handoff_and_trigger_files_removed": true,
+    "fault": "trusted synthetic access token replaced with expired JWT after first model use",
+    "limit": "controlled fault injection; no real expiry, provider or reactive 401 recovery"
+  }
 }

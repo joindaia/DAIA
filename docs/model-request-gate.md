@@ -374,3 +374,29 @@ credentials during the two-call task without renewing authority, not real-time
 refresh on expiry, reactive 401 recovery, real provider acceptance or a complete
 subscription lifecycle. Refresh requests still need a controlled trusted-side
 trigger and failure handling in the eventual runtime integration.
+
+
+## Native renewal triggered during the running KVM task
+
+A subsequent fresh-overlay trial kept the restricted auth service waiting after
+its first successful native refresh. Only after the first completed model call did
+the gateway signal renewal. The trusted lab then replaced the synthetic access
+token in its own profile with an expired fixture JWT. The second original-client
+process performed native proactive renewal and supplied a different token. The
+existing gateway binding used it for the second request without resetting budget
+or deadline. The provider required the first then replacement token in that order.
+
+Runtime: 47.254 seconds. Both native auth processes exited zero; two refreshes and
+two authenticated model requests were observed. The guest completed its tool and
+turn. All 23 hostile probes and the extra valid over-budget request were denied;
+external counters remained three adapter attempts, two forwarded, 24 denied.
+The overlay, both token handoff files, renewal trigger and both sockets were absent
+after cleanup. The [structured evidence](research/native-auth-kvm-evidence-2026-09-13.json)
+contains this separate trial alongside the earlier prelaunch-renewal evidence.
+
+This is a controlled expired-token fault injected on the trusted side after first
+use, not a wall-clock expiry test or real-provider 401 recovery. The internal file
+trigger is a private lab mechanism, not a worker capability or production IPC.
+No real credentials, inference billing, provider account operation or external
+communication was involved. The positive workload remains a shell canary; useful
+patch production and independent evaluation must be demonstrated separately.
