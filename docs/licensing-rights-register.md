@@ -1,8 +1,9 @@
 # Rights register and release clearance
 
 Status at adoption: **commercial clearance not established**. The founding human operator
-has accepted interim stewardship as the intended individual licensor. Legal identity
-must be verified privately before contracts are executed. No executed supplemental
+has accepted interim stewardship and retains rights actually held. Only a future
+independent DAIA foundation may issue alternative licenses under this program.
+Its formation, identity, independence and licensing authority are not yet established. No executed supplemental
 contributor grant is recorded by this change. Git authorship
 is a discovery aid, not a legal ownership certificate. The inspected public main
 history contains three distinct recorded author identities; these may include
@@ -20,7 +21,7 @@ For each exact proposed commercial release, record:
 | Provenance | Original contribution, copied material, generated material and any employer rights |
 | Rights basis | Verified ownership, executed supplemental grant, or applicable third-party permission |
 | Grant scope | Exact covered contributions, exclusions, commercial sublicensing and patent position |
-| Steward | Private reference to identified legal licensor and signing authority |
+| Steward | Private reference to established independent foundation and signing authority |
 | Community guarantee | Public AGPL counterpart and accepted continuity obligations |
 | Clearance | Unverified, AGPL-only, excluded, or cleared, with dated reviewer decision |
 

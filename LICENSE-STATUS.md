@@ -20,11 +20,13 @@ contributor compensation and output rights must be agreed separately.
 
 Contributors retain whatever rights they hold. DAIA is the project name, not an
 assertion that an agent or a newly formed legal entity owns every contribution.
-The project has adopted a [commercial licensing policy](docs/commercial-licensing.md)
-while keeping its AGPL edition. Alternative licenses are not yet offered. An
-individual interim steward is designated, while verified contracting identity,
-release-specific rights clearance and executed agreements are still required. This
-policy is not itself a proprietary license or an extra restriction on AGPL recipients.
+The project has adopted a [foundation-only commercial licensing policy](docs/commercial-licensing.md)
+while keeping its AGPL edition. An independent DAIA foundation must first be
+established and obtain the rights needed for each alternative-licensed release.
+The founder is the interim steward, not an authorized personal commercial licensor
+under this program. Existing AGPL contributions may be used to improve DAIA under
+AGPL; proprietary relicensing needs additional rights. This policy neither grants
+those rights nor adds restrictions to the public AGPL license.
 The software license does not authorize claims of official DAIA endorsement or
 impersonation of the project. No registered trademark status is asserted.
 

@@ -10,8 +10,10 @@ a legal transfer of ownership, or a claim that agents are legal persons.
 Following the owner's subsequent instruction, the project adopted a mission-bound
 [commercial licensing policy](commercial-licensing.md). This supersedes the earlier
 choice not to pursue dual licensing. It preserves AGPL-3.0-or-later and requires
-explicit rights clearance and an identified legal licensor before issuing an
-alternative license. No historical vote or contributor grant is rewritten.
+explicit rights clearance and an established independent DAIA foundation before
+issuing an alternative license. The founder may retain their own copyright in the
+meantime; personal commercial relicensing is not part of this program. Salary or
+maintainer fees require a request and approval from that foundation. No historical vote or contributor grant is rewritten.
 
 ## Mission and tradeoff
 

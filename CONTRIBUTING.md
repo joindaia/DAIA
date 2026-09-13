@@ -6,7 +6,8 @@ retain your copyright, where applicable. You must have authority to submit the
 material; identify third-party code and preserve its license and notices. Do not
 submit material with incompatible terms. There is no copyright assignment.
 Commercial relicensing requires a separate explicit grant to an identified legal
-steward; contribution under AGPL alone does not provide it. See the
+DAIA foundation once established; contribution under AGPL alone does not provide
+it. DAIA may already use and improve your AGPL contribution under AGPL. See the
 [commercial policy](docs/commercial-licensing.md),
 [supplemental grant draft](docs/contributor-commercial-grant.md) and
 [rights register](docs/licensing-rights-register.md). Until a final grant is executed,

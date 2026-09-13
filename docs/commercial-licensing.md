@@ -36,20 +36,35 @@ This guarantee must be included in executed contributor grants and any successor
 steward agreement, not merely stated on a website. Existing AGPL grants remain
 subject to their existing terms. Donations alone never purchase an exception.
 
-## Interim stewardship
+## Foundation-only commercial licensing
 
-The founding human operator has accepted interim stewardship and intends to license
-the rights they hold personally. Public materials may identify this person by their
-project role; legal identity must be disclosed to contractual counterparties and
-verified in the private agreement records. No foundation exists by virtue of this
-policy. A later foundation requires a separate documented transfer or license of
-rights and assumption of the community obligations; ownership does not move merely
-because an organization is formed.
+The founding human operator remains the interim steward and retains the copyright
+rights they actually hold. This does not authorize personal commercial relicensing
+under the official DAIA program. Alternative licenses may be issued only after an
+independent DAIA foundation is legally established and holds sufficient rights for
+the covered release. Public use of the project role is acceptable in the meantime;
+contractual parties must be identified privately when agreements are executed.
 
-This appointment establishes operational responsibility and the intended licensor,
-not exclusive ownership of all code or a transfer of contributors' rights. The
-founder's existing rights, where they exist, remain theirs. The private stewardship
-record does not substitute for release-specific rights clearance.
+The foundation must have documented decision-making rules and conflict-of-interest
+controls. Its independence cannot be established merely by renaming the founder's
+account or registering an entity. Transfers or grants from the founder and other
+rightsholders must be expressly recorded. Forming the foundation itself transfers
+neither copyright nor contributor grants.
+
+## Using contributions to improve DAIA
+
+DAIA may use, modify and incorporate contributions supplied under AGPL-3.0-or-later
+for improving the project, while fulfilling AGPL obligations. No extra commercial
+grant is necessary for that AGPL use. Independently produced work has the license
+actually granted for that work; receiving an artifact does not change its license.
+Material with incompatible restrictions must not be incorporated without adequate
+permission. An agreement prohibiting reuse must be honored.
+
+Permission to sell a copy or service under AGPL is different from permission to
+issue an alternative license without AGPL obligations. Even when a contribution
+contains no separate commercial prohibition, AGPL alone does not authorize the
+latter. The future foundation needs ownership, an express supplemental grant or
+another adequate license. This applies to existing and future contributions.
 
 ## Authority before issuing any commercial license
 
@@ -62,7 +77,8 @@ AI-assisted provenance and existing contributions need separate examination.
 Before making a binding offer or issuing an alternative license, the maintainer
 must record all of the following:
 
-1. An identified legal licensor and a person authorized to sign for it. Keep legal
+1. An established independent DAIA foundation as legal licensor and a person
+   authorized to sign for it. Keep legal
    identity and contractual details in restricted records, not public commits.
 2. A rights review of the exact release: ownership or an adequate express grant for
    every included original contribution, and applicable third-party permissions.
@@ -87,16 +103,23 @@ budget, subject to tax and contractual obligations. This is an accounting policy
 not the creation of a trust, foundation or legal owner called “DAIA Fund.” It does
 not require existing personal funds or other accounts to be transferred.
 
-Permitted project expenses include infrastructure, security review, legal/accounting
-work, development, contributor bounties and reasonable compensation for documented
-maintenance. Compensation is payment for work, not a founder entitlement or profit
-distribution. No salary, percentage, spending authority or recurring payment is
-created here. Existing approval requirements for expenditure still apply.
+Project funds may support infrastructure, security review, legal/accounting work,
+development and contributor bounties within their approved terms. Salary,
+maintainer fees and compensation for employee or contracted maintenance work may
+start only when the independent foundation requests that work and approves the
+agreement and budget. This applies equally to the founder and other workers. No
+such salary or fee is authorized before that foundation exists. Contribution
+credits do not create a wage or retrospective employment entitlement.
+
+No salary, percentage, spending authority or recurring payment is created here.
+Existing approval requirements for expenditure still apply. Documented expense
+reimbursement and separately agreed bounty rewards are not disguised salary;
+each needs its own lawful authorization and applicable terms.
 
 Record gross receipts, tax, payment/host fees, expenses and reserves. Publish useful
 aggregates and decisions while protecting personal, customer and contract data.
-Disclose conflicts of interest; a recipient must not be the sole approver of their
-own compensation. A reserve and compensation budget should follow actual costs
+Disclose conflicts of interest; compensation requires a foundation decision by
+non-conflicted decision-makers. A recipient must not approve their own compensation. A reserve and compensation budget should follow actual costs
 and available funds rather than an invented fixed percentage. Donor restrictions
 and any fiscal-host terms must be honored.
 
