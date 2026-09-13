@@ -968,3 +968,21 @@ No independent evaluator was run for this particular lifecycle regression; the
 earlier separately evaluated source artifacts remain distinct evidence. The
 private lab harness still needs production packaging, broader live account/network
 negatives and full interrupted-work recovery across a newly created worker.
+
+
+### Real TCP canaries for post-resolution private-address refusal
+
+The credential-free public-egress canary probe ran in a separate systemd private
+network namespace with real IPv4 and IPv6 loopback listeners on port 443. It
+supplied six synthetic resolver answer sets for an explicitly allowed test name:
+loopback alone and mixed public/loopback sets in both orders. The actual CONNECT
+handler returned 403 in every case, with zero outbound connect attempts and zero
+queued canary connections. Twenty-four successful direct control connections,
+before and after the negative cases, established that both listeners were live.
+
+The [reproducible probe](../scripts/probe_public_egress_canary.py) instruments
+connect attempts while retaining real TCP sockets; it does not replace connect
+with a success/failure mock. DNS answers are injected at the resolver boundary,
+not obtained from a live DNS server. This proves the tested post-resolution gate
+against reachable local listeners, not wire-level rebinding, a complete VM route,
+VPN isolation or all private-address classes. Those wider scopes remain open.
