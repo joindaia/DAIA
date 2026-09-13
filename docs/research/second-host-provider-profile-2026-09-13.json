@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-13",
+  "scope": "Second-host provider profile preparation and synthetic credential filesystem access",
+  "source_commit": "c26f4f4ad5d746f6e20724c6135456eb0a3d8b9f",
+  "synthetic_credential_only": true,
+  "private_parent_mode": "0700",
+  "canary_mode": "0600",
+  "read_access": {
+    "daia-provider": true,
+    "daia-runtime": false,
+    "daia-controller": false,
+    "daia-egress": false,
+    "daia-research": false
+  },
+  "canary_removed": true,
+  "real_credentials_read_or_copied": false,
+  "limits": [
+    "This tests filesystem access under distinct Linux identities, not full credential/account confinement.",
+    "The trusted installer and host administrator remain able to access the profile.",
+    "Provider refresh, inference routing, live authentication and cleanup must be tested separately.",
+    "No private account identifiers, machine names, addresses or host paths are recorded."
+  ],
+  "native_client": {
+    "version": "0.153.4",
+    "sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+    "upstream_download": "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-x86_64-unknown-linux-musl.tar.gz",
+    "digest_verified_before_execution": true,
+    "version_command_succeeded": true,
+    "empty_profile_prepared": true,
+    "initial_login_status": "Not logged in"
+  },
+  "authentication_evidence": "Pre-login preparation only; later device authorization is a separate operation."
+}
