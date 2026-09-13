@@ -110,3 +110,29 @@ def test_revocation_wrong_binding_preserves_valid_authority(tmp_path):
     original = path.read_bytes()
     with pytest.raises(Denied): ledger.revoke(path, 'e' * 64)
     assert path.read_bytes() == original
+
+
+@pytest.mark.parametrize('explicit', [False, True])
+def test_creation_delay_never_extends_original_deadline(tmp_path, monkeypatch, explicit):
+    clock=[100.0]
+    monkeypatch.setattr(ledger,'_now',lambda: clock[0])
+    original_open=ledger._open
+    def delayed_open(path,flags):
+        clock[0]+=5
+        return original_open(path,flags)
+    monkeypatch.setattr(ledger,'_open',delayed_open)
+    path=tmp_path/'requests.json'
+    options={'deadline':110.0} if explicit else {}
+    ledger.create(path,BINDING,seconds=30,requests=1,**options)
+    assert json.loads(path.read_text())['deadline']==(110.0 if explicit else 130.0)
+    if explicit:
+        # Opening the record consumes the last five seconds: reservation must deny.
+        with pytest.raises(Denied):ledger.reserve(path,BINDING)
+
+
+@pytest.mark.parametrize('deadline',[False,float('nan'),float('inf'),99.0,100.0])
+def test_invalid_original_deadline_creates_no_authority(tmp_path,monkeypatch,deadline):
+    monkeypatch.setattr(ledger,'_now',lambda:100.0)
+    path=tmp_path/'requests.json'
+    with pytest.raises(ValueError):ledger.create(path,BINDING,seconds=30,requests=1,deadline=deadline)
+    assert not path.exists()

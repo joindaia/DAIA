@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import runpy
 import sys
+import time
 import pytest
 
 if sys.platform != 'linux':
@@ -19,7 +20,7 @@ def test_original_scope_is_bound_once_and_account_not_stored(tmp_path, monkeypat
     call=prepare(monkeypatch)
     scope=dict(lease={'assignment_id':'a'*32,'hard_deadline':1000},
                consent_deadline=900,template=b'{"model":"fixed"}',
-               account='synthetic-account-canary',seconds=30)
+               account='synthetic-account-canary',deadline=time.clock_gettime(time.CLOCK_BOOTTIME)+30)
     first=tmp_path/'one';first.mkdir(mode=0o700)
     digest=call(first,**scope)
     authority=first/'model-authority'

@@ -590,3 +590,22 @@ wiring, and this service probe covers the new verification separately. Historica
 run records without the controller identity are rejected rather than upgraded.
 Full controller recovery, host-reboot recovery and participant installation remain
 open, and no new resume permission follows from a successfully revoked run.
+
+
+### Preparation cannot move the original authority deadline
+
+The controller now freezes a CLOCK_BOOTTIME cutoff when calculating the original
+remaining allowance and passes that absolute cutoff to authority preparation.
+The binding digest includes it. Ledger creation caps its deadline against this
+cutoff before opening/writing the state file; filesystem delay no longer restarts
+the relative duration. Existing callers without a cutoff also freeze their deadline
+before file creation. Expired or invalid supplied cutoffs create no authority.
+
+Forty request-ledger, authority, shutdown and crash-rendezvous tests passed.
+Injected clock advancement during file opening preserved the original cutoff and
+caused reservation at that cutoff to fail. The actual isolated service-crash probe
+still reached reservation before SIGKILL, durably revoked its ledger and passed
+the supervisor check. No provider calls occurred. The complete native subscription
+run was not repeated for this deadline change. Full recovery and clean participant
+installation remain unestablished.
+[Evidence](research/frozen-authority-deadline-2026-09-13.json).

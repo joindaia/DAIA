@@ -44,17 +44,22 @@ def _open(path, flags):
     return fd
 
 
-def create(path, binding, *, seconds, requests):
+def create(path, binding, *, seconds, requests, deadline=None):
     """Explicit trusted authorization: create once; existing state never resets."""
     if (not isinstance(binding, str) or not re.fullmatch('[0-9a-f]{64}', binding)
             or type(seconds) not in (int, float) or not math.isfinite(seconds)
             or not 0 < seconds <= 300 or type(requests) is not int
             or not 0 < requests <= 100):
         raise ValueError('Invalid request authorization')
+    now = _now()
+    if deadline is not None and (type(deadline) not in (int, float)
+                                or not math.isfinite(deadline) or deadline <= now):
+        raise ValueError('Invalid original deadline')
+    expires = min(now + seconds, deadline) if deadline is not None else now + seconds
     fd = _open(path, os.O_RDWR | os.O_CREAT | os.O_EXCL)
     try:
         _write(fd, {'v': 1, 'binding': binding, 'boot': _boot(),
-                    'deadline': _now() + seconds, 'remaining': requests})
+                    'deadline': expires, 'remaining': requests})
     finally:
         os.close(fd)
     directory = os.open(Path(path).parent, os.O_RDONLY | os.O_DIRECTORY)

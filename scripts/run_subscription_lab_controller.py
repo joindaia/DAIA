@@ -158,13 +158,14 @@ with running_server(build_mcp_app(service)) as url:
  lease=asyncio.run(host.perform('request_work'))
  before={k:host.state[k] for k in ['key','used','deadline','max_jobs']}
  # Freeze before helper/VM startup. Neither connection nor heartbeat resets it.
+ authority_started=time.clock_gettime(time.CLOCK_BOOTTIME)
  remaining=min(150,lease['hard_deadline']-host.clock(),host.state['deadline']-host.clock())
  if remaining<=0:raise RuntimeError('Assignment transport already expired')
  transport_deadline=time.monotonic()+remaining
  from subscription_lab_authority import prepare as prepare_authority
  authority_binding=prepare_authority(run_state,lease=lease,
      consent_deadline=host.state['deadline'],template=(p/'model-template.json').read_bytes(),
-     account=provider_account,seconds=remaining)
+     account=provider_account,deadline=authority_started+remaining)
  del provider_account
  os.chown(authority_dir,gateway.pw_uid,gateway.pw_gid)
  for entry in authority_dir.iterdir():os.chown(entry,gateway.pw_uid,gateway.pw_gid)
