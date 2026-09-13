@@ -117,3 +117,24 @@ def test_native_metadata_is_accepted_but_not_forwarded():
     reply, seen = exchange(wire(extra=extra))
     assert reply.startswith(b'HTTP/1.1 200') and seen[0][0] == BODY
     assert b'guest-value' not in reply
+
+
+@pytest.mark.parametrize('route', [
+    b'OPTIONS /v1/responses HTTP/1.1', b'GET /v1/models HTTP/1.1',
+    b'GET /.well-known/oauth-authorization-server HTTP/1.1',
+    b'GET /mcp HTTP/1.1', b'POST /mcp HTTP/1.1',
+    b'GET /openapi.json HTTP/1.1', b'GET /tools/list HTTP/1.1',
+])
+def test_enumeration_routes_return_no_capability_details(route):
+    reply, seen = exchange(wire(route=route))
+    assert reply == b'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'
+    assert seen == []
+
+
+@pytest.mark.parametrize('method', ['initialize', 'tools/list', 'resources/list',
+                                   'prompts/list', 'rpc.discover', 'unknown'])
+def test_jsonrpc_discovery_on_model_route_is_not_dispatched(method):
+    body = {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': {}}
+    reply, seen = exchange(wire(body))
+    assert reply == b'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'
+    assert seen == []

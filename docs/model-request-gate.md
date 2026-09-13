@@ -156,3 +156,19 @@ Literal-secret reflection is rejected, but encoded/transformed exfiltration is n
 covered: this is not a general response data-loss prevention mechanism. A trusted
 provider route, response contract and process boundary remain required. A separate
 watchdog is still necessary to enforce total execution time against slow traffic.
+
+## Protocol and capability enumeration
+
+Thirteen additional socket tests cover OPTIONS, model listing, OAuth discovery,
+MCP/OpenAPI/tool paths, and JSON-RPC initialize, tools/list, resources/list,
+prompts/list, rpc.discover and unknown methods sent to the model channel. Each
+returns the same empty 403 and never invokes the upstream callback. The combined
+suite now has 69 passing cases. This is local socket evidence, not yet guest-side
+or real ChatGPT account capability enumeration.
+
+This channel is model-only. The separate assignment MCP channel must legitimately
+support its documented discovery protocol and expose only assigned heartbeat/result
+operations. Hiding discovery is not the authorization boundary: operations must
+remain denied even when an attacker already knows every method and endpoint name.
+A complete worker-visible inventory must include all network routes, MCP servers,
+provider-side tools and account functions; that inventory remains outstanding.
