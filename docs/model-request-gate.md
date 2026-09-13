@@ -114,3 +114,23 @@ confinement, real inference, public research, independent patch evaluation or
 subscription lifecycle. The fixture's external-only synthetic marker was not a
 provider credential; no credential-isolation claim follows from generating it.
 The combined assignment-helper retry test remains a separate earlier run.
+
+## Hostile guest followed by useful tool execution
+
+A fresh KVM guest sent ten hostile HTTP requests before starting the original
+Codex client. The external service counted ten denials and exactly two forwarded
+requests. Codex then successfully executed the shell canary and completed its turn;
+the overlay was removed. Runtime: 47.749 seconds. Staged external server SHA-256:
+`f8b51e2fd6e38d133ed31dd56b3568d75e8122378d961ee8082e24c36a6961b6`.
+
+Rejected cases: guest Authorization, Transfer-Encoding, duplicate Content-Length,
+WebSocket upgrade, connector path, CONNECT tunnel, replacement hosted MCP tool,
+foreign previous-response reference, item reference and enabling stored responses.
+Both the guest's explicit 403 checks and the external adapter counters agreed.
+The external service remained usable for the positive task after those attacks.
+
+These attacks exercised the live VM-to-channel path, not provider account actions.
+The template and tracing normalization are the same controlled lab concessions as
+above. Real credential injection, provider scope enforcement, independent patch
+evaluation and subscription lifecycle remain untested. Do not infer protection
+against every HTTP attack or sandbox escape from these ten bounded cases.
