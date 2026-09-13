@@ -1,5 +1,8 @@
 # Experimental model request gate
 
+For current release requirements and unresolved acceptance tests, see the
+[subscription worker release gates](subscription-worker-release-gates.md).
+
 `daia.model_request.RequestGate` is a pure validator, not a credential proxy or
 production account-isolation boundary. Run it outside the guest before attaching
 credentials. Its initial route is the synthetic `/v1/responses` laboratory route.
