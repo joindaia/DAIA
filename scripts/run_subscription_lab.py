@@ -14,6 +14,7 @@ import uuid
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ("guest", "request-template", "auth-home", "codex-binary", "python-runtime"):
     parser.add_argument("--" + name, type=Path, required=True)
+parser.add_argument("--native-delivery", action="store_true")
 args = parser.parse_args()
 if os.geteuid() != 0:
     parser.error("Requires the preconfigured lab administrator.")
@@ -42,6 +43,9 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
         str(repo / "scripts/run_subscription_lab_controller.py"),
     ]
     for name, value in vars(args).items():
+        if name == "native_delivery":
+            if value: command += ["--native-delivery"]
+            continue
         command += ["--" + name.replace("_", "-"), str(value)]
     try:
         run = subprocess.run(command, capture_output=True, timeout=230)

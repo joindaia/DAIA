@@ -26,10 +26,11 @@ import argparse
 parser=argparse.ArgumentParser(description=__doc__)
 for name in ('guest','request-template','auth-home','codex-binary','python-runtime'):
  parser.add_argument('--'+name,type=pathlib.Path,required=True)
+parser.add_argument('--native-delivery',action='store_true')
 options=parser.parse_args()
 # Trusted inputs only. This controller creates no service identities or login.
 assert os.geteuid()==0
-for value in vars(options).values():
+for value in (v for v in vars(options).values() if isinstance(v,pathlib.Path)):
  assert value.is_absolute() and value.exists() and not value.is_symlink()
  assert re.fullmatch(r'/[A-Za-z0-9_./-]+',str(value)) and '..' not in value.parts
 controller=pwd.getpwnam('daia-controller')
@@ -222,8 +223,20 @@ with running_server(build_mcp_app(service)) as url:
    assert not any(job.iterdir())
    assert len(r.stdout)<=9*1024*1024
    envelope=json.loads(r.stdout);assert envelope['ok'] is True
-   report=envelope['report'];assert report['guest']['receipt_hash']==saved['receipt']['receipt_hash']
-   assert report['guest']['scoped_tools'] and report['guest']['wrong_retry_denied'] and report['guest']['exact_retry']
+   report=envelope['report'];assert options.native_delivery or report['guest']['receipt_hash']==saved['receipt']['receipt_hash']
+   if options.native_delivery:
+    audit=json.loads((private/'delivery-audit.json').read_text())
+    submissions=[a for a in audit if a['operation']=='submit_result']
+    assert report['guest']['native_mcp_delivery']
+    assert any(a['operation']=='heartbeat' for a in audit)
+    assert len(submissions)==2 and submissions[0].get('receipt_hidden')
+    assert submissions[1]['status']=='already_recorded'
+    report['guest']['receipt_hash']=saved['receipt']['receipt_hash']
+    report['native_delivery_audit']=audit
+    report['delivery_origin']='native_codex_mcp'
+   else:
+    assert report['guest']['scoped_tools'] and report['guest']['wrong_retry_denied'] and report['guest']['exact_retry']
+    report['delivery_origin']='fixture_harness'
    report['assembled_bundle_sha256']=bundle_hashes
    report['bounded_storage_and_export']=True
    model_audit=json.loads((rundir/'subscription-audit.json').read_text())

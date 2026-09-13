@@ -331,3 +331,53 @@ tests passed, including expired deadlines, upper bounds, byte limits, EOF,
 backpressure and bundled bridge configuration. This is transport evidence, not
 a new full-VM or real-subscription native MCP delivery result. That combined run
 still requires the approved tool-bearing model template and prepared guest seed.
+
+
+## Live native MCP delivery with the subscription
+
+The native-delivery variant now completes the development fixture through the
+original pinned Codex client, using the existing ChatGPT subscription and the
+outside-VM credential channel. Enable `--native-delivery` on the supervised lab
+entry point only with its approved native-MCP request template and guest fixture.
+`prepare_native_delivery_fixture.py` prepares that fixture from the existing
+approved research seed (`--source`, `--output`, `--native-directory`, `--iso-builder`)
+and refuses an existing output directory. It adds the repository guest adapter,
+removes the direct submission harness, and requires native MCP completion events.
+It is a lab preparation tool, not a clean installation workflow.
+
+Codex implicitly adds local `list_mcp_resources`, `list_mcp_resource_templates`
+and `read_mcp_resource` declarations when MCP is configured. The first attempt
+failed closed because those declarations were absent from the approved template:
+zero provider requests and complete cleanup. Their exact schemas were then
+reviewed in a credential-free capture. The assignment server exposes no resources
+or templates and rejects arbitrary file/URL reads; regression coverage now checks
+that. These local client functions do not enable hosted MCP, account APIs, or any
+additional server outside the configured assignment helper.
+
+A second attempt made six permitted provider calls but ran out of its existing
+budget before retrying a saved submission. No extra allowance was granted. The
+successful attempt combined research, file inspection, editing and tests in one
+terminal invocation, without changing the development task or tests. It used
+five provider requests, rejected all 23 negative requests, refreshed credentials
+through the original client and retained the original deadline and account.
+
+The trusted helper audit records a native heartbeat, initial submission with the
+receipt intentionally hidden, and an exact retry returning `already_recorded`.
+The coordinator stores one result; the native client finishes successfully.
+Cleanup removes the overlay, sockets and credential handoffs. Identity and
+consent remain unchanged. This is native MCP delivery, not shell-driven RPC or
+submission by the fixture after the client exits.
+
+The submitted source omitted the workfile's final newline (222 versus 223 bytes).
+The first byte-equality check correctly failed. The workfile was evaluated, then
+an additional fresh evaluator with no NIC or provider credentials evaluated the
+**actual coordinator-stored source**, without normalizing or editing it. Those
+stored bytes passed all ten cases; the original implementation failed. The
+artifact and workfile hashes are separately recorded. Future publishing must use
+the evaluated stored artifact rather than silently substitute the workspace file.
+
+See [native subscription delivery evidence](research/native-subscription-mcp-delivery-2026-09-13.json).
+Sixty-eight focused checks passed before the live runs; the expanded resource
+checks subsequently passed in the 54-test assignment/request subset. Full guest
+crash recovery, clean participant installation, initial login packaging, broader
+boundary evidence and repeated performance across tasks remain open.

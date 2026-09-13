@@ -91,6 +91,11 @@ def test_assignment_server_exposes_no_claim_identity_or_consent_tools(network, t
         server = build_assignment_server(host, assignment)
         tools = await server.list_tools()
         assert {tool.name for tool in tools} == {'heartbeat', 'submit_result'}
+        assert await server.list_resources() == []
+        assert await server.list_resource_templates() == []
+        for uri in ('file:///etc/passwd', 'file:///state/helper.json', 'https://example.org'):
+            with pytest.raises(Exception, match='Unknown resource'):
+                await server.read_resource(uri)
         for tool in tools:
             assert set(tool.input_schema.get('properties', {})) <= {'artifact', 'verdict'}
     asyncio.run(exercise())

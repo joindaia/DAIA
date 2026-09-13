@@ -1,0 +1,80 @@
+{
+  "date": "2026-09-13",
+  "scope": "Original pinned Codex with existing ChatGPT subscription inside disposable Linux/KVM; native assignment MCP delivery and independent evaluation of coordinator-stored bytes",
+  "delivery_origin": "native_codex_mcp",
+  "native_mcp_items": 3,
+  "helper_audit": [
+    {
+      "operation": "heartbeat",
+      "status": null
+    },
+    {
+      "operation": "submit_result",
+      "status": "in_review",
+      "receipt_hidden": true
+    },
+    {
+      "operation": "submit_result",
+      "status": "already_recorded"
+    }
+  ],
+  "results": 1,
+  "model_channel_counts": {
+    "forwarded": 5,
+    "denied": 23,
+    "attempts": 5
+  },
+  "rotation": {
+    "native_refresh_completed": true,
+    "account_unchanged": true,
+    "native_restart_completed": true,
+    "deadline_preserved": true,
+    "rotation_after_provider_requests": 1
+  },
+  "cleanup": true,
+  "overlay_removed": true,
+  "saved_identity_and_consent_unchanged": true,
+  "test_file_unchanged": true,
+  "artifact_comparison": {
+    "stored_source_sha256": "e652e766447716761eaa7ab5e8a2c233069b0db1845a4425169d7e5147c77526",
+    "workspace_source_sha256": "db0817738891bd44a6c899725b8d5c46d46bab03f154219b9f34ffb03b654971",
+    "byte_equal": false,
+    "equal_without_trailing_whitespace": true,
+    "stored_bytes": 222,
+    "workspace_bytes": 223
+  },
+  "evaluator": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "e652e766447716761eaa7ab5e8a2c233069b0db1845a4425169d7e5147c77526",
+    "proposal_sha256": "e652e766447716761eaa7ab5e8a2c233069b0db1845a4425169d7e5147c77526",
+    "format_normalized": false,
+    "model_source_changed": false,
+    "provider_credentials_present": false
+  },
+  "earlier_attempts": [
+    {
+      "reason": "Native local resource declarations not in approved template",
+      "provider_requests": 0,
+      "denied": 24,
+      "cleanup": true
+    },
+    {
+      "reason": "Six-request budget reached before retry",
+      "provider_requests": 6,
+      "attempts": 7,
+      "denied": 24,
+      "native_initial_submission_persisted": true,
+      "retry_completed": false,
+      "cleanup": true
+    }
+  ],
+  "remaining": [
+    "clean-machine installation",
+    "initial login packaging",
+    "full guest crash recovery",
+    "broader account and network confinement evidence",
+    "repeatability across more tasks"
+  ],
+  "focused_tests_passed": 68
+}
