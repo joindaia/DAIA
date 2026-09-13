@@ -12,8 +12,39 @@ import subprocess
 import uuid
 
 
+COMPANION_PIN = '3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45'
+
+
+def companion_inputs(native):
+    native = Path(native)
+    paths = [native / 'codex', native / 'bwrap']
+    companion = native / 'codex-code-mode-host'
+    present = companion.exists() or companion.is_symlink()
+    digest = None
+    if present:
+        if companion.is_symlink() or not companion.is_file():
+            raise ValueError('Pinned companion regular file required')
+        with companion.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if digest != COMPANION_PIN:
+            raise ValueError('Native companion pin mismatch')
+        paths.append(companion)
+    return paths, present, digest
+
+
+def validate_source_companion(source_config, present, digest):
+    expected_present = source_config.get('companion_present', False)
+    expected_digest = source_config.get('companion_sha256')
+    if (type(expected_present) is not bool or expected_present != present
+            or expected_digest != (COMPANION_PIN if present else None)):
+        raise ValueError('Derived fixture companion metadata mismatch')
+
+
 def prepare(source, output, native, iso_builder):
     source, output, native = Path(source), Path(output), Path(native)
+    native_inputs, companion_present, companion_sha256 = companion_inputs(native)
+    source_config = json.loads((source / 'config.json').read_text())
+    validate_source_companion(source_config, companion_present, companion_sha256)
     task = json.loads((Path(__file__).parents[1] /
         'tests/fixtures/subscription-development/outcome-summary.json').read_text())
     source_text = task['source']['text']
@@ -74,8 +105,9 @@ def prepare(source, output, native, iso_builder):
     subprocess.run([str(iso_builder),'-quiet','-output',str(output/'seed.iso'),
         '-volid','CIDATA','-joliet','-rock',
         *[str(output/name) for name in ('user-data','meta-data','network-config')],
-        str(native/'codex'),str(native/'bwrap')],check=True)
-    config.update(retry_receipt=True,nonce=nonce,task_sha256=hashlib.sha256(raw).hexdigest(),
+        *[str(path) for path in native_inputs]],check=True)
+    config=source_config
+    config.update(retry_receipt=True,nonce=nonce,companion_present=companion_present,companion_sha256=companion_sha256,task_sha256=hashlib.sha256(raw).hexdigest(),
                   seed_sha256=hashlib.sha256((output/'seed.iso').read_bytes()).hexdigest())
     (output/'config.json').write_text(json.dumps(config))
     return config

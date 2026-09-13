@@ -10,11 +10,28 @@ parser=argparse.ArgumentParser(description='Prepare the lab-only native MCP deli
 for name in ('source','output','native-directory','iso-builder'):
  parser.add_argument('--'+name,type=Path,required=True)
 args=parser.parse_args()
+COMPANION_PIN='3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45'
+def companion_inputs(native):
+ native=Path(native); paths=[native/'codex',native/'bwrap']; companion=native/'codex-code-mode-host'; present=companion.exists() or companion.is_symlink(); digest=None
+ if present:
+  if companion.is_symlink() or not companion.is_file(): raise ValueError('Pinned companion regular file required')
+  with companion.open('rb') as stream: digest=hashlib.file_digest(stream,'sha256').hexdigest()
+  if digest!=COMPANION_PIN: raise ValueError('Native companion pin mismatch')
+  paths.append(companion)
+ return paths,present,digest
+def validate_source_companion(source_config, present, digest):
+ expected_present=source_config.get('companion_present',False)
+ expected_digest=source_config.get('companion_sha256')
+ if type(expected_present) is not bool or expected_present != present or expected_digest != (COMPANION_PIN if present else None):
+  raise ValueError('Derived fixture companion metadata mismatch')
 repo=Path(__file__).resolve().parents[1];old=args.source;out=args.output
+native_inputs,companion_present,companion_sha256=companion_inputs(args.native_directory)
+source_config=json.loads((old/'config.json').read_text())
+validate_source_companion(source_config,companion_present,companion_sha256)
 out.mkdir()  # Never overwrite an existing approved fixture.
 
 data=json.loads((old/'user-data').read_text().split('\n',1)[1]);entry=next(x for x in data['write_files'] if x['path']=='/tmp/probe.py');code=entry['content'];nonce=uuid.uuid4().hex
-old_nonce=json.loads((old/'config.json').read_text())['nonce']
+old_nonce=source_config['nonce']
 if code.count(old_nonce)!=1:raise ValueError('Unexpected source nonce binding')
 code=code.replace(old_nonce,nonce)
 marker="pathlib.Path('/work').mkdir(exist_ok=True)"
@@ -36,6 +53,6 @@ for filename in ['__init__.py','assignment_guest.py','assignment_relay.py']:
  data['write_files'].append({'path':'/opt/daia/'+filename,'content':(repo/'src/daia'/filename).read_text(),'permissions':'0444'})
 data['write_files'].append({'path':'/opt/assignment-stdio.py','content':'from daia.assignment_guest import main\nraise SystemExit(main())\n','permissions':'0444'})
 (out/'user-data').write_text('#cloud-config\n'+json.dumps(data));(out/'meta-data').write_text(json.dumps({'instance-id':'daia-native-'+nonce,'local-hostname':'daia-native'}));(out/'network-config').write_bytes((old/'network-config').read_bytes())
-subprocess.run([str(args.iso_builder),'-quiet','-output',str(out/'seed.iso'),'-volid','CIDATA','-joliet','-rock',str(out/'user-data'),str(out/'meta-data'),str(out/'network-config'),str(args.native_directory/'codex'),str(args.native_directory/'bwrap')],check=True)
-cfg=json.loads((old/'config.json').read_text());cfg.update(nonce=nonce,seed_sha256=hashlib.sha256((out/'seed.iso').read_bytes()).hexdigest());(out/'config.json').write_text(json.dumps(cfg));(out/'probe.py').write_bytes((old/'probe.py').read_bytes())
+subprocess.run([str(args.iso_builder),'-quiet','-output',str(out/'seed.iso'),'-volid','CIDATA','-joliet','-rock',str(out/'user-data'),str(out/'meta-data'),str(out/'network-config'),*[str(path) for path in native_inputs]],check=True)
+cfg=source_config;cfg.update(nonce=nonce,companion_present=companion_present,companion_sha256=companion_sha256,seed_sha256=hashlib.sha256((out/'seed.iso').read_bytes()).hexdigest());(out/'config.json').write_text(json.dumps(cfg));(out/'probe.py').write_bytes((old/'probe.py').read_bytes())
 print('Prepared native MCP guest; no provider request made.')

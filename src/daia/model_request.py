@@ -54,13 +54,21 @@ def _local_tools(tools: list) -> None:
             _require(type(tool.get("name")) is str)
             children = tool.get("tools")
             _require(type(children) is list)
-            _require(all(type(t) is dict and t.get("type") == "function" for t in children))
+            _require(all(type(t) is dict and t.get("type") in ("function", "custom")
+                         for t in children))
             _local_tools(children)
-        else:
-            _require(kind == "function")
+        elif kind == "function":
             _require(set(tool) <= {"type", "name", "description", "parameters", "strict"})
             _require(type(tool.get("name")) is str)
             _require(type(tool.get("parameters")) is dict)
+        else:
+            _require(kind == "custom")
+            _require(set(tool) == {"type", "name", "description", "format"})
+            _require(type(tool["name"]) is str and type(tool["description"]) is str)
+            format = tool["format"]
+            _require(type(format) is dict and set(format) == {"type", "syntax", "definition"})
+            _require(format["type"] == "grammar" and format["syntax"] in ("lark", "regex"))
+            _require(type(format["definition"]) is str)
 
 
 def _text_blocks(value) -> None:
@@ -70,8 +78,43 @@ def _text_blocks(value) -> None:
         _require(part["type"] in ("input_text", "output_text") and type(part["text"]) is str)
 
 
-def _history(items, admitted_reasoning=frozenset()) -> None:
+def _tool_names(tools, namespace=None):
+    names = set()
+    for tool in tools:
+        if tool["type"] == "namespace":
+            names.update(_tool_names(tool["tools"], tool["name"]))
+        else:
+            names.add((namespace, tool["name"]))
+    return names
+
+
+def _additional_tools(item):
+    _require(type(item) is dict)
+    if "id" in item:
+        _require(type(item["id"]) is str)
+    clean = dict(item)
+    clean.pop("id", None)
+    _require(set(clean) == {"type", "role", "tools"})
+    _require(clean["type"] == "additional_tools" and clean["role"] == "developer")
+    _local_tools(clean["tools"])
+    return json.dumps(clean, sort_keys=True, allow_nan=False), _tool_names(clean["tools"])
+
+
+def _input_catalog(items):
     _require(type(items) is list)
+    catalogs = [item for item in items if isinstance(item, dict)
+                and item.get("type") == "additional_tools"]
+    _require(len(catalogs) <= 1)
+    if not catalogs:
+        return None, None
+    catalog, names = _additional_tools(catalogs[0])
+    return catalog, frozenset(names)
+
+
+def _history(items, admitted_reasoning=frozenset(), approved_names=None,
+             approved_catalog=None) -> None:
+    _require(type(items) is list)
+    custom_calls = {}
     for item in items:
         _require(type(item) is dict)
         # Full inline items need no provider-side lookup. Remove optional IDs
@@ -89,13 +132,38 @@ def _history(items, admitted_reasoning=frozenset()) -> None:
             _text_blocks(item.get("content"))
         elif kind == "reasoning":
             _require(_reasoning_digest(item) in admitted_reasoning)
+        elif kind == "additional_tools":
+            _require(approved_catalog is not None)
+            catalog, _ = _additional_tools(item)
+            _require(catalog == approved_catalog)
         elif kind == "function_call":
             _require(set(item) <= {"type", "name", "namespace", "call_id", "arguments"})
             _require(all(type(item.get(k)) is str for k in ("name", "call_id", "arguments")))
             _require("namespace" not in item or type(item["namespace"]) is str)
+            if approved_names is not None:
+                _require((item.get("namespace"), item["name"]) in approved_names)
         elif kind == "function_call_output":
             _require(set(item) == {"type", "call_id", "output"})
             _require(type(item["call_id"]) is str)
+            if type(item["output"]) is not str:
+                _text_blocks(item["output"])
+        elif kind == "custom_tool_call":
+            _require(set(item) <= {"type", "status", "call_id", "name", "namespace", "input"})
+            _require(set(item) >= {"type", "call_id", "name", "input"})
+            _require(item["name"] == "exec" and item.get("namespace") == "functions")
+            _require(item.get("status") in (None, "completed", "in_progress"))
+            _require(all(type(item[k]) is str for k in ("call_id", "name", "namespace", "input")))
+            _require(approved_names is not None and ("functions", "exec") in approved_names)
+            _require(item["call_id"] not in custom_calls)
+            custom_calls[item["call_id"]] = item["name"]
+        elif kind == "custom_tool_call_output":
+            _require(set(item) <= {"type", "call_id", "name", "output"})
+            _require(set(item) >= {"type", "call_id", "output"})
+            _require(type(item["call_id"]) is str and approved_names is not None)
+            _require(item["call_id"] in custom_calls)
+            if "name" in item:
+                _require(type(item["name"]) is str and item["name"] == custom_calls[item["call_id"]])
+            custom_calls.pop(item["call_id"])
             if type(item["output"]) is not str:
                 _text_blocks(item["output"])
         else:
@@ -135,9 +203,13 @@ class RequestGate:
                               "include", "text"})
         _require(type(body.get("model")) is str and bool(body["model"]))
         _require(body.get("store") is False and body.get("stream") is True)
-        _local_tools(body.get("tools"))
+        if "tools" in body:
+            _local_tools(body["tools"])
         _require(body.get("include", []) in ([], ["reasoning.encrypted_content"]))
-        _history(body.pop("input", []))
+        input_items = body.pop("input", [])
+        self._catalog, self._approved_names = _input_catalog(input_items)
+        _history(input_items, approved_names=self._approved_names,
+                 approved_catalog=self._catalog)
         self._template = json.dumps(body, sort_keys=True, allow_nan=False)
         self._reasoning = set()
 
@@ -175,7 +247,9 @@ class RequestGate:
         for field in ("client_metadata", "prompt_cache_key"):
             body.pop(field, None)
         history = body.pop("input", None)
-        _history(history, self._reasoning)
+        catalog, _ = _input_catalog(history)
+        _require(catalog == self._catalog)
+        _history(history, self._reasoning, self._approved_names, self._catalog)
         _require(json.dumps(body, sort_keys=True, allow_nan=False) == self._template)
         # Forward only validated inline history, with optional item IDs removed.
         body["input"] = history

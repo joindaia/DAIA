@@ -12,6 +12,9 @@ import subprocess
 import uuid
 
 
+COMPANION_PIN = '3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45'
+
+
 def prepare(template, native, output, iso_builder, base_sha256):
     if not re.fullmatch('[0-9a-f]{64}', base_sha256):
         raise ValueError('Approved base hash required')
@@ -22,6 +25,16 @@ def prepare(template, native, output, iso_builder, base_sha256):
         with (native / name).open('rb') as stream:
             if hashlib.file_digest(stream, 'sha256').hexdigest() != digest:
                 raise ValueError('Native binary pin mismatch')
+    companion = native / 'codex-code-mode-host'
+    companion_present = companion.exists() or companion.is_symlink()
+    companion_sha256 = None
+    if companion_present:
+        if companion.is_symlink() or not companion.is_file():
+            raise ValueError('Pinned companion regular file required')
+        with companion.open('rb') as stream:
+            companion_sha256 = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if companion_sha256 != COMPANION_PIN:
+            raise ValueError('Native companion pin mismatch')
     with Path(template).open('rb') as stream:
         raw = stream.read(256 * 1024 + 1)
     if len(raw) > 256 * 1024:
@@ -56,11 +69,15 @@ def prepare(template, native, output, iso_builder, base_sha256):
     (output / 'network-config').write_text(json.dumps({'version': 2, 'ethernets': {
         'probe': {'match': {'name': 'en*'}, 'dhcp4': False, 'addresses': ['10.0.2.15/24'],
                   'routes': [{'to': 'default', 'via': '10.0.2.2'}], 'optional': True}}}))
+    native_inputs = [str(native / name) for name in pins]
+    if companion_present:
+        native_inputs.append(str(companion))
     subprocess.run([str(iso_builder), '-quiet', '-output', str(output / 'seed.iso'),
         '-volid', 'CIDATA', '-joliet', '-rock',
         *[str(output / name) for name in ('user-data', 'meta-data', 'network-config')],
-        *[str(native / name) for name in pins]], check=True)
+        *native_inputs], check=True)
     config = {'nonce': nonce, 'model': model, 'base_sha256': base_sha256,
+              'companion_present': companion_present, 'companion_sha256': companion_sha256,
               'seed_sha256': hashlib.sha256((output / 'seed.iso').read_bytes()).hexdigest()}
     (output / 'config.json').write_text(json.dumps(config))
     # Compatibility input for the current lab controller; never executed by builder.
