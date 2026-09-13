@@ -59,7 +59,7 @@ def prepare(source, output, native, iso_builder):
     failure_write = "with open('/dev/ttyS0', 'w') as out:\n        out.write('DAIA_NATIVE_FAILURE "
     if code.count(failure_write) != 1:
         raise ValueError('Expected native failure diagnostic')
-    details = "diagnostic = {'native_exit': r.returncode, 'items': [[{'command_execution':'command','mcp_tool_call':'mcp','agent_message':'message'}.get(i.get('type'),'other'), str(i.get('tool',''))[-48:], i.get('exit_code') if type(i.get('exit_code')) is int else None] for i in items[-10:]]}\n    "
+    details = "diagnostic = {'native_exit': r.returncode, 'failed_commands': [[str(i.get('command',''))[:100], str(i.get('aggregated_output',''))[-160:]] for i in items if i.get('type') == 'command_execution' and i.get('exit_code') not in (None, 0)][:2], 'items': [[{'command_execution':'command','mcp_tool_call':'mcp','agent_message':'message'}.get(i.get('type'),'other'), str(i.get('tool',''))[-48:], i.get('exit_code') if type(i.get('exit_code')) is int else None] for i in items[-10:]]}\n    "
     code = code.replace(failure_write, details + failure_write)
     compile(code, 'outcome-summary-guest', 'exec')  # Syntax only.
     entry['content'] = code
