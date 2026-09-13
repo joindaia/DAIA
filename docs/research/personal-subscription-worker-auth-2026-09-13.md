@@ -183,3 +183,47 @@ on the current shell PATH. Existing native KVM harness files are present. No Cla
 installation, login, real inference, token transfer or provider-account test occurred
 in this follow-up. A login request would currently be premature: the external token
 binding still needs credential-free integration evidence.
+
+
+## Codex pinned-source follow-up — 13 September 2026
+
+Priority is Codex using the participant's existing subscription. Claude purchase or
+local model availability is not a prerequisite.
+
+Upstream release `rust-v0.153.4` resolves to commit
+`3d2ee51ca2d5db578f328aa75e20aa22c0197c9a`. The existing native laboratory binary's
+SHA-256 was rechecked as
+`56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da`.
+This records the source release and binary independently; it is not a reproducible
+build attestation connecting those bytes to that commit.
+
+The pinned [login implementation](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/login/src/server.rs#L589)
+requests identity/offline scopes plus `api.connectors.read` and
+`api.connectors.invoke`. This confirms broader requested authority; it does not
+prove arbitrary personal chat history is accessible.
+
+The [native request builder](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/core/src/client.rs#L1014)
+sets `store` false and streams responses, with input, tools, reasoning, metadata
+and other fields. These are client defaults, not controls a malicious guest cannot
+change. Account confinement must check the request body as well as its destination.
+
+The same source declares a separate `/responses/compact` endpoint and supports
+WebSocket responses with previous-response references. An HTTP-only prototype must
+explicitly disable/reject WebSocket upgrades and document its compatibility ceiling;
+it must not claim full lifecycle support until compaction and continuation are tested.
+[Client source](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/core/src/client.rs).
+
+### Next executable evidence
+
+Capture the pinned original client's requests against the existing credential-free
+fixture. Derive an explicit accepted request schema from actual traffic and source:
+local function tool declarations are different from provider-executed tools. Reject
+unknown tool types, external resource references, unowned response references and
+unexpected fields until their semantics are understood. Reject duplicate JSON keys
+and ambiguous HTTP framing before any credential injection. Fixed routing, request
+size, deadline, stream limits, revocation and redirect denial belong outside the guest.
+
+This is the next experiment, not an implemented enforcement claim. Preserve useful
+multi-turn code work and independently evaluated patches as positive acceptance tests;
+a filter that permits only a greeting would not satisfy the goal. No real account
+credential or provider request was used during this source review.
