@@ -1,0 +1,55 @@
+{
+  "date": "2026-09-13",
+  "native_version": "0.153.4",
+  "model": "gpt-5.3-codex-spark",
+  "real_subscription": true,
+  "controlled_source_fixture": true,
+  "worker_exit": 0,
+  "worker_runtime_seconds": 63.153,
+  "native_turn_completed": true,
+  "rotation": {
+    "native_refresh_completed": true,
+    "account_unchanged": true,
+    "native_restart_completed": true,
+    "deadline_preserved": true,
+    "rotation_after_provider_requests": 1
+  },
+  "request_budget": 6,
+  "binding_seconds": 150,
+  "model_channel_counts": {
+    "forwarded": 5,
+    "denied": 23,
+    "attempts": 5
+  },
+  "unchanged_worker_test": true,
+  "receipt_retry": {
+    "changed_retry_denied": true,
+    "exact_retry_recovered": true,
+    "results": 1,
+    "consent_and_identity_unchanged": true
+  },
+  "artifact": {
+    "stored_source_matches_worker": true,
+    "stored_source_sha256": "881910b3db51a889d53e2dcfae903581ce91f17cffb5468ba985734a9aa80636",
+    "result_state": "in_review",
+    "results": 1
+  },
+  "evaluator": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "881910b3db51a889d53e2dcfae903581ce91f17cffb5468ba985734a9aa80636",
+    "source_changed": false,
+    "network_device": false,
+    "overlay_removed": true
+  },
+  "worker_overlay_removed": true,
+  "earlier_incomplete_attempts": 3,
+  "failure_diagnosis": "Native refresh report tried to overwrite another user-owned temporary file; controller withheld replacement on failure. Removed the unnecessary report write, without changing host protections.",
+  "limitations": [
+    "Harness-driven result submission",
+    "Controlled numeric-version fixture, not a productivity benchmark",
+    "No research/download in this combined run",
+    "No provider-side revocation proof",
+    "Private lab harness, not a packaged production controller"
+  ]
+}

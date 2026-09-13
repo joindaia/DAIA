@@ -788,3 +788,36 @@ one second, rejects subsequent requests and cannot be reversed by replacing the
 credential. Between requests, trusted credential replacement preserves the fixed
 account, destination, deadline and request budget. These use synthetic credentials
 and a local TLS fixture, not provider-side token revocation.
+
+
+### Real worker continues across native credential refresh
+
+A fresh KVM source-evidence trial now spans real credential replacement. After
+one successful Spark request, the external model service paused the next call.
+The trusted controller invoked the pinned original Codex account/read refresh
+and restarted that auth client; it checked the unchanged account before delivering
+only the new access credential through a private, consumed handoff. The model
+service retained the same binding, reasoning history, destination, 150-second
+deadline and six-request budget. No refresh credential entered the service or VM.
+
+The native guest completed development in five provider calls and three terminal
+commands, leaving the supplied test unchanged. The 23 negative preflights were
+refused. The harness submitted the exact source through the assignment helper;
+a deliberately lost receipt, refused changed retry and successful exact retry
+left one in-review result, with no extra consent or identity change. A direct
+read-only database check matched the stored source to the worker. The same bytes
+passed ten regressions in a fresh evaluator with no network device; the original
+failed. Both overlays were removed. Worker runtime was 63.153 seconds.
+See the [bounded record](research/live-subscription-rotation-2026-09-13.json).
+
+Three earlier attempts stopped after one provider request and submitted nothing.
+Diagnostics isolated a harness reporting failure: the native refresh helper tried
+to overwrite an existing temporary file owned by a different user. WSL refused
+that write, so the controller treated refresh as failed and withheld replacement.
+Removing the unnecessary report write fixed the trial; filesystem protections and
+request limits were not relaxed. A failed refresh/handoff still fails closed.
+
+This establishes development and idempotent delivery across a real managed-auth
+refresh and auth-client restart. It does not establish a guest restart, public
+research/download in the same run, provider-side revocation, comprehensive account
+confinement, or a packaged production controller. Submission remains harness-driven.
