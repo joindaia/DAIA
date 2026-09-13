@@ -204,3 +204,18 @@ ten integrations/platform checks and emitted one dependency warning (64.10 s).
 uses approved repository/test helpers, and a full VM run on the new runtime has
 not occurred. This removes the need to copy the old Python environment; it is not
 yet complete participant installation or a vulnerability audit.
+
+
+## Full lab run on the newly built Python runtime
+
+At `8630596`, the controller and isolated assignment helper used the newly built
+locked runtime instead of the old development environment. The existing real
+Codex subscription fixture completed in five provider requests, with 23 denials,
+native refresh/restart, unchanged account/deadline, one stored result and complete
+supervised cleanup. A fresh networkless evaluator passed all ten cases on exactly
+the stored source; the original failed and evaluator storage was removed.
+
+[Evidence](research/fresh-runtime-live-subscription-2026-09-13.json). This confirms
+runtime replacement in the complete lab chain. It still reuses host identities,
+the base image/client fixture, trusted login and approved checkout/test helpers.
+The clean participant installation and broader adversarial gates remain open.
