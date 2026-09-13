@@ -85,3 +85,62 @@ def test_jwt_shaped_credential_is_injected_exactly(upstream):
     binding = LocalModelUpstream(path, secret, seconds=5, requests=1)
     assert binding(b'{}') == state['body']
     assert state['seen'] == [('/v1/responses', 'Bearer ' + secret, b'{}')]
+
+
+def test_rotation_preserves_budget_and_injects_new_credential(upstream):
+    path, state = upstream
+    binding = LocalModelUpstream(path, 'before', seconds=5, requests=2)
+    binding(b'{}')
+    binding.replace_credential('after')
+    binding(b'{}')
+    with pytest.raises(Denied): binding.replace_credential('another')
+    with pytest.raises(Denied): binding(b'{}')
+    assert [entry[1] for entry in state['seen']] == ['Bearer before', 'Bearer after']
+
+
+def test_rotation_cannot_extend_deadline(upstream, monkeypatch):
+    path, state = upstream
+    now = [100.0]
+    monkeypatch.setattr('daia.model_upstream.time.monotonic', lambda: now[0])
+    binding = LocalModelUpstream(path, 'before', seconds=5, requests=2)
+    now[0] = 104.0
+    binding.replace_credential('after')
+    now[0] = 105.0
+    with pytest.raises(Denied): binding.replace_credential('another')
+    with pytest.raises(Denied): binding(b'{}')
+    assert state['seen'] == []
+
+
+def test_rotation_cannot_revive_revoked_binding(upstream):
+    path, state = upstream
+    binding = LocalModelUpstream(path, 'before', seconds=5, requests=2)
+    binding.revoke()
+    with pytest.raises(Denied): binding.replace_credential('after')
+    with pytest.raises(Denied): binding(b'{}')
+    assert state['seen'] == []
+
+
+def test_rotation_during_request_is_rejected(upstream):
+    path, state = upstream
+    state['wait'] = True
+    binding = LocalModelUpstream(path, 'before', seconds=5, requests=2)
+    outputs = []
+    thread = threading.Thread(target=lambda: outputs.append(binding(b'{}')))
+    thread.start()
+    try:
+        assert state['started'].wait(2)
+        with pytest.raises(Denied): binding.replace_credential('after')
+    finally:
+        state['release'].set(); thread.join(5)
+    assert not thread.is_alive() and outputs == [state['body']]
+    binding.replace_credential('after')
+    binding(b'{}')
+    assert [entry[1] for entry in state['seen']] == ['Bearer before', 'Bearer after']
+
+
+def test_invalid_rotation_does_not_replace_current_credential(upstream):
+    path, state = upstream
+    binding = LocalModelUpstream(path, 'before', seconds=5, requests=1)
+    with pytest.raises(ValueError): binding.replace_credential('bad\r\nHeader: value')
+    binding(b'{}')
+    assert state['seen'][0][1] == 'Bearer before'

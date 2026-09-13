@@ -11,10 +11,16 @@ import time
 from .model_request import Denied
 
 
+def _check_secret(secret: str) -> None:
+    if not isinstance(secret, str) or not 0 < len(secret) <= 8192 or any(
+        c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_." for c in secret
+    ):
+        raise ValueError("invalid lab credential")
+
+
 class LocalModelUpstream:
     def __init__(self, path: str, secret: str, *, seconds: float, requests: int):
-        if not isinstance(secret, str) or not 0 < len(secret) <= 8192 or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_." for c in secret):
-            raise ValueError("invalid lab credential")
+        _check_secret(secret)
         if not 0 < seconds <= 300 or type(requests) is not int or not 0 < requests <= 100:
             raise ValueError("invalid lab budget")
         self._path = path
@@ -24,6 +30,19 @@ class LocalModelUpstream:
         self._lock = threading.Lock()
         self._revoked = False
         self._active = None
+
+    def replace_credential(self, secret: str) -> None:
+        """Trusted controller only: rotate between calls without renewing authority.
+
+        This is not a guest API or an OAuth verifier. The caller establishes
+        credential freshness and account binding before supplying it.
+        """
+        _check_secret(secret)
+        with self._lock:
+            if (self._revoked or time.monotonic() >= self._deadline
+                    or self._remaining == 0 or self._active is not None):
+                raise Denied("upstream binding unavailable")
+            self._secret = secret
 
     def revoke(self) -> None:
         with self._lock:

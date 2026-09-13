@@ -345,3 +345,32 @@ processes share the restricted external service identity. This is not a proof of
 real ChatGPT account confinement, credential extraction resistance against every
 route, TLS compatibility, real subscription inference or useful patch evaluation.
 The negative native refresh/admission case remains the separate local probe.
+
+## Credential replacement preserves assignment authority
+
+`LocalModelUpstream.replace_credential` is a trusted-controller method, not a
+worker endpoint. It accepts a replacement only between requests on an active
+binding. It cannot reset the deadline or request budget, revive a revoked binding,
+or change credentials during an in-flight response. The controller remains
+responsible for credential provenance, freshness and account binding. Five added
+tests exercise these properties and malformed replacement; 80 combined tests pass.
+Literal response-secret checking remains limited to the current credential and is
+not a general DLP guarantee, including for previous credentials or encoded secrets.
+
+A fresh KVM-overlay run exercised replacement between the two native model calls.
+The restricted auth service generated two distinct synthetic access tokens through
+two original-client refreshes before guest launch. The provider required the first
+token on its first request and the replacement on its second. The external adapter
+replaced the credential after the first completed call, retaining its original
+150-second/two-request allowance. Both requests succeeded; 23 hostile probes and
+one extra valid request were denied. External counters: three adapter attempts,
+two forwarded, 24 denied, two authenticated provider requests. Runtime: 46.077s.
+Native tool/turn completion and overlay removal succeeded. Both one-use handoff
+files and provider/gateway sockets were absent afterward. Server digest:
+`1e5578d35923634af39f2fdff180e11925cca840ea5f69df8edf1a8e03eefdb6`.
+
+The replacement tokens were prepared before guest execution. This proves switching
+credentials during the two-call task without renewing authority, not real-time
+refresh on expiry, reactive 401 recovery, real provider acceptance or a complete
+subscription lifecycle. Refresh requests still need a controlled trusted-side
+trigger and failure handling in the eventual runtime integration.
