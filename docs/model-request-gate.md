@@ -664,3 +664,33 @@ in this change. The preceding live Spark evidence remains the evidence for model
 execution. No new provider request was made for this refactor.
 
 Validation for this refactor: 531 passed, 10 skipped, one existing warning.
+
+
+### Preparing the combined assignment and model round
+
+A new source-evidence regression uses real local MCP/HTTP requests to submit an
+assignment-bound packet, then deliberately loses the committed receipt. A fresh
+Contributor instance rejects a changed retry and recovers the exact pending
+submission after the original consent deadline. The coordinator retains exactly
+one result, no promotion occurs, and identity, job count and deadline remain
+unchanged. This is an in-process helper restart against a real HTTP service, not
+a VM restart or an additional live-model run. The existing factorization recovery
+test did not by itself establish this source-evidence path.
+
+The two standalone VM harnesses currently reuse virtual address
+`10.0.2.100:3128`, so they cannot simply be concatenated. The combined trial must
+keep that fixed assignment endpoint and give the model channel a separate fixed
+virtual endpoint, for example `10.0.2.101:3128`, mapped by the trusted launcher to
+a different Unix socket. Neither bridge may accept a worker-selected host path,
+URL, destination or credential. Guest protocol enumeration must exercise both
+channels and prove that model traffic cannot invoke assignment/operator functions.
+This is the next launcher integration, not an already tested dual-channel claim.
+
+Create the synthetic local assignment and frozen source before the live model
+runs; do not retrospectively describe the earlier Spark fixture as work obtained
+from DAIA. Preserve independent patch evaluation and the distinction between an
+accepted source-evidence packet and a proven correct patch. The combined trial
+must show an unchanged pending payload, a refused modified retry, one recovered
+receipt and no extra consent or job consumption.
+
+Validation: 34 assignment-host, source-evidence and assignment-relay tests passed.

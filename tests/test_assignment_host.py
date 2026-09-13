@@ -178,3 +178,55 @@ def test_scoped_operations_require_explicit_signed_capabilities(network, tmp_pat
         assert host.state['pending'] is None
         assert service.metrics()['results'] == 0
     asyncio.run(exercise())
+
+
+def test_source_evidence_receipt_loss_over_http_survives_helper_restart(network, tmp_path):
+    """Transport preparation for the combined worker; no model or VM is used."""
+    import json
+    import time
+    from daia.mcp_server import build_mcp_app
+    from test_mcp import running_server
+    from test_evidence import document, packet
+
+    service, now = network
+    now[0] = int(time.time())
+    service.admit_evidence(document())
+
+    async def exercise(url):
+        path = invite_file(tmp_path, service, url, max_jobs=1)
+        host = Contributor(path, minutes=1, clock=service.clock)
+        lease = await host.perform('request_work')
+        assignment = lease['assignment_id']
+        authority = approve(host, lease, ['read_input', 'heartbeat', 'submit_result'])
+        host.job_authority = authority
+        original = (host.state['key'], host.state['used'], host.state['deadline'])
+        artifact = packet(lease)
+        remote = host.remote
+        async def lose_receipt(name, **args):
+            result = await remote(name, **args)
+            if name == 'submit_result':
+                raise ValueError('Simulated response loss after committed operation')
+            return result
+        host.remote = lose_receipt
+        await host.perform('heartbeat', assignment_id=assignment)
+        with pytest.raises(ValueError, match='response loss'):
+            await host.perform('submit_result', assignment_id=assignment,
+                               artifact=artifact, verdict='candidate')
+        assert service.metrics()['results'] == 1
+        now[0] += 301
+        restarted = Contributor(path, clock=service.clock, job_authority=authority)
+        changed = json.loads(artifact); changed['suggested_change'] = 'Substituted patch'
+        with pytest.raises(ValueError, match='exact pending'):
+            await restarted.perform('submit_result', assignment_id=assignment,
+                                    artifact=json.dumps(changed), verdict='candidate')
+        receipt = await restarted.perform('submit_result', assignment_id=assignment,
+                                         artifact=artifact, verdict='candidate')
+        assert receipt['status'] == 'already_recorded'
+        assert service.metrics()['results'] == 1
+        assert service.metrics()['promoted'] == 0
+        assert (restarted.state['key'], restarted.state['used'], restarted.state['deadline']) == original
+        with pytest.raises(ValueError, match='scope'):
+            await restarted.perform('request_work', assignment_id=assignment)
+
+    with running_server(build_mcp_app(service)) as url:
+        asyncio.run(exercise(url))
