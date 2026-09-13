@@ -218,3 +218,26 @@ Failure export additionally scans at most 8 MiB of serial data and retains up to
 8 KiB of selected error context, capped per line, so shutdown messages do not
 necessarily displace an earlier native failure. This output remains untrusted and
 private. Synthetic tests verify retention after 20,000 bytes of later chatter.
+
+
+## Repository-native authentication lifecycle probe
+
+`probe_codex_native_auth.py --binary "$APPROVED_CODEX" --home "$PRIVATE_AUTH_HOME"`
+now reproduces the trusted-side native refresh/restart check without hardcoded
+personal paths. The existing dedicated profile must be owned by the invoking user,
+private, and nonsymlink; the client must match the pinned 0.153.4 SHA-256. This
+probe runs outside the worker and must never be exposed as a worker tool.
+
+It sends only native initialization and `account/read`, requesting refresh in the
+first process and reading persisted state in a fresh second process. Each response
+has a 45-second deadline and 1 MiB aggregate byte limit. RPC errors withhold their
+payloads. The process environment contains only PATH and the dedicated HOME/
+CODEX_HOME; credentials are compared privately and only booleans are reported.
+Success requires token rotation on the first run, no further token change on the
+second, unchanged account, private auth file and clean client exits.
+
+The live run observed all those properties, with zero requested model calls and
+no worker started. Two negative preflight tests confirm an incorrect binary or
+symlink is rejected before execution and leaves a synthetic auth file untouched.
+This packages the lifecycle probe, not the initial interactive login, an external
+identity proof, provider revocation, or the complete production credential broker.
