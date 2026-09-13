@@ -440,3 +440,29 @@ Four focused checks pass, including the empty-directory invariant; a live run of
 this correction is still required. The earlier broader run passed 34 checks.
 Complete restart reporting, independent artifact evaluation, partial workspace
 recovery and controller/host reboot recovery remain open.
+
+
+## Successful worker replacement after the injected crash
+
+The corrected native fixture starts its serial result on a new line. An offline
+regression reproduces preceding console output without a line ending and checks
+that the existing strict parser can still recognize exactly one result. The live
+trial then completed with the unchanged nonce/parser checks.
+
+The first worker was killed after the first real provider response, before it
+received that response. A fresh worker and helper completed the same assignment
+using the same live model gateway: six successful requests total, including the
+discarded first response, and 47 denied channel requests. Native refresh and
+restart preserved account identity and deadline. Native MCP heartbeat, submission
+and exact retry produced one coordinator result. Consent remained unchanged and
+the supervisor removed the overlays, endpoints and credential handoffs.
+
+The stored artifact omitted the workfile's final newline. The independent fresh
+evaluator used the exact stored bytes, without normalization, and passed ten
+cases; the original implementation failed. Its VM had no network interface or
+provider credentials and its overlay was removed. Sixteen focused regressions
+passed. See [live crash recovery evidence](research/native-worker-crash-recovery-2026-09-13.json).
+
+This proves one unfinished-assignment restart from original input, not restoration
+of partial work files or recovery after the model gateway/controller/host dies.
+Clean participant installation and broader account/network proofs remain open.

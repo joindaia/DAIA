@@ -57,3 +57,23 @@ def test_failed_launch_exports_only_bounded_private_diagnostics(tmp_path):
     assert report['untrusted_diagnostics']['stderr.txt'] == ''
     assert 'Guest correlation result missing' in report['untrusted_diagnostics']['launcher-error.txt']
     assert len(report['untrusted_diagnostics']['launcher-error.txt'].encode()) <= 4096
+
+
+def test_native_report_starts_a_new_serial_line():
+    import ast
+    import io
+    from contextlib import nullcontext
+    source = Path(__file__).parents[1] / 'scripts/prepare_native_delivery_fixture.py'
+    tree = ast.parse(source.read_text())
+    snippets = [n.value for n in ast.walk(tree) if isinstance(n, ast.Constant)
+                and isinstance(n.value, str) and "out.write(" in n.value
+                and 'DAIA_BOOT_RESULT' in n.value]
+    assert len(snippets) == 1
+    output = io.StringIO(); output.write('unterminated console output')
+    result = {'nonce': 'a' * 32}
+    scope = {'items': [{'type': 'mcp_tool_call'}] * 3, 'model_result': result,
+             'json': json, 'open': lambda *a: nullcontext(output)}
+    exec(compile(snippets[0], 'trusted-report-writer', 'exec'), scope)
+    markers = [json.loads(line[17:]) for line in output.getvalue().splitlines()
+               if line.startswith('DAIA_BOOT_RESULT ')]
+    assert len(markers) == 1 and markers[0]['nonce'] == 'a' * 32

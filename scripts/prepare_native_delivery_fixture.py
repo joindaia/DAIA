@@ -27,7 +27,7 @@ a=code.index("s=socket.create_connection(('10.0.2.100',3128),timeout=8)")
 code=code[:a]+"""mcp_items=[i for i in items if i.get('type')=='mcp_tool_call']
 assert len(mcp_items)>=3,'Native MCP calls absent'
 model_result.update(native_mcp_delivery=True,native_mcp_items=len(mcp_items))
-with open('/dev/ttyS0','w') as out:out.write('DAIA_BOOT_RESULT '+json.dumps(model_result)+'\\n')
+with open('/dev/ttyS0','w') as out:out.write('\\nDAIA_BOOT_RESULT '+json.dumps(model_result)+'\\n')
 """
 compile(code,'native-delivery-probe','exec');entry['content']=code
 for filename in ['__init__.py','assignment_guest.py','assignment_relay.py']:
