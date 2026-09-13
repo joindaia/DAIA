@@ -986,3 +986,29 @@ with a success/failure mock. DNS answers are injected at the resolver boundary,
 not obtained from a live DNS server. This proves the tested post-resolution gate
 against reachable local listeners, not wire-level rebinding, a complete VM route,
 VPN isolation or all private-address classes. Those wider scopes remain open.
+
+### KVM guest to real private IPv4/IPv6 canaries
+
+A subsequent credential-free KVM run sent CONNECT requests through the actual
+research relay for two explicitly allowed names. The research service used the
+OS resolver and private hosts-file mappings to `127.0.0.1` and `::1`, with live
+TCP listeners on port 443 in its separate network namespace. Both guest requests
+received 403. Twelve direct control connections around the three research
+requests (including the initial forbidden-method check) verified listener
+liveness; the service observed zero unexpected connections. The guest also
+verified the model refusal and assignment-helper initialization before readiness.
+
+The external launcher then killed the controller with SIGKILL. All five cgroups
+emptied, three endpoints became unreachable, and the overlay and handoffs were
+removed within 0.053 seconds, without Python cleanup running. A repeated run
+also independently asserted both OS-resolved addresses before accepting the
+negative probes, excluding resolver failure as an explanation. See the
+[recorded result](research/kvm-egress-canaries-2026-09-13.json) and the
+[test-only listener](../scripts/probe_kvm_egress_canary_server.py).
+
+The first attempt failed before guest readiness because the service could not
+bind privileged port 443. Only the test listener service received
+`CAP_NET_BIND_SERVICE` for the successful retry; no worker or production policy
+was changed. These are real guest requests and real TCP canaries, but hosts-file
+resolution is not wire-level DNS rebinding. Live LAN/VPN routes, other private
+ranges and the complete production packaging remain separate release gates.
