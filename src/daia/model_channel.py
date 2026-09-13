@@ -1,0 +1,69 @@
+"""One-request experimental HTTP channel for an external model gate.
+
+Use only in the credential-free lab until native VM integration is established.
+The trusted forward callback owns destination, credentials and response handling.
+Guest headers are never forwarded. No CONNECT, upgrade, redirect or keep-alive.
+"""
+import socket
+from collections.abc import Callable
+
+from .model_request import Denied, RequestGate
+
+
+def serve_once(connection: socket.socket, gate: RequestGate,
+               forward: Callable[[bytes], bytes]) -> bool:
+    """Handle one bounded request and close; return whether forwarding succeeded.
+
+    An external watchdog must bound total time, including the trusted callback.
+    Response callbacks return bounded, already-reviewed SSE, never arbitrary
+    upstream headers. This does not itself establish response secret filtering.
+    """
+    with connection:
+        connection.settimeout(5)
+        try:
+            wire = bytearray()
+            while b"\r\n\r\n" not in wire:
+                part = connection.recv(1)
+                if not part:
+                    raise Denied("incomplete headers")
+                wire.extend(part)
+                if len(wire) > 8192:
+                    raise Denied("headers too large")
+            lines = bytes(wire[:-4]).decode("ascii").split("\r\n")
+            if lines[0] != "POST /v1/responses HTTP/1.1":
+                raise Denied("route denied")
+            headers = {}
+            for line in lines[1:]:
+                name, sep, value = line.partition(":")
+                if not sep or not name or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-" for c in name):
+                    raise Denied("invalid header")
+                name = name.lower()
+                if name in headers:
+                    raise Denied("duplicate header")
+                headers[name] = value.strip(" ")
+            if set(headers) - {"host", "content-length", "content-type", "accept", "connection", "user-agent"}:
+                raise Denied("header denied")
+            if headers.get("host") != "daia-model" or headers.get("content-type") != "application/json":
+                raise Denied("destination or encoding denied")
+            length = headers.get("content-length", "")
+            if not length.isascii() or not length.isdecimal() or not 0 < int(length) <= 1024 * 1024:
+                raise Denied("invalid length")
+            body = bytearray()
+            while len(body) < int(length):
+                part = connection.recv(min(65536, int(length) - len(body)))
+                if not part:
+                    raise Denied("incomplete body")
+                body.extend(part)
+            cleaned = gate.validate("POST", "/v1/responses", bytes(body))
+            output = forward(cleaned)
+            if type(output) is not bytes or len(output) > 8 * 1024 * 1024:
+                raise Denied("invalid response")
+            reply = b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\nContent-Length: " + str(len(output)).encode() + b"\r\n\r\n" + output
+            connection.sendall(reply)
+            return True
+        except (Denied, ValueError, OSError):
+            try:
+                connection.sendall(b"HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n")
+            except OSError:
+                pass
+            return False

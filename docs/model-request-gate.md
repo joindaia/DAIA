@@ -49,3 +49,23 @@ This is not inline filtering of live VM traffic and not external secret injectio
 31 unit cases pass. Independent review found that earlier malformed-JSON tests
 could pass for unrelated profile mismatches. New otherwise-valid duplicate-key
 requests and nonfinite template cases now target those parser protections directly.
+
+## Bounded transport prototype
+
+`daia.model_channel.serve_once` connects the validator to a single-request HTTP/1.1
+socket handler. Only the fixed laboratory route and authority are accepted. Duplicate
+headers, alternate routing, guest authentication, transfer/content encodings and
+upgrades are refused before invoking the trusted callback. Only canonical validated
+JSON reaches that callback; no guest header is forwarded.
+
+46 combined unit/real-socket tests pass. The socket tests run in threads in one test
+process, with a synthetic credential owned by the callback. They establish forwarding
+order and absence of that synthetic secret from the fixture response, **not** process
+or VM credential isolation, external network denial, TLS or provider compatibility.
+
+The prototype buffers a response up to 8 MiB rather than forwarding live SSE. A
+separate watchdog must bound total service/callback time. Provider errors, arbitrary
+response content and headers need independent handling before credentials can be
+used. Native client headers, compression and useful long-running streamed responses
+must be covered during integration; the strict laboratory header set is not yet a
+verified native production profile. No listener is installed by this module.
