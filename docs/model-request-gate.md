@@ -89,3 +89,28 @@ Independent review identified possible double responses after a partial success
 write. The handler now closes on that failure rather than appending a 403 inside
 an unfinished SSE response. Partial-write, pipelining, model-binding and native
 metadata tests bring the combined total to 50 passing cases.
+
+## Live external-channel KVM trial
+
+The pinned native Codex client completed a shell-tool task through `serve_once`
+and `RequestGate` running in the separate non-root gateway service outside KVM.
+The trusted callback supplied synthetic Responses events. Two validated requests
+reached it, the actual guest shell created/read the expected canary, Codex exited
+zero and completed its turn, and the disposable overlay was removed. Runtime was
+47.232 seconds. Staged external server SHA-256:
+`836cdc367836047f9d077d723d65649d63dceb16b5a1734e768724bb99faeaeb`.
+
+The lab prepared a frozen template from a separate controlled native run, not from
+an unknown incoming job. The lab wrapper removed `client_metadata` and
+`prompt_cache_key` before template comparison and forwarding. Those tracing fields
+vary between sessions; removing them has only been tested against the synthetic
+provider, not ChatGPT. The repository validator itself was not weakened to learn
+or accept arbitrary guest profiles.
+
+This establishes live native tool-use compatibility through the external channel.
+It does not establish hostile-request rejection from inside KVM (socket tests cover
+those cases locally), secret injection to a distinct upstream service, account
+confinement, real inference, public research, independent patch evaluation or
+subscription lifecycle. The fixture's external-only synthetic marker was not a
+provider credential; no credential-isolation claim follows from generating it.
+The combined assignment-helper retry test remains a separate earlier run.
