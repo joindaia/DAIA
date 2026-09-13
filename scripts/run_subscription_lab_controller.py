@@ -10,6 +10,7 @@ import atexit,signal,select,asyncio,json,os,pathlib,pwd,subprocess,sys,tempfile,
 import re
 from subscription_lab_outcome import outcome, write_outcome, new_run_directory
 from subscription_lab_identity import check_identities
+from subscription_lab_auth import read_auth
 parent_unit=os.environ.get('DAIA_CONTROLLER_UNIT','')
 if not re.fullmatch(r'daia-controller-job-[a-f0-9]{32}\.service',parent_unit):
  raise SystemExit('Run inside a dedicated DAIA controller systemd unit.')
@@ -71,8 +72,9 @@ args=['systemd-run','--unit='+gunit,'--collect','--quiet']
 for k,v in {'RootDirectory':str(jail),'BindReadOnlyPaths':'/usr /etc/ssl /var/lib/daia-lab/templates','BindPaths':str(rundir),'User':'daia-egress','Group':str(worker.pw_gid),'NoNewPrivileges':'yes','ProtectSystem':'strict','ProtectHome':'yes','InaccessiblePaths':'/mnt','ReadWritePaths':str(rundir),'PrivateTmp':'yes','ExecStopPost':'/usr/bin/rm -f /run/daia-lab/model.sock','MemoryMax':'128M','MemorySwapMax':'0','TasksMax':'16','RuntimeMaxSec':'240','CapabilityBoundingSet':'','PrivateNetwork':'no','RestrictAddressFamilies':'AF_UNIX AF_INET AF_INET6'}.items():args+=['-p',k+'='+v]
 import socket
 profile=options.auth_home/'auth.json'
-assert profile.stat().st_mode & 0o077 == 0
-t=json.loads(profile.read_text())['tokens']
+forbidden_auth_uids={pwd.getpwnam(n).pw_uid for n in ('daia-controller','daia-runtime','daia-egress','daia-research')}
+auth_data,auth_owner=read_auth(options.auth_home,forbidden_uids=forbidden_auth_uids)
+t=auth_data['tokens']
 addresses=sorted({x[4][0] for x in socket.getaddrinfo('chatgpt.com',443,family=socket.AF_INET,type=socket.SOCK_STREAM)})
 assert addresses and all(ipaddress.ip_address(a).is_global for a in addresses)
 args += ['-p','IPAddressDeny=any','-p','IPAddressAllow='+addresses[0]+'/32']
@@ -91,13 +93,13 @@ def rotate_once():
    if (rundir/'rotation-request').exists():break
   else:return
   (rundir/'rotation-request').unlink()
-  original=json.loads(profile.read_text())['tokens']
-  owner=pwd.getpwuid(profile.stat().st_uid)
+  original=read_auth(options.auth_home,owner_uid=auth_owner,forbidden_uids=forbidden_auth_uids)[0]['tokens']
+  owner=pwd.getpwuid(auth_owner)
   r=subprocess.run(['/usr/bin/python3',str(repo/'scripts/probe_codex_native_auth.py'),'--binary',str(options.codex_binary),'--home',str(options.auth_home)],user=owner.pw_uid,group=owner.pw_gid,extra_groups=[],env={'PATH':'/usr/bin:/bin'},cwd='/tmp',capture_output=True,timeout=110)
   if r.returncode:raise RuntimeError('native refresh failed')
   report=json.loads(r.stdout)
   assert report['runs'][0]['access_token_changed'] and report['runs'][0]['refresh_token_changed']
-  updated=json.loads(profile.read_text())['tokens']
+  updated=read_auth(options.auth_home,owner_uid=auth_owner,forbidden_uids=forbidden_auth_uids)[0]['tokens']
   assert updated['account_id']==original['account_id']
   fd=os.open(rundir/'rotation-credential.tmp',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
   with os.fdopen(fd,'w') as f:json.dump({'access_token':updated['access_token']},f)

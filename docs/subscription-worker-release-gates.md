@@ -140,3 +140,21 @@ were changed and no provider call occurred. See [evidence](research/subscription
 This is one installation prerequisite, not a clean installer or proof of effective
 service confinement. A trusted administrator can still change account state after
 the preflight; immutable installation and effective runtime checks remain needed.
+
+
+## Private authentication file reads
+
+The lab controller now opens the dedicated profile directory and `auth.json`
+without following final-component symlinks. It validates the opened descriptors:
+private modes, matching owner, regular single-link file and a bounded one-MiB
+read. The profile may not belong to any worker, helper or gateway service account.
+Refresh reads must preserve the original owner; malformed content is rejected
+without echoing credentials. A FIFO cannot block this read. Native atomic file
+replacement under the same trusted profile remains supported.
+
+Twenty focused authentication and identity tests passed, using synthetic tokens.
+No live provider refresh or model request was performed for this change.
+[Evidence](research/subscription-private-auth-read-2026-09-13.json) records the
+scope. Ancestor directories and the native client's own profile access remain
+part of the trusted installation boundary; this is not proof against a malicious
+profile owner or administrator changing files concurrently.
