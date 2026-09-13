@@ -6,6 +6,9 @@ only that launcher may service the native refresh handoff. No guest API exposes
 credential replacement. This is not a standalone production login broker or
 participant installer. Run only with the documented isolated service/watchdog.
 """
+if not __debug__:
+    raise SystemExit("Optimized Python is unsupported for lab execution")
+
 import sys,types,json,os,socket,pathlib,http.client,time
 from pathlib import Path
 package=types.ModuleType('daia');package.__path__=['/var/lib/daia-lab/templates'];sys.modules['daia']=package

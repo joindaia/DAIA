@@ -3,6 +3,9 @@
 Requires preconfigured Linux service identities, KVM and trusted fixture inputs.
 Run as administrator on the dedicated lab host. No new login or quota is granted.
 """
+if not __debug__:
+    raise SystemExit("Optimized Python is unsupported for lab execution")
+
 import argparse
 import fcntl
 import json

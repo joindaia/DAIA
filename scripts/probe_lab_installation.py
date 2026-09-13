@@ -4,6 +4,9 @@ Uses native systemd tools with --root for every operation. Never installs into
 host /etc or starts a service. No provider credentials, login or jobs involved.
 Run only on the trusted Linux installation side, not as an untrusted worker tool.
 """
+if not __debug__:
+    raise SystemExit("Optimized Python is unsupported for lab execution")
+
 import tempfile,pathlib,subprocess,json,hashlib,os
 repo=pathlib.Path(__file__).resolve().parents[1]
 if os.geteuid()!=0: raise SystemExit('Administrator required for temporary-root ownership checks')

@@ -1,4 +1,7 @@
 """Root lab integration test; synthetic identity only, no model credentials."""
+if not __debug__:
+    raise SystemExit("Optimized Python is unsupported for lab execution")
+
 from pathlib import Path
 import asyncio,json,os,pwd,subprocess,sys,tempfile
 import argparse

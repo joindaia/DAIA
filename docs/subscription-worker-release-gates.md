@@ -304,3 +304,18 @@ before any login. No real credentials or provider request was used.
 [Evidence](research/native-auth-optimized-checks-2026-09-13.json). This fixes this
 probe's optimization bypass; it is not an audit of all lab scripts or a new live
 refresh result. Trusted installation/path assumptions still apply.
+
+
+## Lab entrypoints reject optimized execution
+
+The supervisor, controller, assignment helper, subscription gateway and two
+installation/receipt probes now reject `not __debug__` immediately after their
+module docstrings, before imports or side effects. Their remaining lab assertions
+therefore cannot silently disappear under `-O` or `PYTHONOPTIMIZE=2`. The native
+authentication probe separately uses explicit checks and supports optimization.
+
+Twelve real subprocess refusals across six entrypoints passed, alongside the
+identity, credential and crash-rendezvous regressions: 36 tests in total. No service
+or provider call started. [Evidence](research/lab-optimized-execution-refusal-2026-09-13.json).
+This is not an all-repository assertion audit or proof about arbitrary guest code.
+Normal execution is unchanged; full VM execution was not repeated for this guard.

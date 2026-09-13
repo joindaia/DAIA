@@ -106,3 +106,12 @@ model boundary is still required. Five preparation tests passed, including an
 optimized-Python invalid-binary rejection. The actual pinned client's login help
 was checked in a temporary prepared profile: device-auth was available and no
 authentication file was created. A new provider login was not performed.
+
+
+## Python execution mode
+
+The lab entrypoints require normal Python execution: do not set `PYTHONOPTIMIZE`
+or pass `-O`/`-OO`. They stop before imports or side effects in those modes because
+some lab invariant checks still use assertions. This is separate from the native
+authentication probe, whose security checks are explicit and remain enforced with
+optimization. Do not remove the entrypoint guard to bypass a refused launch.

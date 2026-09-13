@@ -1,4 +1,7 @@
 """Test-only subscription lab service; requires the controller isolation profile."""
+if not __debug__:
+    raise SystemExit("Optimized Python is unsupported for lab execution")
+
 import sys,json,asyncio,os,pathlib
 assert os.geteuid()!=0
 assert not pathlib.Path("/mnt/c").exists()

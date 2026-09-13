@@ -6,6 +6,9 @@ fixtures. Tests original Codex, refresh and intentionally lost receipt recovery.
 Credentials remain outside the VM. No production coordinator or new login is used.
 Inputs are trusted operator files, never worker-selected paths or configuration.
 """
+if not __debug__:
+    raise SystemExit("Optimized Python is unsupported for lab execution")
+
 import atexit,signal,select,asyncio,json,os,pathlib,pwd,subprocess,sys,tempfile,shutil,socket,selectors,time,threading,uuid
 import re
 from subscription_lab_outcome import outcome, write_outcome, new_run_directory
