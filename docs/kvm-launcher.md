@@ -140,3 +140,28 @@ See the [failed trial record](research/assembled-kvm-bundle-2026-09-13.json).
 This is an unresolved integration failure, not a passing boot result. The next
 trial must retain bounded private failure diagnostics before teardown while
 preserving storage, network and watchdog limits.
+
+
+### Follow-up: explicit internal guest networking
+
+The unchanged assembled bundle subsequently booted successfully on repetition with
+bounded diagnostic inspection. Its initial QEMU failure remains unexplained. Live
+serial output showed over 100 seconds waiting for `systemd-networkd-wait-online`;
+the initial fixture had an empty ethernet definition.
+
+The [checked-in seed inputs](../tests/fixtures/kvm-boot-seed/) now configure a fixed
+`10.0.2.15/24` address, disable DHCPv4/v6 and mark the matched guest NIC optional.
+No default route or external DNS server is added. This is a synthetic boot fixture,
+not a participant task or permission to use these settings on the host.
+Generate a cidata ISO from its `user-data`, `meta-data` and `network-config`, then
+supply that ISO's approved digest and the fixture nonce to the offline builder.
+ISO timestamps can change its bytes: reproducible bundle assembly applies to
+identical ISO input, not regeneration by an unpinned ISO tool invocation.
+
+A fresh bundle built from these inputs completed the same restricted KVM/storage
+trial in 44.899 seconds, including launch/teardown overhead. All four mount limits
+held, the overlay was removed and the underlying host directory stayed empty.
+[Exact hashes and results](research/assembled-kvm-static-network-2026-09-13.json)
+are recorded. No model credentials or requests were used. This removes the empty
+network configuration from the fixture; it does not prove the original failure's
+cause or close full participant-installation acceptance.
