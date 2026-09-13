@@ -75,3 +75,45 @@ def test_provider_tool_injection_never_reaches_adapter():
 def test_truncated_body_never_reaches_adapter():
     reply, seen = exchange(wire()[:-1])
     assert reply.startswith(b'HTTP/1.1 403') and not seen
+
+
+
+def test_pipelined_second_request_is_never_forwarded():
+    reply, seen = exchange(wire() + wire())
+    assert reply.startswith(b'HTTP/1.1 200')
+    assert len(seen) == 1
+
+
+def test_template_binding_cannot_be_replaced_by_guest_model():
+    body = dict(BODY, model='different-account-route')
+    reply, seen = exchange(wire(body))
+    assert reply.startswith(b'HTTP/1.1 403') and not seen
+
+
+
+def test_partial_success_write_never_appends_error_response():
+    class InterruptedWriter:
+        def __init__(self):
+            self.raw = wire(); self.writes = []; self.closed = False
+        def __enter__(self): return self
+        def __exit__(self, *args): self.closed = True
+        def settimeout(self, value): pass
+        def recv(self, size):
+            part = self.raw[:size]; self.raw = self.raw[size:]; return part
+        def sendall(self, value):
+            self.writes.append(value[:50])
+            raise TimeoutError('synthetic partial write')
+    sock = InterruptedWriter()
+    assert not serve_once(sock, RequestGate(json.dumps(BODY).encode()), lambda _: b'data: {}\n\n')
+    assert sock.closed and len(sock.writes) == 1
+    assert sock.writes[0].startswith(b'HTTP/1.1 200')
+
+
+
+def test_native_metadata_is_accepted_but_not_forwarded():
+    extra = b''.join(name + b': guest-value\r\n' for name in (
+        b'originator', b'session-id', b'thread-id', b'x-client-request-id',
+        b'x-codex-beta-features', b'x-codex-turn-metadata', b'x-codex-window-id'))
+    reply, seen = exchange(wire(extra=extra))
+    assert reply.startswith(b'HTTP/1.1 200') and seen[0][0] == BODY
+    assert b'guest-value' not in reply

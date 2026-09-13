@@ -11,7 +11,7 @@ from .model_request import Denied, RequestGate
 
 
 def serve_once(connection: socket.socket, gate: RequestGate,
-               forward: Callable[[bytes], bytes]) -> bool:
+               forward: Callable[[bytes], bytes], *, authority: str = "daia-model") -> bool:
     """Handle one bounded request and close; return whether forwarding succeeded.
 
     An external watchdog must bound total time, including the trusted callback.
@@ -20,6 +20,7 @@ def serve_once(connection: socket.socket, gate: RequestGate,
     """
     with connection:
         connection.settimeout(5)
+        response_started = False
         try:
             wire = bytearray()
             while b"\r\n\r\n" not in wire:
@@ -41,9 +42,11 @@ def serve_once(connection: socket.socket, gate: RequestGate,
                 if name in headers:
                     raise Denied("duplicate header")
                 headers[name] = value.strip(" ")
-            if set(headers) - {"host", "content-length", "content-type", "accept", "connection", "user-agent"}:
+            if set(headers) - {"host", "content-length", "content-type", "accept", "connection", "user-agent",
+                               "originator", "session-id", "thread-id", "x-client-request-id",
+                               "x-codex-beta-features", "x-codex-turn-metadata", "x-codex-window-id"}:
                 raise Denied("header denied")
-            if headers.get("host") != "daia-model" or headers.get("content-type") != "application/json":
+            if headers.get("host") != authority or headers.get("content-type") != "application/json":
                 raise Denied("destination or encoding denied")
             length = headers.get("content-length", "")
             if not length.isascii() or not length.isdecimal() or not 0 < int(length) <= 1024 * 1024:
@@ -59,9 +62,12 @@ def serve_once(connection: socket.socket, gate: RequestGate,
             if type(output) is not bytes or len(output) > 8 * 1024 * 1024:
                 raise Denied("invalid response")
             reply = b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\nContent-Length: " + str(len(output)).encode() + b"\r\n\r\n" + output
+            response_started = True
             connection.sendall(reply)
             return True
         except (Denied, ValueError, OSError):
+            if response_started:
+                return False
             try:
                 connection.sendall(b"HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n")
             except OSError:

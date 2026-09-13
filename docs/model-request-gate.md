@@ -9,7 +9,7 @@ that approval from the first guest request. All non-history fields remain frozen
 local function tools and function namespaces are allowed, provider-executed tools
 are not. Only explicit text messages, local function calls and text outputs are
 accepted in history. Remote files, item references, previous-response links, opaque
-reasoning state, duplicate keys, nonfinite numbers and unknown fields are denied.
+reasoning input, duplicate keys, nonfinite numbers and unknown fields are denied.
 The returned JSON is canonicalized; a caller must forward those returned bytes.
 
 This establishes parser behavior only. HTTP framing/headers, routing, TLS, credential
@@ -69,3 +69,23 @@ response content and headers need independent handling before credentials can be
 used. Native client headers, compression and useful long-running streamed responses
 must be covered during integration; the strict laboratory header set is not yet a
 verified native production profile. No listener is installed by this module.
+
+## Native transport observation and review
+
+The original Codex binary completed a fresh KVM shell-tool fixture against the
+external synthetic server (46.917 seconds; zero native exit; temporary overlay
+removed). This run observed `application/json`, no content encoding and no
+Authorization header. In addition to standard HTTP fields, it sent `originator`,
+`session-id`, `thread-id`, `x-client-request-id`, `x-codex-beta-features`,
+`x-codex-turn-metadata` and `x-codex-window-id`.
+
+The channel accepts these metadata header names but discards their values; it
+never forwards guest headers to the trusted callback. The trusted launcher may set
+an exact expected Host value for its fixed virtual endpoint. That value is not a
+forwarding destination. The native observation still used the existing fixture
+server, not this new channel: full inline integration remains outstanding.
+
+Independent review identified possible double responses after a partial success
+write. The handler now closes on that failure rather than appending a 403 inside
+an unfinished SSE response. Partial-write, pipelining, model-binding and native
+metadata tests bring the combined total to 50 passing cases.
