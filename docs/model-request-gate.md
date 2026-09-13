@@ -227,3 +227,23 @@ Source: pinned official [revocation implementation](https://github.com/openai/co
 and [auth manager](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/login/src/auth/manager.rs).
 The same manager supports proactive refresh and a test endpoint override; testing
 native refresh with synthetic credentials is the next lifecycle step.
+
+
+## Native refresh and process restart with synthetic credentials
+
+`python3 scripts/probe_codex_refresh.py /path/to/pinned/codex` runs the hash-pinned
+original client twice with a fresh temporary profile and an expired synthetic JWT.
+A local authority rotates both tokens. The first native model request carries the
+new access token; a second, newly started Codex process loads the persisted tokens
+and completes another model turn without requesting another refresh. Both processes
+exit zero and return the fixture marker. Observed sequence: one refresh, then two
+model requests authenticated with the refreshed token. Both rotated tokens persist.
+
+The profile uses a custom Responses provider with `requires_openai_auth = true` and
+the pinned client's refresh-endpoint override. No existing profile or real token is
+loaded. These are native-client integration results against local HTTP fixtures,
+not official-provider compatibility, production TLS, device login or a hostile-VM
+credential boundary. Credentials intentionally reside in this trusted test profile;
+this must not be copied into the worker. Native renewal across processes is now
+established locally; connecting that lifecycle to the outside-worker credential
+binding remains required before any real subscription test.
