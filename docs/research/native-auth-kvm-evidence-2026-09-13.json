@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-13",
+  "kind": "synthetic-native-auth-plus-kvm",
+  "codex_version": "0.153.4",
+  "binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "external_server_sha256": "9ffad718de081e046dcf8b1aff940be50691a7fcddc19a136b1cce6f909fec4f",
+  "auth": {
+    "native_process_exits": [
+      0,
+      0
+    ],
+    "refresh_requests": 1,
+    "rotated_tokens_persisted": true,
+    "model_requests": 0
+  },
+  "worker": {
+    "native_exit": 0,
+    "tool_completed": true,
+    "turn_completed": true,
+    "attacks_denied": 23,
+    "budget_denied": true,
+    "runtime_seconds": 46.039
+  },
+  "external": {
+    "adapter_attempts": 3,
+    "forwarded": 2,
+    "denied": 24,
+    "provider_authenticated_requests": 2
+  },
+  "cleanup": {
+    "overlay_removed": true,
+    "handoff_secret_removed": true,
+    "gateway_removed": true,
+    "provider_socket_removed": true
+  },
+  "limits": [
+    "synthetic authority and model provider",
+    "native auth completes before VM launch; no mid-job refresh tested",
+    "separate processes share restricted external service identity",
+    "fixture seed reused; fresh overlay created",
+    "no real login, subscription, TLS, account confinement or exhaustive extraction proof",
+    "positive task is shell canary, not independently evaluated development patch"
+  ]
+}

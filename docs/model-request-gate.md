@@ -318,3 +318,30 @@ freshness, account identity or provider authorization. No real subscription is
 accessed, and no broader native account interface is exposed through the model
 channel. Next: transfer the combined flow into the restricted external service
 and fresh KVM trial, preserving the existing assignment deadline and request budget.
+
+
+## Native renewal followed by live KVM model use
+
+The combined lab now ran through a fresh KVM overlay. A separate restricted
+nonroot auth service first ran the original app-server twice: one synthetic token
+refresh, persisted replacement tokens, no model requests. This service used a
+private network namespace with loopback for its synthetic authority. The gateway
+retained its AF_UNIX-only configuration; the worker configuration was unchanged.
+The verified synthetic token was handed to the gateway in a mode-0600 file outside
+the guest and deleted when consumed. No native account RPC reached the worker.
+
+The original guest Codex completed the shell-canary task through the gate and
+credential adapter. The external provider authenticated two requests. All 23 guest
+attacks were denied; a third valid adapter attempt exhausted the two-request budget
+and did not reach the provider. Total external denials: 24. Runtime: 46.039 seconds.
+The overlay, credential handoff file and gateway/provider sockets were absent after
+cleanup. Structured [evidence](research/native-auth-kvm-evidence-2026-09-13.json)
+records the binary/server digests and counters without raw credentials or profiles.
+
+This reused the fixture seed with a fresh overlay; it is not a new DAIA assignment
+or a new consent grant. Auth refresh completed before guest launch, so renewal
+*during* a job is still untested. Separate native-auth, gateway and synthetic-provider
+processes share the restricted external service identity. This is not a proof of
+real ChatGPT account confinement, credential extraction resistance against every
+route, TLS compatibility, real subscription inference or useful patch evaluation.
+The negative native refresh/admission case remains the separate local probe.
