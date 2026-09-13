@@ -165,3 +165,30 @@ held, the overlay was removed and the underlying host directory stayed empty.
 are recorded. No model credentials or requests were used. This removes the empty
 network configuration from the fixture; it does not prove the original failure's
 cause or close full participant-installation acceptance.
+
+
+## Capturing failure before teardown
+
+The bundle now includes `report-wrapper.py`, assembled from
+`run_kvm_lab_report.py`. Inside the same restricted service, invoke it with the
+approved `--bundle` path instead of invoking `launcher.py` directly. The wrapper
+executes that launcher and emits an `ok` envelope. On success, `report` contains
+the existing untrusted guest report; on failure, `untrusted_diagnostics` contains
+at most the final 4096 bytes each of QEMU stderr and serial output, decoded as text.
+The controller must capture this JSON in private storage before destroying mounts,
+never display it as terminal commands or treat it as trusted instructions.
+Exit status stays nonzero on failure; bounded diagnostics do not convert failure
+into success. The same independent service watchdog remains mandatory.
+
+A unit/process test confirms a failing launcher with 20,000 serial bytes exports
+only 4096 bytes. Bundle assembly includes and hashes the wrapper. This wrapper is
+not yet proven in the full live subscription route.
+
+The first assembled subscription trial reached real model requests and native
+credential refresh, but ended without the required guest correlation result.
+Cleanup removed supervised sockets and handoffs. That is a failed end-to-end
+trial, not a completed development task; no independent evaluation was possible.
+The private audit reported three forwarded requests, four attempts and 24 refusals,
+with credential rotation and the original deadline preserved. The next trial must
+use the bounded wrapper to retain guest failure context. Earlier successful
+subscription results remain separate evidence from this failed integration.

@@ -37,6 +37,7 @@ def prepare(base, seed, output, *, base_sha256, seed_sha256, nonce):
                 raise ValueError('Copied input digest mismatch')
         scripts = Path(__file__).resolve().parent
         shutil.copyfile(scripts / 'run_kvm_lab_guest.py', output / 'launcher.py')
+        shutil.copyfile(scripts / 'run_kvm_lab_report.py', output / 'report-wrapper.py')
         bridge = (scripts / 'model_channel_bridge.py').read_text()
         original = '/run/daia-lab/gateway.sock'
         if bridge.count(original) != 1:

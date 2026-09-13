@@ -16,7 +16,7 @@ def test_reproducible_bundle_and_rejected_inputs(tmp_path):
     first, second = tmp_path / 'first', tmp_path / 'second'
     one = prepare(base, seed, first, **args)
     assert prepare(base, seed, second, **args) == one
-    assert len(one) == 7
+    assert len(one) == 8
     manifest = json.loads((first / 'network-config.json').read_text())
     assert manifest['base_sha256'] == args['base_sha256']
     for name, expected in manifest['bridge_sha256'].items():
@@ -34,3 +34,18 @@ def test_reproducible_bundle_and_rejected_inputs(tmp_path):
     with pytest.raises(ValueError, match='regular input'):
         prepare(link, seed, bad, **args)
     assert not bad.exists()
+
+
+def test_failed_launch_exports_only_bounded_private_diagnostics(tmp_path):
+    import subprocess
+    import sys
+    bundle = tmp_path / 'bundle'; bundle.mkdir()
+    (bundle / 'launcher.py').write_text("from pathlib import Path\nPath('serial.txt').write_bytes(b'x'*20000)\nraise SystemExit(1)\n")
+    wrapper = Path(__file__).parents[1] / 'scripts/run_kvm_lab_report.py'
+    result = subprocess.run([sys.executable, '-I', str(wrapper), '--bundle', str(bundle)],
+                            cwd=tmp_path, capture_output=True, text=True, timeout=5)
+    assert result.returncode == 1 and not result.stderr
+    report = json.loads(result.stdout)
+    assert report['ok'] is False
+    assert report['untrusted_diagnostics']['serial.txt'] == 'x' * 4096
+    assert report['untrusted_diagnostics']['stderr.txt'] == ''
