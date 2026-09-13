@@ -37,7 +37,8 @@ def provider(tmp_path, monkeypatch):
             body = self.rfile.read(int(self.headers['Content-Length']))
             state['seen'].append((self.path, dict(self.headers), body))
             self.send_response(state['status'])
-            self.send_header('Content-Type', 'text/event-stream')
+            for value in state.get('content_types', ['text/event-stream']):
+                self.send_header('Content-Type', value)
             for name, value in state.get('framing', [('Content-Length', '10')]):
                 self.send_header(name, value)
             self.send_header('Location', 'https://example.invalid/account')
@@ -152,3 +153,19 @@ def test_continuous_tls_chunks_stop_at_deadline(provider):
     assert time.monotonic() - start < 1.5
     with pytest.raises(Denied): adapter(b'{}')
     assert len(provider[1]['connections']) == 1
+
+
+@pytest.mark.parametrize('value', ['text/event-stream; charset=utf-8',
+    'Text/Event-Stream; Charset="UTF-8"'])
+def test_utf8_sse_content_type(provider, value):
+    provider[1]['content_types'] = [value]
+    assert binding(provider)(b'{}') == b'data: {}\n\n'
+
+
+@pytest.mark.parametrize('values', [[], ['text/html'],
+    ['text/event-stream', 'text/event-stream'],
+    ['text/event-stream; charset=iso-8859-1'],
+    ['text/event-stream; charset=utf-8; charset=utf-8']])
+def test_ambiguous_or_unsupported_content_type(provider, values):
+    provider[1]['content_types'] = values
+    with pytest.raises(Denied): binding(provider)(b'{}')

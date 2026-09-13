@@ -488,3 +488,13 @@ with SNI/hostname verification for chatgpt.com. It sent **zero HTTP requests** a
 used **no credentials**. This proves reachability from the development execution
 environment, not from the final restricted gateway service or worker VM. It does
 not prove Responses compatibility, login, subscription use or account confinement.
+
+
+### UTF-8 SSE media type
+
+The response gate also accepts a single SSE Content-Type with an explicit UTF-8
+charset, including a quoted charset and case-insensitive media type. Missing or
+duplicate Content-Type, another media type, a non-UTF-8 charset or repeated
+parameters remain rejected. The combined transport/gate suite passes 117 tests.
+This is protocol compatibility tested with synthetic credentials, not evidence
+that a real subscription request succeeded.
