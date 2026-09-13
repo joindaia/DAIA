@@ -43,12 +43,12 @@ From the trusted DAIA checkout:
 
 ```sh
 UV_PROJECT_ENVIRONMENT="$DAIA_RUNTIME_DEST" uv sync --locked --no-editable \
-  --extra dev --extra mcp --python /usr/bin/python3.12
+  --extra mcp --python /usr/bin/python3.12
 ```
 
-The current experimental controller imports repository test helpers, so `dev` is
-still required. Keep the approved checkout available; this is not yet a standalone
-controller wheel. `--locked` refuses lock drift and `--no-editable` installs the
+The lab controller uses its own small fixture module and actual loopback MCP;
+`dev` is no longer required at runtime. Keep the approved checkout available;
+this is not yet a standalone controller wheel. `--locked` refuses lock drift and `--no-editable` installs the
 DAIA package rather than linking it back to the checkout. The controller still
 explicitly uses approved repository source for its lab fixtures.
 

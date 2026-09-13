@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-13",
+  "scope": "Real loopback MCP setup without importing test infrastructure",
+  "runtime_distributions": 31,
+  "runtime_has_pytest": false,
+  "offline_locked_build": true,
+  "actual_http": [
+    "request_work",
+    "heartbeat",
+    "submit_result",
+    "exact retry after lost response"
+  ],
+  "results": 1,
+  "identity_and_consent_preserved": true,
+  "regression_tests": 35,
+  "provider_calls": 0,
+  "limitations": [
+    "Changed full controller VM path not live tested yet",
+    "Trusted repository scripts remain installation dependencies",
+    "Lab-local grant and approval setup only"
+  ]
+}

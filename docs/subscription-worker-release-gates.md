@@ -219,3 +219,19 @@ the stored source; the original failed and evaluator storage was removed.
 runtime replacement in the complete lab chain. It still reuses host identities,
 the base image/client fixture, trusted login and approved checkout/test helpers.
 The clean participant installation and broader adversarial gates remain open.
+
+
+## Lab controller no longer imports test modules
+
+The controller now creates its contributor using the real loopback MCP endpoint
+instead of a test replacement for remote calls. The small local-server, invite
+and authorization setup lives in `subscription_lab_fixture.py`; the controller
+no longer adds the tests directory or imports pytest-dependent test modules.
+This remains trusted finite lab setup, not production registration authority.
+
+A fresh locked runtime without the dev extra installed 31 distributions. With
+pytest absent, the actual HTTP claim, heartbeat, committed-but-lost submission
+and exact retry completed with unchanged identity/consent and one result.
+Thirty-five targeted tests passed. [Evidence](research/lab-without-test-imports-2026-09-13.json).
+The changed controller has not yet completed a full VM/subscription run. The
+approved source checkout is still required; this does not finish packaging.

@@ -16,15 +16,13 @@ if not re.fullmatch(r'daia-controller-job-[a-f0-9]{32}\.service',parent_unit):
  raise SystemExit('Run inside a dedicated DAIA controller systemd unit.')
 def dependent(args):
  return args+['-p','BindsTo='+parent_unit,'-p','After='+parent_unit,'-p','KillMode=control-group','-p','TimeoutStopSec=3','-p','Restart=no']
-repo=pathlib.Path(__file__).resolve().parents[1];sys.path[:0]=[str(repo/'src'),str(repo/'tests')]
+repo=pathlib.Path(__file__).resolve().parents[1];sys.path[:0]=[str(repo/'src')]
 from daia.contributor import Contributor
 from daia.mcp_server import build_mcp_app
 from daia.service import Coordinator
 from daia.store import Store
 from daia.assignment_relay import relay as assignment_relay
-from test_contributor import direct,invite_file
-from test_assignment_host import approve
-from test_mcp import running_server
+from subscription_lab_fixture import invite_file, approve, running_server
 import argparse
 parser=argparse.ArgumentParser(description=__doc__)
 for name in ('guest','request-template','auth-home','codex-binary','python-runtime'):
@@ -153,7 +151,7 @@ private=run_state/'assignment';coordinator_dir=run_state/'coordinator'
 write_outcome('/run/daia-subscription-run.json',{'state_directory':str(run_state), 'automatic_resume_authorized':False})
 service=Coordinator(Store(str(coordinator_dir/'network.sqlite3')));service.admit_evidence({'objective': 'Find the numeric-version comparison bug in this frozen public fixture.', 'baseline_commit': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'source': {'path': 'src/version_check.py', 'start_line': 1, 'text': 'def newer(a, b): return a > b\n'}})
 with running_server(build_mcp_app(service)) as url:
- invite=invite_file(private,service,url);host=direct(Contributor(invite,minutes=5),service)
+ invite=invite_file(private,service,url);host=Contributor(invite,minutes=5)
  lease=asyncio.run(host.perform('request_work'))
  write_outcome(run_state/'run.json',{'assignment_id':lease['assignment_id'], 'automatic_resume_authorized':False})
  before={k:host.state[k] for k in ['key','used','deadline','max_jobs']}
