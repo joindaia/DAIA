@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-13",
+  "model": "gpt-5.3-codex-spark",
+  "original_client_version": "0.153.4",
+  "real_subscription": true,
+  "assignment_created_before_execution": true,
+  "synthetic_local_source_assignment": true,
+  "existing_participant_consent_changed": false,
+  "provider_credentials_in_separate_service": true,
+  "model_channel_counts": {
+    "forwarded": 4,
+    "denied": 23,
+    "attempts": 4
+  },
+  "worker": {
+    "native_exit": 0,
+    "turn_completed": true,
+    "command_count": 3,
+    "all_command_exits_zero": true,
+    "test_file_unchanged": true,
+    "overlay_removed": true,
+    "runtime_seconds": 56.304
+  },
+  "receipt": {
+    "submitted_by": "guest harness through assignment-bound helper",
+    "exact_retry": true,
+    "wrong_retry_denied": true,
+    "results": 1,
+    "identity_and_consent_unchanged": true,
+    "pending_cleared": true,
+    "stored_source_matches_worker": true,
+    "stored_source_sha256": "e9c6c86ccf641b0babc602e95c02e2ddf9ea0e2dbb1d335f004f5b2f1d4fcef7",
+    "result_state": "in_review"
+  },
+  "evaluation": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "e9c6c86ccf641b0babc602e95c02e2ddf9ea0e2dbb1d335f004f5b2f1d4fcef7",
+    "model_source_changed": false,
+    "format_normalized": false,
+    "provider_credentials_present": false
+  },
+  "evaluator_network": false,
+  "evaluator_overlay_removed": true,
+  "evaluator_runtime_seconds": 44.016,
+  "source": "from itertools import zip_longest\n\n\ndef _normalize(version):\n    values = [int(part) for part in version.split('.')]\n    while values and values[-1] == 0:\n        values.pop()\n    return values\n\n\ndef newer(a, b):\n    left = _normalize(a)\n    right = _normalize(b)\n    for a_part, b_part in zip_longest(left, right, fillvalue=0):\n        if a_part != b_part:\n            return a_part > b_part\n    return False\n",
+  "earlier_attempt": {
+    "budget_limit": 6,
+    "forwarded": 6,
+    "seventh_request_denied": true,
+    "no_submission": true
+  },
+  "limitations": [
+    "Controlled public numeric-version fixture, not an organic DAIA repository improvement.",
+    "Guest harness constructs the source-evidence packet and invokes the helper; the model did not autonomously choose submission tools.",
+    "Real provider refresh, revocation, public research, dependency downloads and comprehensive private-network/account negatives are not combined in this run.",
+    "No maintainer approval, automatic merge or deployment.",
+    "The earlier attempt hit the fixed request budget; the successful attempt used a more focused prompt without increasing it."
+  ]
+}

@@ -728,3 +728,37 @@ binding while keeping the source assignment and helper authority established
 before execution. Preserve the separately tested external credential service,
 its resource/network limits, and independent evaluation; do not move credentials
 into this synthetic parent process merely to combine harnesses.
+
+
+### Real subscription plus assignment receipt in one worker
+
+A new local source-evidence assignment and finite contributor grant were created
+before booting the combined worker. The fixed model channel used the existing
+separate credential service, public destination pin and resource/network policy;
+the assignment channel used its non-root private helper. No existing participant
+grant was extended and no credential was put into the guest seed.
+
+The original Codex client with Spark read the two supplied source/test files,
+applied a change and ran the unchanged test file. It completed with exit zero
+using four provider requests and three terminal commands. The model channel also
+refused the 23 hostile preflight requests. The guest harness then constructed a
+source-bound evidence packet containing the exact resulting source and invoked
+the scoped helper. The helper deliberately lost the first committed receipt;
+a changed retry failed and the exact retry returned the existing receipt. The
+coordinator stored one result, still in_review. Identity, deadline and job count
+were unchanged and pending state was cleared.
+
+A read-only query of the actual local coordinator database confirmed that the
+stored proposed source exactly matched the worker output. Those same bytes passed
+ten separately supplied regressions in another fresh VM with no network device
+or provider credentials. The original source failed. Worker and evaluator took
+56.304 and 44.016 seconds respectively, and both overlays were removed. See the
+[combined result record](research/live-subscription-assignment-trial-2026-09-13.json).
+
+The first attempt reached the six-request ceiling; the seventh request was denied
+and nothing was submitted. The successful run used a narrower exploration prompt,
+not a higher limit. This is a real subscription development-and-delivery trial,
+but remains a controlled fixture with harness-driven submission. It does not prove
+public research, downloads, native provider refresh/revocation, comprehensive
+private-network or provider-account confinement, production scheduling, or an
+automatically accepted repository improvement. Keep those release gates open.
