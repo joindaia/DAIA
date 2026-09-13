@@ -629,3 +629,18 @@ accounts were unchanged. No provider credentials or model requests were used.
 These results establish regression coverage and the finite tested Linux command,
 namespace and manifest behaviours. They do not certify the entire agent environment,
 private LAN/VPN isolation, clean participant installation or full crash recovery.
+
+## Second useful task and its incomplete native turn
+
+The [outcome-summary task](research/outcome-summary-subscription-task-2026-09-13.json)
+produced a real subscription-backed addition to the operator result module.
+Seven independent networkless evaluator cases passed; the maintainer reviewed the
+exact addition and connected it to read-only multi-run inspection. Thirty-three
+targeted regressions passed and the live two-run summary worked. Request authority
+was durably revoked after the worker stopped.
+
+The native turn consumed its six requests before retrying the intentionally lost
+receipt. One result was already persisted; the existing bounded recovery route
+recovered that exact receipt without model use or consent changes. Do not mark
+native unattended completion, generalized development or separate-host installation
+as satisfied by this trial. Earlier unsuccessful attempts are included in evidence.

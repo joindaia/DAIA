@@ -11,7 +11,9 @@ import subprocess
 import uuid
 
 
-def prepare(candidate, output, iso_builder):
+def prepare(candidate, output, iso_builder, *, task="version"):
+    if task not in ("version", "outcome-summary"):
+        raise ValueError("Unknown evaluator task")
     with Path(candidate).open('rb') as stream:
         raw = stream.read(64 * 1024 + 1)
     if len(raw) > 64 * 1024:
@@ -22,7 +24,7 @@ def prepare(candidate, output, iso_builder):
     output = Path(output)
     output.mkdir()  # Exclusive: never replace existing approved inputs.
     nonce = uuid.uuid4().hex
-    template = Path(__file__).with_name('version_evaluator_guest.py').read_text()
+    template = Path(__file__).with_name('version_evaluator_guest.py' if task == 'version' else 'outcome_evaluator_guest.py').read_text()
     code = template.replace('NONCE', repr(nonce))
     compile(code, 'evaluator-guest', 'exec')  # Syntax only; never execute it.
     cloud = {'users': [], 'package_update': False, 'package_upgrade': False,
@@ -55,8 +57,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('candidate', 'output', 'iso-builder'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument("--task", choices=("version", "outcome-summary"), default="version")
     args = parser.parse_args()
-    print(json.dumps(prepare(args.candidate, args.output, args.iso_builder)))
+    print(json.dumps(prepare(args.candidate, args.output, args.iso_builder, task=args.task)))
 
 
 if __name__ == '__main__':

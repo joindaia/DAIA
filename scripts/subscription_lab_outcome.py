@@ -55,3 +55,27 @@ def new_run_directory(root):
         try: os.fsync(fd)
         finally: os.close(fd)
     return run
+
+def summarize_outcomes(records):
+    totals = {
+        'total': 0,
+        'worker_completed': 0,
+        'acknowledged': 0,
+        'stored_unacknowledged': 0,
+        'unconfirmed': 0,
+    }
+    for record in records:
+        totals['total'] += 1
+        if isinstance(record, dict) and record.get('worker_completed') is True:
+            totals['worker_completed'] += 1
+        if isinstance(record, dict):
+            delivery = record.get('delivery')
+            if delivery == 'acknowledged':
+                totals['acknowledged'] += 1
+            elif delivery == 'stored_unacknowledged':
+                totals['stored_unacknowledged'] += 1
+            else:
+                totals['unconfirmed'] += 1
+        else:
+            totals['unconfirmed'] += 1
+    return totals

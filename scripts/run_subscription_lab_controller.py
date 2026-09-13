@@ -47,6 +47,8 @@ import hashlib
 import runpy
 prepare=runpy.run_path(str(repo/'scripts/prepare_kvm_bundle.py'))['prepare']
 pinned=json.loads((source/'config.json').read_text())
+from subscription_lab_task import load_task
+task_document=load_task(source,pinned)
 bundle=root/('subscription-bundle-'+uuid.uuid4().hex)
 bundle_hashes=prepare(p/'base.qcow2',source/'seed.iso',bundle,
  base_sha256=pinned['base_sha256'],seed_sha256=pinned['seed_sha256'],nonce=pinned['nonce'])
@@ -152,7 +154,8 @@ assert (researchdir/'gateway.sock').exists()
 
 private=run_state/'assignment';coordinator_dir=run_state/'coordinator'
 write_outcome('/run/daia-subscription-run.json',{'state_directory':str(run_state), 'automatic_resume_authorized':False})
-service=Coordinator(Store(str(coordinator_dir/'network.sqlite3')));service.admit_evidence({'objective': 'Find the numeric-version comparison bug in this frozen public fixture.', 'baseline_commit': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'source': {'path': 'src/version_check.py', 'start_line': 1, 'text': 'def newer(a, b): return a > b\n'}})
+service=Coordinator(Store(str(coordinator_dir/'network.sqlite3')))
+service.admit_evidence(task_document)
 with running_server(build_mcp_app(service)) as url:
  invite=invite_file(private,service,url);host=Contributor(invite,minutes=5)
  lease=asyncio.run(host.perform('request_work'))

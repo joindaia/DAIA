@@ -59,3 +59,15 @@ def test_shared_or_symlink_state_root_refused(tmp_path):
     with pytest.raises(ValueError, match='Private operator'):
         scope['new_run_directory'](link)
     assert list(root.iterdir()) == list(target.iterdir()) == []
+
+
+def test_summary_counts_without_leaking_or_mutating_records():
+    summarize = scope['summarize_outcomes']
+    records = [{'delivery':'acknowledged','worker_completed':False,'key':'secret'},
+               {'delivery':'stored_unacknowledged','worker_completed':True},
+               {'delivery':'other','worker_completed':1}, {}]
+    before = json.dumps(records)
+    assert summarize(iter(records)) == {'total':4,'worker_completed':1,
+        'acknowledged':1,'stored_unacknowledged':1,'unconfirmed':2}
+    assert json.dumps(records) == before
+    assert summarize([]) == dict.fromkeys(summarize(records), 0)

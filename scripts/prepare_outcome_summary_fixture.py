@@ -1,0 +1,82 @@
+"""Prepare the second development task from an approved native-delivery fixture.
+
+Installer-only: transforms repository fixture code, never executes task code.
+The controller must bind the exported task document before issuing the assignment.
+"""
+import argparse
+import ast
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import uuid
+
+
+def prepare(source, output, native, iso_builder):
+    source, output, native = Path(source), Path(output), Path(native)
+    task = json.loads((Path(__file__).parents[1] /
+        'tests/fixtures/subscription-development/outcome-summary.json').read_text())
+    source_text = task['source']['text']
+    packet = {'source_digest': hashlib.sha256(source_text.encode()).hexdigest(),
+              'line': 1, 'finding': 'Operator outcome aggregation is not implemented.',
+              'reproduction_outline': 'Run the supplied summary tests against the original and updated module.',
+              'suggested_change': 'REPLACE WITH ONLY THE NEW summarize_outcomes FUNCTION, MAXIMUM 1200 CHARACTERS'}
+    prompt = ('Complete this DAIA assignment using native MCP tools. Call heartbeat once. '
+              'Use one terminal invocation to run python3 /work/research.py, read /work/task.py '
+              'and /work/test_task.py, implement the requirement, run the unchanged tests and '
+              'print only the added function. The existing module is supplied here so you can design the addition before the terminal call: ' + source_text + '\nRequirement: ' + task['objective'] +
+              ' Then call submit_result with verdict candidate and artifact equal to a JSON '
+              'string of this packet, replacing suggested_change with ONLY the appended function (maximum 1200 characters), not the original module. Append the function without editing existing source: ' +
+              json.dumps(packet) + ' The first response is intentionally lost after persistence. '
+              'Retry once with exactly the same artifact and verdict. Finish after the receipt. '
+              'Maximum six model requests. No additional heartbeat. Do not invoke MCP via shell.')
+    cloud = json.loads((source/'user-data').read_text().split('\n', 1)[1])
+    entry = next(f for f in cloud['write_files'] if f['path']=='/tmp/probe.py')
+    config = json.loads((source/'config.json').read_text())
+    nonce = uuid.uuid4().hex
+    replaced = set()
+
+    class TaskLiterals(ast.NodeTransformer):
+        def visit_Constant(self, node):
+            value = node.value
+            if not isinstance(value, str): return node
+            if value == 'def newer(a, b): return a > b\n':
+                value = source_text; replaced.add('source')
+            elif value.startswith('from version_check import newer\n'):
+                value = task['tests']; replaced.add('tests')
+            elif value.startswith('Complete this assigned development task using native DAIA MCP tools.'):
+                value = prompt; replaced.add('prompt')
+            elif value == '/work/version_check.py': value = '/work/task.py'
+            elif value == '/work/test_version.py': value = '/work/test_task.py'
+            elif value == config['nonce']: value = nonce; replaced.add('nonce')
+            return ast.copy_location(ast.Constant(value=value), node)
+
+    code = ast.unparse(TaskLiterals().visit(ast.parse(entry['content']))) + '\n'
+    if replaced != {'source','tests','prompt','nonce'}:
+        raise ValueError('Expected native task fixture required')
+    compile(code, 'outcome-summary-guest', 'exec')  # Syntax only.
+    entry['content'] = code
+    output.mkdir()
+    (output/'user-data').write_text('#cloud-config\n'+json.dumps(cloud))
+    (output/'meta-data').write_text(json.dumps({'instance-id':'daia-summary-'+nonce,'local-hostname':'daia-summary'}))
+    (output/'network-config').write_bytes((source/'network-config').read_bytes())
+    (output/'probe.py').write_bytes((source/'probe.py').read_bytes())
+    document = {k:task[k] for k in ('objective','baseline_commit','source')}
+    raw = json.dumps(document, sort_keys=True).encode()
+    (output/'task.json').write_bytes(raw)
+    subprocess.run([str(iso_builder),'-quiet','-output',str(output/'seed.iso'),
+        '-volid','CIDATA','-joliet','-rock',
+        *[str(output/name) for name in ('user-data','meta-data','network-config')],
+        str(native/'codex'),str(native/'bwrap')],check=True)
+    config.update(nonce=nonce,task_sha256=hashlib.sha256(raw).hexdigest(),
+                  seed_sha256=hashlib.sha256((output/'seed.iso').read_bytes()).hexdigest())
+    (output/'config.json').write_text(json.dumps(config))
+    return config
+
+
+if __name__ == '__main__':
+    parser=argparse.ArgumentParser(description=__doc__)
+    for name in ('source','output','native','iso-builder'):
+        parser.add_argument('--'+name,type=Path,required=True)
+    args=parser.parse_args()
+    print(json.dumps(prepare(args.source,args.output,args.native,args.iso_builder)))

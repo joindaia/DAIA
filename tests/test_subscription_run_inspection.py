@@ -47,3 +47,17 @@ def test_mismatch_and_shared_state_are_not_trusted(tmp_path, monkeypatch):
     state.chmod(0o644)
     with pytest.raises(ValueError, match='permissions'):
         inspect(tmp_path)
+
+
+def test_multiple_run_cli_only_returns_counts(tmp_path, monkeypatch, capsys):
+    import sys
+    script = Path(__file__).parents[1] / 'scripts/inspect_subscription_run.py'
+    monkeypatch.syspath_prepend(str(script.parent))
+    paths=[]
+    for name in ('first','second'):
+        folder=tmp_path/name;folder.mkdir();fixture(folder);paths.append(folder)
+    monkeypatch.setattr(sys,'argv',[str(script),'--run',str(paths[0]),'--run',str(paths[1])])
+    runpy.run_path(str(script),run_name='__main__')
+    result=json.loads(capsys.readouterr().out)
+    assert result == {'total':2,'acknowledged':2,'stored_unacknowledged':0,
+        'unconfirmed':0,'worker_completion':'not_established_by_this_inspection'}

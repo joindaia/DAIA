@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import re
 import sqlite3
-from subscription_lab_outcome import outcome
+from subscription_lab_outcome import outcome, summarize_outcomes
 
 
 def private(path, directory=False):
@@ -62,9 +62,15 @@ def inspect(run):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--run', type=Path, required=True)
+    parser.add_argument('--run', type=Path, action='append', required=True)
     args = parser.parse_args()
-    print(json.dumps(inspect(args.run)))
+    if len(args.run) == 1:
+        result = inspect(args.run[0])
+    else:
+        result = summarize_outcomes(inspect(run) for run in args.run)
+        result.pop('worker_completed')
+        result['worker_completion'] = 'not_established_by_this_inspection'
+    print(json.dumps(result))
 
 
 if __name__ == '__main__':

@@ -9,7 +9,8 @@ prepare = runpy.run_path(str(Path(__file__).parents[1] /
     'scripts/prepare_version_evaluator.py'))['prepare']
 
 
-def test_exact_candidate_is_data_only(tmp_path, monkeypatch):
+@pytest.mark.parametrize("task", ["version", "outcome-summary"])
+def test_exact_candidate_is_data_only(tmp_path, monkeypatch, task):
     sentinel = tmp_path / 'executed'
     source = f"from pathlib import Path; Path({str(sentinel)!r}).touch()\n"
     candidate = tmp_path / 'candidate.json'
@@ -20,7 +21,7 @@ def test_exact_candidate_is_data_only(tmp_path, monkeypatch):
         assert kwargs == {'check': True}
         Path(argv[argv.index('-output') + 1]).write_bytes(b'synthetic ISO')
     monkeypatch.setattr('subprocess.run', build)
-    report = prepare(candidate, output, '/approved/iso-builder')
+    report = prepare(candidate, output, '/approved/iso-builder', task=task)
     assert not sentinel.exists()
     cloud = json.loads((output / 'user-data').read_text().split('\n', 1)[1])
     stored = next(f['content'] for f in cloud['write_files']
@@ -34,7 +35,7 @@ def test_exact_candidate_is_data_only(tmp_path, monkeypatch):
     assert network['ethernets']['unused']['optional'] is True
     assert network['ethernets']['unused']['dhcp4'] is False
     with pytest.raises(FileExistsError):
-        prepare(candidate, output, '/approved/iso-builder')
+        prepare(candidate, output, '/approved/iso-builder', task=task)
 
 
 @pytest.mark.parametrize('raw', [b'x' * 65537, b'{}', json.dumps('x' * 8192).encode()])

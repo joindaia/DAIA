@@ -242,3 +242,51 @@ requires separately acquired native tools, base image and approved request input
 Use `guest` and `runtime` with the existing lab supervisor after host setup.
 The actual online fresh-checkout/empty-cache build is recorded in
 [clean preparation evidence](../../docs/research/clean-subscription-preparation-2026-09-13.json).
+
+## Second development task: operator outcome summary
+
+The outcome-summary task uses an exact committed copy of the existing lab outcome
+module. Its requested addition counts completed work separately from acknowledged,
+stored-but-unacknowledged and unconfirmed delivery. It is a small practical feature,
+not proof of arbitrary multi-file repository work.
+
+After building the native-delivery fixture above:
+
+```sh
+python3 scripts/prepare_outcome_summary_fixture.py \
+  --source "$DAIA_NATIVE_FIXTURE" --output "$DAIA_SUMMARY_FIXTURE" \
+  --native "$DAIA_NATIVE_DIRECTORY" --iso-builder "$DAIA_ISO_BUILDER"
+```
+
+The builder writes the frozen task document and binds its digest in `config.json`.
+The controller checks this binding before service startup and admits that exact
+source context. These remain trusted installer inputs; a worker cannot choose its
+own task or change the coordinator's source-path policy. A legacy version task
+without a task document remains supported.
+
+The evidence protocol limits each result text field to 1,200 characters. Therefore
+this task returns only the appended function, not the complete original module.
+The evaluator combines those unchanged bytes with the fixed original module inside
+a new networkless VM. Select `--task outcome-summary` when invoking
+`prepare_version_evaluator.py`. It requires one appended `summarize_outcomes`
+function and checks seven cases, generator inputs, unchanged inputs and integer
+counts. Candidate code runs under the existing unprivileged evaluator identity;
+the trusted parent compares output. Nothing is automatically merged or released.
+
+The real second-task trial produced one stored function addition. It exhausted its
+six-request allowance before the native receipt retry; the existing operator
+recovery command recovered the exact receipt with no model calls or consent change.
+A separate networkless evaluator passed seven cases. The maintainer reviewed and
+integrated those exact function bytes and connected them to retained-run inspection:
+
+```sh
+python3 scripts/inspect_subscription_run.py --run "$DAIA_RUN_ONE" --run "$DAIA_RUN_TWO"
+```
+
+One `--run` retains the prior detailed result. Multiple `--run` arguments return
+only delivery counts; worker completion is explicitly not established by receipt
+inspection. The real two-run check returned one acknowledged and one unconfirmed
+run. No accounts, receipts or paths are included in that summary.
+[Full evidence and failed attempts](../../docs/research/outcome-summary-subscription-task-2026-09-13.json)
+record 33 targeted regression checks. The client turn itself did not complete;
+this is a recovered useful contribution, not a passing unattended-turn release gate.
