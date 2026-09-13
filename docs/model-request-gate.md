@@ -247,3 +247,25 @@ credential boundary. Credentials intentionally reside in this trusted test profi
 this must not be copied into the worker. Native renewal across processes is now
 established locally; connecting that lifecycle to the outside-worker credential
 binding remains required before any real subscription test.
+
+
+## Native refresh without trusted-side model execution
+
+The same probe now accepts `--account-only`. It starts the pinned original
+`codex app-server` over private stdio, initializes the connection and sends
+`account/read` with `refreshToken: false`. An expired synthetic access token still
+triggers native proactive refresh. After the process exits, a fresh process reads
+the persisted account without another refresh. Both exits were zero, both returned
+a ChatGPT account, and the fixture observed exactly one refresh and **no model
+requests**. Both replacement tokens were saved. The model-mode probe separately
+checks actual fixture answer markers; account mode checks account responses instead.
+
+This removes the need to start a model task on the trusted controller just to
+exercise renewal. It does not expose app-server to the worker: the native server
+has broader account, process and thread operations and must remain private to the
+trusted controller. No generic RPC relay is appropriate here. A bounded request
+channel to the worker and a provider credential binding are still separate needs.
+
+Source: pinned official [app-server account documentation](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/app-server/README.md).
+The native network-proxy [OpenAI credential provider](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/network-proxy/src/credential_broker/providers/openai.rs)
+handles `OPENAI_API_KEY`; it is not evidence of built-in ChatGPT OAuth brokerage.

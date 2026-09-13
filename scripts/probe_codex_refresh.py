@@ -1,8 +1,11 @@
 import argparse
+import selectors
 import base64, hashlib, http.server, json, os, pathlib, subprocess, tempfile, threading, time
 parser=argparse.ArgumentParser(description='Native Codex synthetic refresh/restart probe; uses no existing auth.')
 parser.add_argument('binary',type=pathlib.Path)
-binary=str(parser.parse_args().binary.resolve())
+parser.add_argument('--account-only',action='store_true',help='Use trusted native account/read without starting model work')
+args=parser.parse_args()
+binary=str(args.binary.resolve())
 assert hashlib.sha256(pathlib.Path(binary).read_bytes()).hexdigest()=='56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da'
 def jwt(exp):
  def b(x):return base64.urlsafe_b64encode(json.dumps(x).encode()).decode().rstrip('=')
@@ -49,11 +52,40 @@ supports_websockets = false
   exits=[]
   markers=[]
   for i in range(2):
-   p=subprocess.run([binary,'exec','--skip-git-repo-check','--ephemeral','--sandbox','read-only','--json','Return DAIA_AUTH_READY without using tools.'],env=env,cwd=root,capture_output=True,timeout=45)
-   exits.append(p.returncode)
-   markers.append(b"DAIA_AUTH_READY" in p.stdout)
-   if p.returncode: print(p.stderr.decode()[-1500:])
+   if args.account_only:
+    p=subprocess.Popen([binary,'app-server'],env=env,cwd=root,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1)
+    def send(value):p.stdin.write(json.dumps(value)+'\n');p.stdin.flush()
+    def receive(wanted):
+     deadline=time.monotonic()+20
+     with selectors.DefaultSelector() as sel:
+      sel.register(p.stdout,selectors.EVENT_READ)
+      while time.monotonic()<deadline:
+       if not sel.select(max(0,deadline-time.monotonic())):break
+       line=p.stdout.readline()
+       if not line:raise RuntimeError('app-server stopped')
+       item=json.loads(line)
+       if item.get('id')==wanted:
+        assert 'error' not in item,item
+        return item
+     raise TimeoutError('app-server response')
+    try:
+     send({'id':1,'method':'initialize','params':{'clientInfo':{'name':'daia-auth-lab','version':'0.1'}}});receive(1)
+     send({'method':'initialized'})
+     send({'id':2,'method':'account/read','params':{'refreshToken':False}})
+     answer=receive(2)
+     assert answer['result']['account']['type']=='chatgpt',answer
+    finally:
+     p.stdin.close()
+     try:p.wait(timeout=5)
+     except subprocess.TimeoutExpired:p.kill();p.wait()
+    exits.append(p.returncode)
+    markers.append(True)
+   else:
+    p=subprocess.run([binary,'exec','--skip-git-repo-check','--ephemeral','--sandbox','read-only','--json','Return DAIA_AUTH_READY without using tools.'],env=env,cwd=root,capture_output=True,timeout=45)
+    exits.append(p.returncode)
+    markers.append(b"DAIA_AUTH_READY" in p.stdout)
+    if p.returncode: print(p.stderr.decode()[-1500:])
   stored=json.loads(auth.read_text())
   result={'exits':exits,'markers':markers,'calls':calls,'rotated_persisted':stored['tokens']['refresh_token']=='synthetic-rotated','access_persisted':stored['tokens']['access_token']==new}
-  print(json.dumps(result));assert result=={'exits':[0,0],'markers':[True,True],'calls':['refresh','model-refreshed','model-refreshed'],'rotated_persisted':True,'access_persisted':True}
+  print(json.dumps(result));assert result=={'exits':[0,0],'markers':[True,True],'calls':(['refresh'] if args.account_only else ['refresh','model-refreshed','model-refreshed']),'rotated_persisted':True,'access_persisted':True}
 finally:server.shutdown();server.server_close();thread.join()
