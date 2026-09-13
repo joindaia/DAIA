@@ -174,3 +174,26 @@ def test_nonempty_provider_content_is_not_silently_discarded():
     with pytest.raises(Denied):
         gate.record_provider_output([{"type": "reasoning", "summary": [],
             "encrypted_content": "bound", "content": [{"type": "unknown"}]}])
+
+
+def test_native_metadata_is_discarded_in_template_and_each_turn():
+    original = request()
+    gate = RequestGate(encode(dict(original, client_metadata={"session": "synthetic-A"},
+                                  prompt_cache_key="synthetic-cache-A")))
+    for metadata in ({"session": "synthetic-B"}, {"connector": {"invoke": "ignored"}}):
+        candidate = dict(original, client_metadata=metadata, prompt_cache_key="synthetic-cache-B")
+        cleaned = gate.validate("POST", "/v1/responses", encode(candidate))
+        assert json.loads(cleaned) == original
+    candidate["previous_response_id"] = "forbidden-reference"
+    with pytest.raises(Denied):
+        gate.validate("POST", "/v1/responses", encode(candidate))
+
+
+def test_discarded_metadata_still_passes_full_json_checks():
+    gate = RequestGate(encode(request()))
+    for extra in (b'"client_metadata":1,"client_metadata":2',
+                  b'"client_metadata":{"value":NaN}',
+                  b'"prompt_cache_key":"' + b'x' * (1024 * 1024) + b'"'):
+        raw = encode(request())[:-1] + b',' + extra + b'}'
+        with pytest.raises(Denied):
+            gate.validate("POST", "/v1/responses", raw)

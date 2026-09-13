@@ -238,3 +238,15 @@ def test_bound_channel_rejects_concurrent_calls_and_releases_lock_after_failure(
     assert not thread.is_alive()
     assert bound_exchange(channel, wire()).startswith(b"HTTP/1.1 403")
     assert len(calls) == 2
+
+
+def test_bound_channel_strips_native_metadata_before_upstream():
+    seen = []
+    def forward(raw):
+        seen.append(json.loads(raw))
+        return b'data: {"type":"response.completed","response":{"status":"completed","output":[]}}\n\n'
+    channel = AssignmentModelChannel(json.dumps(BODY).encode(), forward)
+    for marker in ("synthetic-turn-A", "synthetic-turn-B"):
+        assert bound_exchange(channel, wire(dict(BODY, client_metadata={"session": marker},
+                              prompt_cache_key=marker))).startswith(b"HTTP/1.1 200")
+    assert seen == [BODY, BODY]

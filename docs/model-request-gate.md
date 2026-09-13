@@ -1061,6 +1061,37 @@ exchanges for cross-assignment opaque-state refusal, incomplete response denial,
 concurrent admission refusal and reuse after a failed call. Illustrative account
 paths, query/path-normalization variants and encoded routes never invoked the
 callback. These were credential-free tests, not provider endpoint enumeration.
-The prior live harness still normalizes native client metadata explicitly; this
-new composition has not yet replaced that harness or undergone a live native
-subscription run. Its strict frozen template does not silently strip metadata.
+At this initial stage the live harness still normalized native metadata itself.
+The subsequent native integration and trial below supersede that limitation.
+
+
+### Native metadata and live packaged-channel trial
+
+The request gate now removes exactly `client_metadata` and `prompt_cache_key`
+from both the approved template and each incoming request. They are not upstream
+inputs or authorization fields. Full size, duplicate-key and nonfinite-JSON
+checks run before removal; all other non-history fields remain frozen. This
+moves the existing lab behavior into the checked library and avoids forwarding
+native per-turn identifiers. Ninety targeted request/channel/response tests pass.
+
+The original pinned Codex client then completed the existing development fixture
+using the repository `AssignmentModelChannel`, real Spark subscription inference,
+public research and the same outside-guest native refresh route. Four requests
+were forwarded, 23 negative model requests were refused, and the native refresh
+and restart preserved account and deadline after the first request. The helper
+recorded exactly one result, with changed retry refused and exact retry recovered.
+Raw upstream header/body diagnostic hooks were removed from the server.
+
+A separate fresh networkless evaluator ran the exact submitted source against ten
+regressions: the candidate passed and the original failed. The coordinator's
+stored source matched the evaluator and worker byte-for-byte. Supervised worker
+cleanup and evaluator overlay removal both passed. See the
+[measured result](research/packaged-channel-subscription-trial-2026-09-13.json)
+and [tested lab server](../scripts/probe_subscription_channel_server.py).
+The evaluator initially stopped before testing because an old AST restriction
+allowed only one function. Removing that shape restriction inside the isolated
+guest admitted the unchanged helper-based candidate; the ten cases, five-second
+execution timeout and VM boundary remained unchanged. The
+[evaluator fixture](../scripts/probe_version_candidate_guest.py) is preserved.
+The complete launcher is still private lab tooling, and this fixture is not proof
+of exhaustive account confinement, broad task compatibility or provider approval.

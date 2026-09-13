@@ -122,13 +122,17 @@ class RequestGate:
     Caller must authorize the template independently, not take the first guest
     request as approval. Trusted template values are also restricted here so it
     cannot accidentally enable hosted tools or remote response references.
+    Native client_metadata and prompt_cache_key are discarded from both sides;
+    they never become provider inputs or authorization fields.
     """
 
     def __init__(self, approved_template: bytes):
         body = _decode(approved_template)
+        for field in ("client_metadata", "prompt_cache_key"):
+            body.pop(field, None)
         _require(set(body) <= {"model", "instructions", "input", "tools", "tool_choice",
                               "parallel_tool_calls", "reasoning", "store", "stream",
-                              "include", "prompt_cache_key", "text", "client_metadata"})
+                              "include", "text"})
         _require(type(body.get("model")) is str and bool(body["model"]))
         _require(body.get("store") is False and body.get("stream") is True)
         _local_tools(body.get("tools"))
@@ -166,6 +170,10 @@ class RequestGate:
         """
         _require(method == "POST" and path == "/v1/responses")
         body = _decode(raw)
+        # Native per-turn identifiers are neither authority nor upstream input.
+        # Decode the entire request first, retaining duplicate/size/JSON checks.
+        for field in ("client_metadata", "prompt_cache_key"):
+            body.pop(field, None)
         history = body.pop("input", None)
         _history(history, self._reasoning)
         _require(json.dumps(body, sort_keys=True, allow_nan=False) == self._template)
