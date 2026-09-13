@@ -466,3 +466,31 @@ passed. See [live crash recovery evidence](research/native-worker-crash-recovery
 This proves one unfinished-assignment restart from original input, not restoration
 of partial work files or recovery after the model gateway/controller/host dies.
 Clean participant installation and broader account/network proofs remain open.
+
+
+## Repository-owned evaluator seed
+
+`python scripts/prepare_version_evaluator.py --candidate "$STORED_SOURCE_JSON"`
+`--output "$NEW_SEED_DIRECTORY" --iso-builder "$APPROVED_ISO_BUILDER"`
+prepares the numeric-version fixture evaluator without executing candidate code.
+The candidate must be a bounded JSON source string extracted from the actual
+coordinator receipt, not substituted from the worker workspace. Existing output
+is refused. Exact source bytes and ISO bytes are hashed in `evaluator.json`.
+
+The guest-only `version_evaluator_guest.py` carries the ten fixed cases and the
+original failing implementation. It must never be run on the host. The manifest's
+network/credential fields are launcher requirements, not enforcement or proof.
+The evaluator launcher must supply no NIC, no provider credentials, fresh isolated
+storage and independent resource/cleanup supervision.
+
+Seven offline checks passed, including candidate-as-data and exact byte retention.
+A real ISO from this builder passed all ten cases in the existing networkless KVM;
+the original failed and the exact stored source hash matched. An initial empty
+network config caused a boot wait; an explicit optional config resolved it without
+adding a NIC. Stopping that initial legacy launcher left its overlay, which was
+removed explicitly. Normal successful cleanup passed. This exposes a remaining
+interrupted-cleanup gap in the legacy evaluator harness.
+
+See [seed extraction evidence](research/repository-evaluator-seed-2026-09-13.json).
+The start/service harness still needs repository packaging and supervised storage;
+this extraction alone is not a participant installer or crash-cleanup guarantee.
