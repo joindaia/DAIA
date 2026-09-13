@@ -374,3 +374,32 @@ the ordinary host network. The script refuses non-loopback network interfaces.
 real client/TLS/CONNECT redirect route, not browser behavior, wire DNS, live
 LAN/VPN isolation or the complete worker deployment. TLS payloads remain opaque
 to the research proxy; account confinement on shared hosts is a separate gate.
+
+
+### Evaluator pass/fail is outside candidate execution
+
+Review found that the previous evaluator imported candidate code into its test
+process and treated exit status zero as success. `sys.exit(0)` could skip the
+assertions. The corrected guest parent invokes each case in a fresh process as
+`nobody` and requires an actual JSON boolean matching the expected value. Empty,
+malformed or incorrect output is rejected. The candidate cannot write the
+root-owned source/checker or serial report endpoint. Candidate code still executes
+only inside a fresh networkless KVM, never on the installation host.
+
+The data fixture `tests/fixtures/evaluator-false-success.json` was built with
+`prepare_version_evaluator.py`, bundled with `prepare_kvm_bundle.py` and run with
+`run_evaluator_lab.py`. A real KVM run rejected it with `Candidate result mismatch`
+and returned failure; cleanup completed. The exact previously stored Codex patch
+was separately evaluated again and passed all ten cases, with the original failing.
+Seven offline preparation/bundle tests passed. No new model request was used.
+See [evidence](research/evaluator-process-separation-2026-09-13.json).
+
+This strengthens the evaluator without rewriting historical results: earlier
+runs did not have this separation. It does not prove general correctness beyond
+the finite cases or protect against guest kernel compromise. Further hostile
+attempts against the report channel and checker remain necessary.
+
+The first positive run failed with QEMU `qemu_thread_create: Resource temporarily
+unavailable` and cleaned up. A new run of the same bundle succeeded without
+raising process, memory or time limits. The resource failure's cause remains
+unproven; it is retained in the evidence and is not counted as a passing test.
