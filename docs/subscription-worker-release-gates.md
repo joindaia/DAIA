@@ -189,3 +189,18 @@ No credentials or running services were involved. [Evidence](research/lab-instal
 This is an actual fresh-root provisioning check, not a full participant install.
 It leaves runtime/image/client provisioning, trusted first login, existing-state
 migration and complete execution under newly installed identities open.
+
+
+## Fresh locked Python environments
+
+At `52fbe20`, two empty runtime destinations were populated from the unchanged
+lockfile with a non-editable DAIA installation. The first required missing cached
+artifacts to be downloaded; the second then completed offline. Both contained
+the same 39 distribution versions. An isolated import and CLI help worked outside
+the checkout. The full source suite in the new runtime passed 596 tests, skipped
+ten integrations/platform checks and emitted one dependency warning (64.10 s).
+
+[Build instructions](../deploy/subscription-lab/README.md) and [evidence](research/clean-locked-runtime-2026-09-13.json) record the exact boundary. The controller still
+uses approved repository/test helpers, and a full VM run on the new runtime has
+not occurred. This removes the need to copy the old Python environment; it is not
+yet complete participant installation or a vulnerability audit.
