@@ -64,14 +64,7 @@ def create(path, binding, *, seconds, requests):
         os.close(directory)
 
 
-def reserve(path, binding):
-    """Durably consume one attempt before forwarding, including failed attempts.
-
-    Call outside the worker and before socket creation. Missing or corrupt state,
-    another boot, expiry and exhaustion all deny. No refund/reset/resume API exists.
-    Parent directory replacement and administrator rollback are outside this
-    boundary; the independently protected controller must prevent them.
-    """
+def _update(path, binding, *, consume):
     fd = None
     try:
         fd = _open(path, os.O_RDWR)
@@ -84,15 +77,36 @@ def reserve(path, binding):
                 or set(record) != {'v', 'binding', 'boot', 'deadline', 'remaining'}
                 or type(record['v']) is not int or record['v'] != 1
                 or not isinstance(binding, str) or not re.fullmatch('[0-9a-f]{64}', binding)
-                or record['binding'] != binding or record['boot'] != _boot()
+                or record['binding'] != binding
                 or type(record['deadline']) not in (int, float)
-                or not math.isfinite(record['deadline']) or _now() >= record['deadline']
-                or type(record['remaining']) is not int or not 0 < record['remaining'] <= 100):
+                or not math.isfinite(record['deadline'])
+                or type(record['remaining']) is not int or not 0 <= record['remaining'] <= 100):
             raise ValueError()
-        record['remaining'] -= 1
+        if consume and (record['boot'] != _boot() or _now() >= record['deadline']
+                        or record['remaining'] == 0):
+            raise ValueError()
+        record['remaining'] = record['remaining'] - 1 if consume else 0
         _write(fd, record)
     except (OSError, ValueError, TypeError):
         raise Denied('Persisted request authority unavailable') from None
     finally:
         if fd is not None:
             os.close(fd)
+
+
+def reserve(path, binding):
+    """Consume durably before forwarding; no reset or automatic recovery.
+
+    Private parent ownership and protection against administrator rollback are
+    prerequisites. Another boot, expiry, exhaustion or invalid state deny.
+    """
+    _update(path, binding, consume=True)
+
+
+def revoke(path, binding):
+    """Permanently exhaust this authority, even if already expired/exhausted.
+
+    Idempotent for a valid matching record. Storage/locking failure is reported;
+    callers must stop live execution independently and must not claim durability.
+    """
+    _update(path, binding, consume=False)

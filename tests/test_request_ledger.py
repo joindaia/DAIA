@@ -82,3 +82,31 @@ def test_wrong_binding_does_not_consume_valid_authority(tmp_path):
     assert path.read_bytes() == before
     ledger.reserve(path, BINDING)
     assert json.loads(path.read_text())['remaining'] == 0
+
+
+def test_revocation_survives_a_fresh_process_and_is_idempotent(tmp_path):
+    path = tmp_path / 'requests.json'
+    ledger.create(path, BINDING, seconds=30, requests=6)
+    ledger.revoke(path, BINDING)
+    ledger.revoke(path, BINDING)
+    worker = child(path); worker.communicate(timeout=10)
+    assert worker.returncode != 0
+    assert json.loads(path.read_text())['remaining'] == 0
+
+
+def test_revocation_of_expired_or_previous_boot_does_not_renew(tmp_path, monkeypatch):
+    path = tmp_path / 'requests.json'
+    ledger.create(path, BINDING, seconds=30, requests=6)
+    original = json.loads(path.read_text())
+    monkeypatch.setattr(ledger, '_boot', lambda: 'different-boot')
+    monkeypatch.setattr(ledger, '_now', lambda: original['deadline'] + 1)
+    ledger.revoke(path, BINDING)
+    assert json.loads(path.read_text()) == {**original, 'remaining': 0}
+
+
+def test_revocation_wrong_binding_preserves_valid_authority(tmp_path):
+    path = tmp_path / 'requests.json'
+    ledger.create(path, BINDING, seconds=30, requests=6)
+    original = path.read_bytes()
+    with pytest.raises(Denied): ledger.revoke(path, 'e' * 64)
+    assert path.read_bytes() == original

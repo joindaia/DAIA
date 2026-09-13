@@ -279,3 +279,46 @@ def test_recreated_https_adapter_cannot_refill_persisted_authority(provider, tmp
     with pytest.raises(Denied, match='Persisted request authority unavailable'):
         binding(provider, requests=6, request_authority=authority)(b'{}')
     assert len(provider[1]['connections']) == len(provider[1]['seen']) == 2
+
+
+@pytest.mark.parametrize('storage_failure', [False, True])
+def test_persisted_revocation_stops_tls_even_when_storage_fails(provider, tmp_path, monkeypatch, storage_failure):
+    import sys
+    if sys.platform != 'linux':
+        pytest.skip('Linux boot-bound request accounting')
+    from daia import request_ledger as ledger
+    path = tmp_path / 'authority.json'
+    identifier = 'd' * 64
+    ledger.create(path, identifier, seconds=30, requests=6)
+    authority = (str(path), identifier)
+    state = provider[1]
+    state.update(framing=[('Transfer-Encoding', 'chunked')], drip=True)
+    adapter = binding(provider, seconds=10, requests=6, request_authority=authority)
+    results = []
+    def request():
+        try: results.append(adapter(b'{}'))
+        except Denied: results.append('denied')
+    thread = threading.Thread(target=request); thread.start()
+    try:
+        assert state['started'].wait(2)
+        if storage_failure:
+            def fail(fd): raise OSError('synthetic storage failure')
+            with monkeypatch.context() as fault:
+                fault.setattr(ledger.os, 'fsync', fail)
+                with pytest.raises(Denied): adapter.revoke()
+            assert adapter.revocation_persisted is False
+        else:
+            adapter.revoke()
+            assert adapter.revocation_persisted is True
+        thread.join(2)
+        assert not thread.is_alive() and results == ['denied']
+        with pytest.raises(Denied): adapter(b'{}')
+        if storage_failure:
+            # No durability claim on failure: explicit retry is required.
+            adapter.revoke()
+            assert adapter.revocation_persisted is True
+        with pytest.raises(Denied):
+            binding(provider, request_authority=authority)(b'{}')
+        assert len(state['seen']) == len(state['connections']) == 1
+    finally:
+        adapter.revoke(); thread.join(2)

@@ -62,6 +62,7 @@ class LocalModelUpstream:
         self._remaining = requests
         self._lock = threading.Lock()
         self._revoked = False
+        self.revocation_persisted = False
         self._active = None
         self.transport_failure = None
 
@@ -80,6 +81,7 @@ class LocalModelUpstream:
             self._secret = secret
 
     def revoke(self) -> None:
+        """Stop local I/O first; report failure to persist configured revocation."""
         with self._lock:
             self._revoked = True
             if self._active is not None:
@@ -87,6 +89,20 @@ class LocalModelUpstream:
                     self._active.shutdown(socket.SHUT_RDWR)
                 except OSError:
                     pass
+
+        if self._request_authority is not None:
+            from .request_ledger import revoke
+            self.revocation_persisted = False
+            revoke(*self._request_authority)
+            self.revocation_persisted = True
+
+    def _expire(self):
+        try:
+            self.revoke()
+        except Denied:
+            # Local I/O is already stopped. A trusted supervisor must check
+            # revocation_persisted before allowing replacement after failure.
+            pass
 
     def __call__(self, body: bytes) -> bytes:
         if type(body) is not bytes or not 0 < len(body) <= 1024 * 1024:
@@ -106,7 +122,7 @@ class LocalModelUpstream:
         conn = http.client.HTTPConnection(self._host, timeout=min(5, left))
         # A socket timeout only limits inactivity; a trickling peer can keep
         # resetting it. Revoke at the assignment deadline even during I/O.
-        watchdog = threading.Timer(left, self.revoke)
+        watchdog = threading.Timer(left, self._expire)
         watchdog.daemon = True
         watchdog.start()
         phase = "connect"

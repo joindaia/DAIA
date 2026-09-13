@@ -482,8 +482,9 @@ introduced. Before enabling recovery, the trusted controller must create the rec
 once, bind its digest to the original assignment/account/template/consent, preserve
 its location and permissions across replacement, supply access to the real boot ID,
 and never silently fall back to no ledger. The worker must have no access to its
-path, creation or replacement. Explicit revocation must remain durable too; current
-ledger tests establish accounting and expiry, not persisted manual revocation.
+path, creation or replacement. Explicit revocation must remain durable too; the initial
+ledger tests established accounting and expiry only; the following section adds
+persisted manual revocation.
 
 Recovery must also retain credential-reflection protection for previously used
 credentials outside the worker, validate original consent, and reconstruct helper
@@ -492,3 +493,33 @@ this ledger rather than translating deadlines or authorizing fresh work. File
 fsync and process-crash tests do not prove storage behaviour under power loss or
 protect against an administrator rolling back the state. These remain explicit
 limits; the full release gate stays open.
+
+
+### Durable revocation before controller recovery
+
+The trusted ledger can now irreversibly set the matching authority's remaining
+allowance to zero. Repeated revocation is safe, including for already expired or
+previous-boot records, without changing their binding or deadline. A different
+binding cannot revoke another record. A fresh process cannot reserve a request
+from the revoked record.
+
+The HTTPS adapter stops its local active socket before attempting persistence.
+A storage or lock failure raises a denial to an explicit caller and leaves
+`revocation_persisted` false. The expiry watchdog also keeps local execution stopped
+on persistence failure; its status must be checked by the trusted supervisor. A
+controller must not treat stopped local I/O as proof of durable revocation, or
+restart another gateway after an unconfirmed write. This does not cancel a request
+already sent by a different gateway process; supervisor termination of the old
+service remains necessary before replacement.
+
+128 targeted tests passed. The new local TLS probes include interruption of a
+continuously streaming response with both successful and failed fsync, denial on
+the original adapter, an explicit persistence retry after the injected failure,
+and refusal by a freshly constructed adapter without a new TLS connection. A
+separate process test verifies that persisted revocation prevents reservation.
+[Evidence](research/persistent-request-revocation-2026-09-13.json).
+
+These are synthetic tests with no external provider calls. The live supervisor
+still does not configure the ledger, and complete controller/host recovery remains
+open. Persisted ledger revocation is local DAIA authority removal, not provider-side
+OAuth token revocation. No broader consent or provider use was introduced.
