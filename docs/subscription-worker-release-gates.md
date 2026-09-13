@@ -46,6 +46,14 @@ Claude, Gemini and local models are not prerequisites.
 These steps do not authorize new spending, outside contact, account sharing,
 provider token pooling, increased consent or weakened security boundaries.
 
+## First launcher extraction
+
+The [restricted KVM start component](kvm-launcher.md) now verifies the base, seed
+and all three bridge digests before disk creation, streams image hashing and
+refuses the host network namespace. A real credential-free boot and negative
+preflight checks passed. This does not yet package service setup, authentication,
+seed generation, disk quotas or receipt recovery.
+
 ## Regression baseline
 
 Full Linux suite at `04523ca`: **546 passed, 10 skipped, one warning**, in 60.93 s.
