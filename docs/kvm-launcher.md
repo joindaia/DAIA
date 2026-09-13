@@ -280,3 +280,28 @@ production authority boundary around the administrator. Task-seed generation,
 initial authentication setup and the independent evaluator still require lab
 preparation. Submissions are harness-driven. The profile, request template,
 private reports and task seed are not published.
+
+
+## Native assignment-tool discovery before live delivery
+
+`probe_codex_assignment_tools.py --binary "$PINNED_NATIVE_CODEX"` uses a clean
+private temporary profile and a synthetic assignment helper with no signing state
+or coordinator. Its loopback model endpoint rejects the first request. The helper
+uses the real `build_assignment_server` declarations but refuses every operation.
+This is a trusted, credential-free discovery probe, not a hostile workload or VM
+test. No provider inference or actual assignment submission takes place.
+
+The pinned native client exposed a local `mcp__daia_assignment` namespace with
+exactly `heartbeat` and `submit_result(artifact, verdict)`. One request was captured,
+zero provider calls occurred, and Codex exited nonzero because inference was
+intentionally denied. The observed definitions are recorded separately as evidence;
+they do not automatically authorize a new production request template.
+
+The request gate accepts an explicitly approved copy of those declarations and
+refuses adding a claim tool, changing the namespace, adding an assignment selector
+or replacing local tools with hosted MCP. Existing live subscription trials still
+use harness-driven delivery. Before combining native MCP with real development,
+the controller and guest relay's 30-second connection lifetime must be reconciled
+with the already authorized task deadline, without renewing consent. Native Codex
+starts MCP during initialization, so a short synthetic submission run does not
+prove that the connection survives a complete research/development task.

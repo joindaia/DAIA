@@ -197,3 +197,29 @@ def test_discarded_metadata_still_passes_full_json_checks():
         raw = encode(request())[:-1] + b',' + extra + b'}'
         with pytest.raises(Denied):
             gate.validate("POST", "/v1/responses", raw)
+
+
+def test_observed_native_assignment_tools_remain_frozen():
+    # Declarations observed with the original pinned client and synthetic helper.
+    from pathlib import Path
+    import copy
+    evidence = json.loads((Path(__file__).resolve().parents[1] /
+        "docs/research/codex-assignment-tool-discovery-2026-09-13.json").read_text())
+    body = request()
+    body["tools"] = [{"type": "namespace", "name": "mcp__daia_assignment",
+                      "tools": evidence["tools"]}]
+    gate = RequestGate(encode(body))
+    assert json.loads(gate.validate("POST", "/v1/responses", encode(body))) == body
+    for mutation in ("new_tool", "destination", "schema", "hosted_mcp"):
+        changed = copy.deepcopy(body)
+        tools = changed["tools"][0]["tools"]
+        if mutation == "new_tool":
+            tools.append({"type": "function", "name": "request_work", "parameters": {}})
+        elif mutation == "destination":
+            changed["tools"][0]["name"] = "mcp__other_account"
+        elif mutation == "schema":
+            tools[1]["parameters"]["properties"]["assignment_id"] = {"type": "string"}
+        else:
+            changed["tools"] = [{"type": "mcp", "server_url": "https://example.org"}]
+        with pytest.raises(Denied):
+            gate.validate("POST", "/v1/responses", encode(changed))
