@@ -94,3 +94,20 @@ This is a fresh service test, not a second VM boot or a resumed DAIA assignment.
 It uses no credentials or model requests. Full assignment/receipt recovery,
 provider binding cleanup and a useful task under the packaged storage profile
 remain integration requirements.
+
+
+## Pending-result persistence before retry
+
+The contributor now saves pending state before every submission attempt, including
+exact retries. Previously, a failed pending-state write could leave the signed
+submission only in memory. Normal recovery saves state, but recovery that ignores
+an unsolicited different assignment returns early; a retry along that path could
+reach submission without a successful pending-state write.
+
+The regression injects persistent storage failure and an unrelated recovered
+assignment. Both attempts must fail before submission; after storage recovers,
+exactly one result is accepted and pending state clears. The test fails against
+the previous implementation at the outbound submission boundary (disk pending is
+null while memory contains the result), and passes with the fix. Relevant local
+suite: 51 passed, two Windows-specific tests skipped. This does not establish
+power-loss durability or replace full VM/assignment recovery integration.

@@ -321,3 +321,48 @@ asyncio.run(host.perform('submit_result',assignment_id=c['assignment'],artifact=
 
     with running_server(build_mcp_app(service)) as url:
         asyncio.run(exercise(url))
+
+
+def test_pending_save_failure_never_allows_unsaved_retry(network, tmp_path, monkeypatch):
+    service, _ = network
+    service.seed()
+    host = direct(Contributor(invite_file(tmp_path, service), clock=service.clock), service)
+
+    async def exercise():
+        lease = await host.perform('request_work')
+        assignment = lease['assignment_id']
+        host.job_authority = approve(host, lease, ['read_input', 'heartbeat', 'submit_result'])
+        save = host.save
+        remote = host.remote
+        attempts = []
+        async def observe(name, **arguments):
+            if name == 'submit_result':
+                import json
+                assert json.loads(host.path.read_text())['pending'] == host.state['pending']
+                attempts.append(name)
+            result = await remote(name, **arguments)
+            if name == 'contribution_status' and host.state['pending']:
+                # Recovery ignores an unsolicited different assignment so the
+                # pending receipt can still be retried; that path does not save.
+                result = copy.deepcopy(result)
+                result['lease'] = {**lease, 'assignment_id': 'f' * 32}
+            return result
+        host.remote = observe
+        def disk_failure():
+            if host.state['pending']:
+                raise OSError('injected storage failure')
+            save()
+        monkeypatch.setattr(host, 'save', disk_failure)
+        for _ in range(2):
+            with pytest.raises(OSError, match='storage failure'):
+                await host.perform('submit_result', assignment_id=assignment,
+                                   artifact='{"factors":[101,103]}', verdict='candidate')
+            assert not attempts
+            assert service.metrics()['results'] == 0
+        monkeypatch.setattr(host, 'save', save)
+        await host.perform('submit_result', assignment_id=assignment,
+                           artifact='{"factors":[101,103]}', verdict='candidate')
+        assert len(attempts) == 1
+        assert service.metrics()['results'] == 1
+        assert host.state['pending'] is None
+    asyncio.run(exercise())

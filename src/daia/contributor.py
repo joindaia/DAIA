@@ -569,7 +569,9 @@ class Contributor:
                 self.state["pending"] = pending
                 self.state['pending_receipt_hash'] = digest(
                     {'envelope': envelope, 'signature': pending['signature']})
-                self.save()
+            # A previous save may have failed after setting pending in memory.
+            # Persist on every attempt before any submission side effect.
+            self.save()
             receipt = await self.remote("submit_result", **pending)
             if self.transport is not None or self.job_authority is not None:
                 receipt = self.model_response(receipt)
