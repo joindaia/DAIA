@@ -230,3 +230,94 @@ def test_source_evidence_receipt_loss_over_http_survives_helper_restart(network,
 
     with running_server(build_mcp_app(service)) as url:
         asyncio.run(exercise(url))
+
+
+def test_source_evidence_receipt_survives_forced_helper_process_death(network, tmp_path):
+    """Kill the real helper after HTTP commit, before local receipt persistence."""
+    import json
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+    import time
+    from daia.mcp_server import build_mcp_app
+    from test_mcp import running_server
+    from test_evidence import document, packet
+
+    service, now = network
+    now[0] = int(time.time())
+    service.admit_evidence(document())
+    ready = tmp_path / 'committed'
+    graceful = tmp_path / 'graceful'
+    config = tmp_path / 'child.json'
+    child = tmp_path / 'child.py'
+    child.write_text("""import asyncio, atexit, json, pathlib, sys
+from daia.contributor import Contributor
+c=json.loads(pathlib.Path(sys.argv[1]).read_text())
+atexit.register(lambda: pathlib.Path(c['graceful']).touch())
+host=Contributor(c['invite'],job_authority=c['authority'])
+remote=host.remote
+async def pause_after_commit(name,**args):
+ result=await remote(name,**args)
+ if name=='submit_result':
+  pathlib.Path(c['ready']).touch()
+  await asyncio.Event().wait()
+ return result
+host.remote=pause_after_commit
+asyncio.run(host.perform('submit_result',assignment_id=c['assignment'],artifact=c['artifact'],verdict='candidate'))
+""")
+
+    async def exercise(url):
+        path = invite_file(tmp_path, service, url, max_jobs=1)
+        host = Contributor(path, minutes=1, clock=service.clock)
+        lease = await host.perform('request_work')
+        assignment = lease['assignment_id']
+        authority = approve(host, lease, ['read_input', 'heartbeat', 'submit_result'])
+        original = {k: host.state[k] for k in ('key', 'used', 'deadline', 'max_jobs')}
+        artifact = packet(lease)
+        config.write_text(json.dumps(dict(invite=str(path), authority=authority,
+                                         assignment=assignment, artifact=artifact,
+                                         ready=str(ready), graceful=str(graceful))))
+        config.chmod(0o600)
+        process = subprocess.Popen([sys.executable, str(child), str(config)],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   env={**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'src')})
+        try:
+            deadline = time.monotonic() + 15
+            while not ready.exists() and time.monotonic() < deadline:
+                assert process.poll() is None, 'helper exited before committed marker'
+                await asyncio.sleep(.02)
+            assert ready.exists(), 'helper did not reach committed response'
+            assert service.metrics()['results'] == 1
+            saved = json.loads(host.path.read_text())
+            assert saved['pending']['artifact'] == artifact
+            assert saved['receipt'] is None
+            process.kill()
+            process.wait(timeout=5)
+            assert process.returncode != 0 and not graceful.exists()
+            if os.name == 'posix':
+                assert process.returncode == -9
+        finally:
+            if process.poll() is None:
+                process.kill(); process.wait(timeout=5)
+
+        now[0] += 301
+        restored = Contributor(path, clock=service.clock, job_authority=authority)
+        with pytest.raises(ValueError, match='exact pending'):
+            await restored.perform('submit_result', assignment_id=assignment,
+                                   artifact=artifact + ' ', verdict='candidate')
+        receipt = await restored.perform('submit_result', assignment_id=assignment,
+                                         artifact=artifact, verdict='candidate')
+        assert receipt['status'] == 'already_recorded'
+        assert service.metrics()['results'] == 1
+        assert {k: restored.state[k] for k in original} == original
+        assert restored.state['pending'] is None
+        assert restored.state['receipt']['receipt_hash'] == receipt['receipt_hash']
+        again = Contributor(path, clock=service.clock, job_authority=authority)
+        assert again.state['receipt'] == restored.state['receipt']
+        assert again.state['pending'] is None
+        with pytest.raises(ValueError, match='scope'):
+            await again.perform('request_work', assignment_id=assignment)
+
+    with running_server(build_mcp_app(service)) as url:
+        asyncio.run(exercise(url))

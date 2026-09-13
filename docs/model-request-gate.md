@@ -924,3 +924,27 @@ not the remaining production gates. A successful ordinary run under this exact
 supervisor wiring, pending-artifact recovery after a hard crash, and in-flight
 live-subscription revocation remain separate acceptance tests. The controller
 harness is still private lab infrastructure rather than a packaged runtime.
+
+
+### Pending receipt recovery after forced helper-process death
+
+A new assignment-host regression kills an actual helper subprocess after its
+HTTP submit has committed at the coordinator but before the response reaches the
+helper's receipt-saving path. The outside test first confirms one stored result,
+an exact pending artifact on disk and no saved receipt. It forcibly kills the
+helper (SIGKILL on the tested POSIX host) and checks that its atexit marker was
+not created. This is process-death evidence, beyond throwing a response-loss
+exception or constructing a new helper object.
+
+After advancing the test clock beyond the original consent window, a fresh
+helper rejects a whitespace-modified artifact and recovers the exact pending
+submission as already_recorded. The coordinator still contains one result; key,
+job usage, deadline and maximum jobs remain unchanged. Pending state is cleared,
+the receipt hash matches, and another helper reload retains that same receipt.
+An assignment-scoped request for new work remains denied. All nine assignment-host
+tests passed, including this new real-process/HTTP crash regression.
+
+This verifies helper pending-state recovery with a surviving coordinator. It does
+not simulate power loss, filesystem corruption, a coordinator database failure,
+or one end-to-end guest recreation following the KVM controller crash. Those
+failure scopes must not be inferred from this narrower, deterministic test.
