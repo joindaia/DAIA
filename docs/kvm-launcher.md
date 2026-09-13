@@ -527,3 +527,26 @@ This replaces the legacy evaluator start path for subsequent lab work. Initial
 service installation, clean participant setup and supervisor/host-crash testing
 remain separate work. A valid guest report is correlation evidence, not by itself
 a general proof that adversarial candidate code is correct.
+
+
+## Development input without an old temporary source fixture
+
+`prepare_subscription_fixture.py` now assembles the public development input from
+`tests/fixtures/subscription-development`. Supply `--template` (operator-approved
+request JSON), `--native` (the pinned Codex and bubblewrap binaries), `--output`
+(a new directory), `--iso-builder` and `--base-sha256` explicitly. Binary hashes
+are checked before construction. The builder performs no login, model request,
+package installation or guest-code execution. These fixture scripts are guest-only.
+
+Pass that new directory as `--source` to `prepare_native_delivery_fixture.py`
+for native MCP delivery. The native builder now reads the source manifest's nonce
+instead of assuming the historical lab nonce. Both ISO builds succeeded with the
+real approved binaries; the native seed hash, single nonce binding, native MCP
+configuration and syntax were checked. No live guest was run in this extraction
+step. The request template remains external operator input and is not published.
+
+Before this extraction, the full suite at `7ad84f5` passed 567 tests with ten
+explicit skips and one dependency deprecation warning in 63.28 seconds. Five
+focused checks passed afterward. See [build evidence](research/repository-development-fixture-2026-09-13.json).
+The next installation work still includes service identities/runtime setup and
+initial trusted-side authentication; new ISO construction is not live readiness.

@@ -14,7 +14,9 @@ repo=Path(__file__).resolve().parents[1];old=args.source;out=args.output
 out.mkdir()  # Never overwrite an existing approved fixture.
 
 data=json.loads((old/'user-data').read_text().split('\n',1)[1]);entry=next(x for x in data['write_files'] if x['path']=='/tmp/probe.py');code=entry['content'];nonce=uuid.uuid4().hex
-code=code.replace('83344227ed564314a89e1589699e29d9',nonce)
+old_nonce=json.loads((old/'config.json').read_text())['nonce']
+if code.count(old_nonce)!=1:raise ValueError('Unexpected source nonce binding')
+code=code.replace(old_nonce,nonce)
 marker="pathlib.Path('/work').mkdir(exist_ok=True)"
 config='\n[mcp_servers.daia_assignment]\ncommand = "/usr/bin/python3"\nargs = ["/opt/assignment-stdio.py"]\nstartup_timeout_sec = 10\ntool_timeout_sec = 10\n[mcp_servers.daia_assignment.tools.heartbeat]\napproval_mode = "approve"\n[mcp_servers.daia_assignment.tools.submit_result]\napproval_mode = "approve"\n'
 code=code.replace(marker,marker+"\nwith (state/'config.toml').open('a') as f:f.write("+repr(config)+")")

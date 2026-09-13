@@ -63,3 +63,12 @@ They are **not** counted as passing in this run. The warning is a dependency's
 AnyIO `BlockingPortal` deprecation. The separately recorded KVM trials are live
 integration evidence; the general suite does not replace them or prove Windows
 support. No current GitHub CI result is asserted by this local measurement.
+
+
+## Updated regression run
+
+At `7ad84f5`, before the development-fixture extraction: **567 passed, 10 skipped,
+one warning**, in 63.28 seconds. The skips retain the native Codex, namespace,
+Windows sharing and Nginx integration boundaries listed above. The warning is
+the same AnyIO dependency deprecation. This is local regression evidence, not
+a current GitHub CI result or completion of the live release gates.
