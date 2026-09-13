@@ -859,3 +859,37 @@ Remaining gates include comprehensive live host/private-network/account negative
 guest restart and crash cleanup across all three channels, provider-side revocation
 semantics, installation hooks, and a reproducible packaged controller. This trial
 does not authorize an open cohort or weaken any existing admission policy.
+
+
+### Controller crash propagation: verified gap and supervisor fix
+
+The combined private harness previously created independently supervised model,
+research, assignment-helper and worker services. Normal Python cleanup stopped
+these, but SIGKILL cannot run atexit handlers. RuntimeMaxSec bounded their eventual
+termination; it did not make them stop when the controller failed. Earlier clean
+shutdown trials must not be treated as evidence of crash propagation.
+
+The credential-free [systemd lifecycle probe](../scripts/probe_job_lifecycle.py)
+reproduced this gap with four live synthetic Unix endpoints. After killing the
+controller main process, all four unbound services remained active. With BindsTo
+and After pointing at the controller, KillMode=control-group, Restart=no and a
+bounded stop timeout, all four endpoints became unreachable and ExecStopPost
+removed their synthetic temporary files in 1.179 seconds. Children deliberately
+ignored SIGTERM and spawned descendants. The probe requires a privileged lab;
+it does not launch a VM, use credentials or prove network isolation.
+
+The private combined-run candidate now requires a dedicated controller unit and
+adds these dependencies to all four transient children. Worker overlay removal
+and research socket deletion have supervisor-side ExecStopPost actions. The
+controller's own unit must also clean its assignment endpoint and private
+credential-handoff files; those parent-owned files are not automatically removed
+by child dependencies. Never delete the persistent contributor state needed for
+pending-result recovery as part of disposable worker cleanup.
+
+This candidate has been syntax-checked, not yet run through a hard-crash KVM test.
+The next acceptance run must terminate the actual controller without Python
+cleanup, observe QEMU and all service cgroups terminate, verify model/research/
+assignment endpoints are inaccessible and ensure the disposable overlay is gone.
+Use synthetic credentials and no paid model requests for that destructive probe.
+Test ordinary success separately after wiring the supervisor. The open cohort
+and production-controller gates remain closed pending this evidence.
