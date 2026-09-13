@@ -8,7 +8,7 @@ Inputs are trusted operator files, never worker-selected paths or configuration.
 """
 import atexit,signal,select,asyncio,json,os,pathlib,pwd,subprocess,sys,tempfile,shutil,socket,selectors,time,threading,uuid
 import re
-from subscription_lab_outcome import outcome, write_outcome
+from subscription_lab_outcome import outcome, write_outcome, new_run_directory
 parent_unit=os.environ.get('DAIA_CONTROLLER_UNIT','')
 if not re.fullmatch(r'daia-controller-job-[a-f0-9]{32}\.service',parent_unit):
  raise SystemExit('Run inside a dedicated DAIA controller systemd unit.')
@@ -144,12 +144,15 @@ for _ in range(100):
  time.sleep(.05)
 assert (researchdir/'gateway.sock').exists()
 
-private=pathlib.Path(tempfile.mkdtemp(prefix='daia-assignment-private-'));private.chmod(0o700)
-coordinator_dir=pathlib.Path(tempfile.mkdtemp(prefix='daia-network-private-'))
+run_state=new_run_directory(root/'runs')
+private=run_state/'assignment';coordinator_dir=run_state/'coordinator'
+write_outcome('/run/daia-subscription-run.json',{'state_directory':str(run_state), 'automatic_resume_authorized':False})
 service=Coordinator(Store(str(coordinator_dir/'network.sqlite3')));service.admit_evidence({'objective': 'Find the numeric-version comparison bug in this frozen public fixture.', 'baseline_commit': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'source': {'path': 'src/version_check.py', 'start_line': 1, 'text': 'def newer(a, b): return a > b\n'}})
 with running_server(build_mcp_app(service)) as url:
  invite=invite_file(private,service,url);host=direct(Contributor(invite,minutes=5),service)
- lease=asyncio.run(host.perform('request_work'));before={k:host.state[k] for k in ['key','used','deadline','max_jobs']}
+ lease=asyncio.run(host.perform('request_work'))
+ write_outcome(run_state/'run.json',{'assignment_id':lease['assignment_id'], 'automatic_resume_authorized':False})
+ before={k:host.state[k] for k in ['key','used','deadline','max_jobs']}
  # Freeze before helper/VM startup. Neither connection nor heartbeat resets it.
  remaining=min(150,lease['hard_deadline']-host.clock(),host.state['deadline']-host.clock())
  if remaining<=0:raise RuntimeError('Assignment transport already expired')

@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-13",
+  "scope": "Live subscription lab run with private assignment and coordinator data under persistent lab root",
+  "coordinator_and_helper_receipt_match": true,
+  "pending_cleared": true,
+  "state_outside_temporary_directories": true,
+  "private_modes": true,
+  "automatic_resume_authorized": false,
+  "state_retained_after_controller_exit": true,
+  "focused_tests": 16,
+  "host_reboot_performed": false,
+  "limits": [
+    "No automatic recovery, consent extension or model budget reconstruction",
+    "Existing temporary runs not migrated",
+    "Backup and retention policy not yet implemented"
+  ],
+  "worker_completed": true,
+  "delivery": "acknowledged",
+  "failure_path_export_verified": false
+}

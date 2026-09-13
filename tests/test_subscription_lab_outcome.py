@@ -35,3 +35,27 @@ def test_stored_pending_does_not_authorize_replay():
     assert result['automatic_retry_authorized'] is False
     saved['pending']['assignment_id'] = 'c'*32
     assert outcome(saved, ROW)['delivery'] == 'unconfirmed'
+
+
+def test_persistent_runs_are_distinct_and_private(tmp_path):
+    root = tmp_path / 'runs'
+    first = scope['new_run_directory'](root)
+    write(first / 'assignment' / 'outcome.json', {'worker_completed': False})
+    second = scope['new_run_directory'](root)
+    assert first != second
+    assert json.loads((first / 'assignment' / 'outcome.json').read_text()) == {'worker_completed': False}
+    for p in (root, first, second, first / 'assignment', first / 'coordinator'):
+        assert p.stat().st_mode & 0o077 == 0
+    assert list((second / 'assignment').iterdir()) == []
+
+
+def test_shared_or_symlink_state_root_refused(tmp_path):
+    import pytest
+    root = tmp_path / 'shared'; root.mkdir(mode=0o755)
+    with pytest.raises(ValueError, match='Private operator'):
+        scope['new_run_directory'](root)
+    target = tmp_path / 'private'; target.mkdir(mode=0o700)
+    link = tmp_path / 'link'; link.symlink_to(target)
+    with pytest.raises(ValueError, match='Private operator'):
+        scope['new_run_directory'](link)
+    assert list(root.iterdir()) == list(target.iterdir()) == []

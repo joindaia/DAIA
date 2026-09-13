@@ -598,3 +598,29 @@ provider call or resubmission occurred. Fifty-five focused tests passed and two
 Windows file-sharing checks were skipped. See [outcome evidence](research/incomplete-run-outcome-2026-09-13.json).
 The integrated failure path still needs a fresh live test. Automatic recovery and
 reboot-safe state retention remain separate work; this exporter grants neither.
+
+
+## Persistent per-run lab state
+
+New controller runs allocate a fresh private directory beneath
+`/var/lib/daia-lab/runs`, with separate assignment and coordinator subdirectories.
+The state root must be operator-owned, private and not a symlink. Existing runs
+are never reused or migrated. A private atomic `run.json` binds the run to its
+assignment and explicitly denies automatic resume; the current-run reference in
+`/run` is only a convenience pointer. The helper sees its assignment directory
+through the existing private service mount. Worker storage remains disposable.
+
+Sixteen focused checks passed. A real native subscription run completed in five
+model requests, retained one acknowledged result and cleaned up the worker and
+credential handoffs. After controller exit, the persisted coordinator assignment
+and helper receipt matched, pending state was clear and filesystem modes remained
+private. See [persistent state evidence](research/persistent-lab-state-2026-09-13.json).
+The new outcome export's failure branch was not exercised by this successful run.
+This trial checks storage and delivery; it adds no separate correctness claim for
+its newly generated artifact.
+
+A host reboot was not performed. This removes dependence on temporary directories
+for new lab assignment state, but does not implement service restart, coordinator
+endpoint restoration, reconstruction of an expiring model budget, or renewed
+consent. Backup, retention and cleanup of accumulated private runs still need an
+explicit implementation. No automatic work is authorized by a retained record.
