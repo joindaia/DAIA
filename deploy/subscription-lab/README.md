@@ -178,3 +178,27 @@ A fresh two-stage build was used in the real subscription run recorded in
 This still reuses the trusted native binaries, ISO utility, base image, host
 services, approved template and participant login. Their acquisition and the
 complete fresh-host installation remain separate release requirements.
+
+
+## Installed runtime vulnerability audit
+
+Run the audit tool separately from the worker runtime, without `--fix`:
+
+```sh
+uv tool run --from pip-audit==2.10.1 pip-audit \
+  --path "$DAIA_RUNTIME_DEST/lib/python3.12/site-packages" \
+  --format json --desc off --output "$DAIA_AUDIT_REPORT" --progress-spinner off
+```
+
+Inspect JSON skips as well as the exit status. The tested 31-package runtime
+contained 30 external packages with no published vulnerabilities reported by
+PyPI on 2026-09-13. Only the local `daia-coordinator` package was skipped because
+it is not available from PyPI. The full audit name set matched installed metadata,
+and all installed name/version pairs matched `uv.lock`. Runtime packages were not
+modified. [Full scoped evidence](../../docs/research/subscription-runtime-advisory-audit-2026-09-13.json)
+includes the exact lock digest and versions.
+
+This is a dated advisory lookup, not a source review or assurance against unknown
+vulnerabilities. Repeat before release. Host/guest OS packages, native binaries,
+optional extras and the website need separate checks. Tool behavior and limits
+are documented by [PyPA pip-audit](https://github.com/pypa/pip-audit).

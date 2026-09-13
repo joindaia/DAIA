@@ -422,3 +422,14 @@ that their tests passed. It strengthens the finite permission-boundary evidence;
 it does not establish kernel security, exhaustive report-channel enumeration or
 the complete research-enabled worker boundary. Seven preparation/bundle tests
 also passed; pytest could not write its cache in the read-only test invocation.
+
+
+### Installed Python runtime advisory audit
+
+The separately installed pip-audit 2.10.1 checked the actual no-dev subscription
+runtime using PyPI advisories: 30 external distributions, zero reported known
+vulnerabilities. The local DAIA distribution was explicitly skipped. Every
+installed name appeared in the report and every installed version matched the
+lock. No runtime dependency was changed. See [audit evidence](research/subscription-runtime-advisory-audit-2026-09-13.json).
+This closes only this dated Python-runtime lookup; source review, other software
+layers and a fresh pre-release audit remain required.

@@ -1,0 +1,182 @@
+{
+  "date": "2026-09-13",
+  "base_commit": "f6ad0bc",
+  "tool": "pip-audit",
+  "tool_version": "2.10.1",
+  "advisory_service": "PyPI",
+  "lock_sha256": "f0520969c2ad850cc9103874ed0dd7b443082af0a9308124a2d4f879f9cc7c3d",
+  "installed_distributions": 31,
+  "external_distributions_audited": 30,
+  "runtime_matches_lock": true,
+  "audit_covers_all_installed_names": true,
+  "known_vulnerabilities_reported": 0,
+  "skipped_local_project": [
+    "daia-coordinator"
+  ],
+  "runtime_packages_changed": false,
+  "audit": {
+    "dependencies": [
+      {
+        "name": "annotated-doc",
+        "version": "0.0.5",
+        "vulns": []
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "vulns": []
+      },
+      {
+        "name": "anyio",
+        "version": "4.15.1",
+        "vulns": []
+      },
+      {
+        "name": "attrs",
+        "version": "26.1.0",
+        "vulns": []
+      },
+      {
+        "name": "cffi",
+        "version": "2.1.1",
+        "vulns": []
+      },
+      {
+        "name": "click",
+        "version": "8.5.0",
+        "vulns": []
+      },
+      {
+        "name": "cryptography",
+        "version": "50.0.1",
+        "vulns": []
+      },
+      {
+        "name": "daia-coordinator",
+        "skip_reason": "Dependency not found on PyPI and could not be audited: daia-coordinator (0.1.0)"
+      },
+      {
+        "name": "fastapi",
+        "version": "0.141.1",
+        "vulns": []
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0",
+        "vulns": []
+      },
+      {
+        "name": "httpcore2",
+        "version": "2.12.0",
+        "vulns": []
+      },
+      {
+        "name": "httpx2",
+        "version": "2.12.0",
+        "vulns": []
+      },
+      {
+        "name": "idna",
+        "version": "3.19",
+        "vulns": []
+      },
+      {
+        "name": "jsonschema",
+        "version": "4.26.0",
+        "vulns": []
+      },
+      {
+        "name": "jsonschema-specifications",
+        "version": "2025.9.1",
+        "vulns": []
+      },
+      {
+        "name": "mcp",
+        "version": "2.2.0",
+        "vulns": []
+      },
+      {
+        "name": "mcp-types",
+        "version": "2.2.0",
+        "vulns": []
+      },
+      {
+        "name": "opentelemetry-api",
+        "version": "1.44.0",
+        "vulns": []
+      },
+      {
+        "name": "pycparser",
+        "version": "3.0",
+        "vulns": []
+      },
+      {
+        "name": "pydantic",
+        "version": "2.13.5",
+        "vulns": []
+      },
+      {
+        "name": "pydantic-core",
+        "version": "2.46.5",
+        "vulns": []
+      },
+      {
+        "name": "pyjwt",
+        "version": "2.13.0",
+        "vulns": []
+      },
+      {
+        "name": "python-multipart",
+        "version": "0.0.32",
+        "vulns": []
+      },
+      {
+        "name": "referencing",
+        "version": "0.37.0",
+        "vulns": []
+      },
+      {
+        "name": "rpds-py",
+        "version": "2026.6.3",
+        "vulns": []
+      },
+      {
+        "name": "sse-starlette",
+        "version": "3.4.11",
+        "vulns": []
+      },
+      {
+        "name": "starlette",
+        "version": "1.6.0",
+        "vulns": []
+      },
+      {
+        "name": "truststore",
+        "version": "0.10.4",
+        "vulns": []
+      },
+      {
+        "name": "typing-extensions",
+        "version": "4.16.0",
+        "vulns": []
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4",
+        "vulns": []
+      },
+      {
+        "name": "uvicorn",
+        "version": "0.52.4",
+        "vulns": []
+      }
+    ],
+    "fixes": []
+  },
+  "limitations": [
+    "Point-in-time published-advisory lookup, not proof of absence of vulnerabilities",
+    "DAIA source, host OS, QEMU, guest OS, native Codex/bwrap and ISO builder not audited here",
+    "Optional development/postgres and website dependencies outside this installed runtime are not covered",
+    "Audit tool installed separately, not added to worker runtime"
+  ]
+}
