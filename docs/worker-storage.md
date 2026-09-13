@@ -111,3 +111,28 @@ the previous implementation at the outbound submission boundary (disk pending is
 null while memory contains the result), and passes with the fix. Relevant local
 suite: 51 passed, two Windows-specific tests skipped. This does not establish
 power-loss durability or replace full VM/assignment recovery integration.
+
+
+## Trusted controller receipt recovery
+
+After the old helper has stopped, the controller can use the existing private
+invite and authority files with:
+
+```sh
+python -m daia.contributor --invite "$INVITE" --job-authority "$AUTHORITY"   --recover-pending "$ASSIGNMENT"
+```
+
+This one-shot command takes the normal exclusive contributor lock, requires an
+existing registered identity and exact pending assignment, and retries only the
+saved artifact/verdict through the existing signature and receipt checks. It does
+not launch a model, claim work, renew consent or expose additional worker MCP tools.
+It refuses stopped/releasing state, missing pending state and a different assignment.
+Only a fixed success message is printed, not private state or artifact content.
+
+The forced-helper-death test now exercises both library and real CLI recovery over
+HTTP after the coordinator commits but before the helper saves its receipt. A wrong
+assignment leaves state unchanged. Correct recovery keeps one result and the
+original identity/consent; a second CLI invocation refuses rather than starting a
+generic MCP server. Local relevant suite: 52 passed, two Windows-specific skips.
+This covers already persisted signed results; work lost before submission still
+requires fresh-VM task recovery. Full supervisor integration remains outstanding.

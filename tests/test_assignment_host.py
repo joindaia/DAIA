@@ -232,7 +232,8 @@ def test_source_evidence_receipt_loss_over_http_survives_helper_restart(network,
         asyncio.run(exercise(url))
 
 
-def test_source_evidence_receipt_survives_forced_helper_process_death(network, tmp_path):
+@pytest.mark.parametrize('recovery', ['library', 'controller'])
+def test_source_evidence_receipt_survives_forced_helper_process_death(network, tmp_path, recovery):
     """Kill the real helper after HTTP commit, before local receipt persistence."""
     import json
     import os
@@ -306,8 +307,31 @@ asyncio.run(host.perform('submit_result',assignment_id=c['assignment'],artifact=
         with pytest.raises(ValueError, match='exact pending'):
             await restored.perform('submit_result', assignment_id=assignment,
                                    artifact=artifact + ' ', verdict='candidate')
-        receipt = await restored.perform('submit_result', assignment_id=assignment,
-                                         artifact=artifact, verdict='candidate')
+        if recovery == 'controller':
+            authority_path = tmp_path / 'authority.json'
+            authority_path.write_text(json.dumps(authority))
+            command = [sys.executable, '-m', 'daia.contributor', '--invite', str(path),
+                       '--job-authority', str(authority_path), '--recover-pending']
+            environment = {**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'src')}
+            before_refusal = path.with_suffix('.contributor.json').read_bytes()
+            wrong = subprocess.run(command + ['f' * 32], env=environment,
+                                   capture_output=True, text=True, timeout=15)
+            assert wrong.returncode == 1 and not wrong.stdout
+            assert path.with_suffix('.contributor.json').read_bytes() == before_refusal
+            completed = subprocess.run(command + [assignment], env=environment,
+                                       capture_output=True, text=True, timeout=15)
+            assert completed.returncode == 0, completed.stderr
+            assert completed.stdout == 'DAIA pending receipt recovered.\n'
+            restored = Contributor(path, clock=service.clock, job_authority=authority)
+            receipt = restored.state['receipt']
+            # Repeating the controller action does not start a generic MCP host
+            # or claim work once pending state has been cleared.
+            again_cli = subprocess.run(command + [assignment], env=environment,
+                                       capture_output=True, text=True, timeout=15)
+            assert again_cli.returncode == 1 and not again_cli.stdout
+        else:
+            receipt = await restored.perform('submit_result', assignment_id=assignment,
+                                             artifact=artifact, verdict='candidate')
         assert receipt['status'] == 'already_recorded'
         assert service.metrics()['results'] == 1
         assert {k: restored.state[k] for k in original} == original

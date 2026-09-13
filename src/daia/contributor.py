@@ -667,13 +667,16 @@ def main():
     operation.add_argument("--migrate-endpoint", type=Path, help="Operator-only endpoint JSON; preserve saved identity and consent")
     operation.add_argument("--switch-back-endpoint", action="store_true", help="Verify and return to the previous endpoint without rolling back work")
     operation.add_argument("--assignment", help="Serve only heartbeat and submission for an existing assignment")
+    operation.add_argument("--recover-pending", metavar="ASSIGNMENT", help="Trusted controller: retry only saved signed result for this assignment")
     parser.add_argument("--until", type=int, help="Absolute approved consent deadline for --accept-grant")
     parser.add_argument("--additional-jobs", type=int)
     parser.add_argument("--project", type=Path, default=Path.cwd())
     args = parser.parse_args()
-    if args.assignment is not None and (len(args.assignment) != 32
-            or any(c not in '0123456789abcdef' for c in args.assignment)):
-        parser.error('--assignment requires an exact assignment ID')
+    scope = args.assignment if args.assignment is not None else args.recover_pending
+    if scope is not None and (len(scope) != 32
+            or any(c not in '0123456789abcdef' for c in scope)):
+        parser.error('--assignment requires an exact assignment ID' if args.assignment is not None
+                     else '--recover-pending requires an exact assignment ID')
     if args.accept_grant != (args.until is not None):
         parser.error("--accept-grant and --until must be used together")
     if args.renew_consent and args.additional_jobs is None:
@@ -686,14 +689,26 @@ def main():
             configure(args.project, invite, args.max_jobs, args.minutes, job_authority=args.job_authority)
             return
         authority = load_job_authority(args.job_authority) if args.job_authority else None
-        if args.assignment and authority is None:
+        if scope and authority is None:
             raise ValueError('Assignment host requires job authority')
         with exclusive_host(invite.with_suffix(".contributor.lock")):
-            if (args.accept_grant or args.migrate_endpoint or args.switch_back_endpoint or args.assignment) and not invite.with_suffix(".contributor.json").is_file():
+            if (args.accept_grant or args.migrate_endpoint or args.switch_back_endpoint or scope) and not invite.with_suffix(".contributor.json").is_file():
                 raise ValueError("Existing contributor identity required")
             host = Contributor(invite, args.max_jobs, args.minutes,
-                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint or args.assignment),
+                               save_on_load=not (args.migrate_endpoint or args.switch_back_endpoint or scope),
                                job_authority=authority)
+            if args.recover_pending is not None:
+                host.check_assignment_scope(scope)
+                pending = host.state['pending']
+                if (not host.state['registered'] or not pending or host.state['stopped']
+                        or host.state.get('releasing')):
+                    raise ValueError('Existing pending submission required')
+                asyncio.run(host.perform('submit_result', assignment_id=scope,
+                                         artifact=pending['artifact'], verdict=pending['verdict']))
+                if host.state['pending'] is not None or host.state['receipt'] is None:
+                    raise ValueError('Receipt recovery incomplete')
+                print('DAIA pending receipt recovered.')
+                return
             if args.migrate_endpoint or args.switch_back_endpoint:
                 config = strict_json(args.migrate_endpoint.read_text(encoding="utf-8")) if args.migrate_endpoint else None
                 directory = args.migrate_endpoint.resolve().parent if args.migrate_endpoint else None
