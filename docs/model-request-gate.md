@@ -893,3 +893,34 @@ assignment endpoints are inaccessible and ensure the disposable overlay is gone.
 Use synthetic credentials and no paid model requests for that destructive probe.
 Test ordinary success separately after wiring the supervisor. The open cohort
 and production-controller gates remain closed pending this evidence.
+
+
+### Hard controller crash with a real KVM and three channels
+
+The bound-run candidate passed an external crash test. A fresh KVM booted with
+only synthetic model credentials. The guest obtained explicit refusal responses
+from the model and research endpoints and successfully initialized the scoped
+assignment helper, then remained running. No model request or provider refresh
+was attempted; model egress was denied and the research allowlist was empty.
+
+Before the crash, the outside observer verified that all four child services were
+active, the five service cgroups were populated, one actual QEMU process existed
+in the worker cgroup, the overlay existed and all three socket paths existed.
+It then killed only the controller main process with SIGKILL. Within 0.105 seconds
+all five cgroups were empty, connection attempts to every endpoint failed, and
+the overlay and transient handoff paths were absent. An atexit marker was absent,
+confirming Python cleanup had not run. See the
+[bounded record](research/kvm-controller-crash-2026-09-13.json).
+
+The tested arrangement uses BindsTo plus After on all children, control-group
+termination and bounded stop timeouts. The worker has supervisor-side overlay
+removal; model/research services remove their sockets. The controller unit's
+ExecStopPost removes its assignment socket and transient credential handoffs.
+Persistent contributor state is retained for recovery, not erased alongside the
+VM. This distinction is required even when the controller cannot run cleanup.
+
+This supersedes the earlier missing hard-crash evidence for the lab candidate,
+not the remaining production gates. A successful ordinary run under this exact
+supervisor wiring, pending-artifact recovery after a hard crash, and in-flight
+live-subscription revocation remain separate acceptance tests. The controller
+harness is still private lab infrastructure rather than a packaged runtime.

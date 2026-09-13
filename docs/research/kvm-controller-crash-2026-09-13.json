@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-13",
+  "real_kvm_guest_ready": true,
+  "guest_verified_three_endpoints": true,
+  "synthetic_credentials_only": true,
+  "model_requests": 0,
+  "controller_killed_with_sigkill": true,
+  "python_cleanup_not_run": true,
+  "all_five_cgroups_empty": true,
+  "all_three_endpoints_unreachable": true,
+  "overlay_removed": true,
+  "transient_handoffs_removed": true,
+  "termination_seconds": 0.105,
+  "tested_services": [
+    "controller",
+    "model adapter",
+    "public research",
+    "assignment helper",
+    "KVM worker"
+  ],
+  "limitations": [
+    "Credential-free crash fixture; no live subscription request in flight",
+    "Private lab controller not production packaged",
+    "Does not establish artifact recovery after crash",
+    "Normal successful execution under new supervisor wiring still to verify"
+  ]
+}
