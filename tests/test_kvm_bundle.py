@@ -43,10 +43,11 @@ def test_failed_launch_exports_only_bounded_private_diagnostics(tmp_path):
     import subprocess
     import sys
     bundle = tmp_path / 'bundle'; bundle.mkdir()
-    (bundle / 'launcher.py').write_text("from pathlib import Path\nPath('serial.txt').write_bytes(b'DAIA_NATIVE_FAILURE synthetic error\\n'+b'x'*20000)\nraise SystemExit(1)\n")
+    (bundle / 'launcher.py').write_text("from pathlib import Path\nassert not any(Path.cwd().iterdir()), 'Working directory must remain empty'\nPath('serial.txt').write_bytes(b'DAIA_NATIVE_FAILURE synthetic error\\n'+b'x'*20000)\nraise ValueError('Guest correlation result missing')\n")
+    work = tmp_path / 'work'; work.mkdir()
     wrapper = Path(__file__).parents[1] / 'scripts/run_kvm_lab_report.py'
     result = subprocess.run([sys.executable, '-I', str(wrapper), '--bundle', str(bundle)],
-                            cwd=tmp_path, capture_output=True, text=True, timeout=5)
+                            cwd=work, capture_output=True, text=True, timeout=5)
     assert result.returncode == 1 and not result.stderr
     report = json.loads(result.stdout)
     assert report['ok'] is False
@@ -54,3 +55,5 @@ def test_failed_launch_exports_only_bounded_private_diagnostics(tmp_path):
     assert len(report['untrusted_failure_context'].encode()) <= 8192
     assert report['untrusted_diagnostics']['serial.txt'] == 'x' * 4096
     assert report['untrusted_diagnostics']['stderr.txt'] == ''
+    assert 'Guest correlation result missing' in report['untrusted_diagnostics']['launcher-error.txt']
+    assert len(report['untrusted_diagnostics']['launcher-error.txt'].encode()) <= 4096

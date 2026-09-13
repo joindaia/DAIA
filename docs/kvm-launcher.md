@@ -418,3 +418,25 @@ This closes the committed-but-unacknowledged receipt case after actual native
 worker failure. It does not yet prove resuming unfinished research or development
 in a newly created guest, retaining partial artifacts, or preserving the remaining
 model budget across that restart. Those remain separate release gates.
+
+
+## Experimental unfinished-worker crash probe
+
+Use `--native-delivery --crash-before-first-response` only in the configured lab.
+The trusted controller kills the first worker after a real provider response but
+before delivery. The replacement uses the same assignment and live model gateway,
+a fresh work directory and helper, and the original transport deadline. The six
+request limit is not reset. Missing crash acknowledgement revokes the binding.
+This is a fault injector, not general checkpoint recovery.
+
+The [recorded attempt](research/native-worker-crash-attempt-2026-09-13.json)
+obtained a native submission and exact retry but lacked a valid final report.
+It remains incomplete and its stored artifact has not been independently tested.
+Launcher diagnostics were previously discarded. The initial diagnostic fix wrote
+into the required empty work directory, causing two early failures with supervised
+cleanup. Anonymous temporary storage now avoids that conflict; early failures
+are retained too. Export is limited to 4096 bytes of private launcher diagnostics.
+Four focused checks pass, including the empty-directory invariant; a live run of
+this correction is still required. The earlier broader run passed 34 checks.
+Complete restart reporting, independent artifact evaluation, partial workspace
+recovery and controller/host reboot recovery remain open.

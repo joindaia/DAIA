@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 for name in ("guest", "request-template", "auth-home", "codex-binary", "python-runtime"):
     parser.add_argument("--" + name, type=Path, required=True)
 parser.add_argument("--native-delivery", action="store_true")
+parser.add_argument("--crash-before-first-response", action="store_true")
 args = parser.parse_args()
 if os.geteuid() != 0:
     parser.error("Requires the preconfigured lab administrator.")
@@ -27,7 +28,7 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
         "gateway.sock", "model.sock", "subscription-auth.json",
         "rotation-credential.json", "rotation-credential.tmp", "rotation-request",
         "subscription-provider-headers.json", "subscription-provider-error.json",
-        "subscription-request.json",
+        "subscription-request.json", "crash-before-first-response", "crash-ready",
     )] + ["/run/daia-research/gateway.sock"]
     if any(Path(p).exists() for p in paths[:2] + paths[-1:]):
         raise SystemExit("Lab endpoint exists; inspect its owner before starting.")
@@ -43,8 +44,8 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
         str(repo / "scripts/run_subscription_lab_controller.py"),
     ]
     for name, value in vars(args).items():
-        if name == "native_delivery":
-            if value: command += ["--native-delivery"]
+        if name in ("native_delivery", "crash_before_first_response"):
+            if value: command += ["--" + name.replace("_", "-")]
             continue
         command += ["--" + name.replace("_", "-"), str(value)]
     try:

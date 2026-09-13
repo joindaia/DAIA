@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 
 def tail(path, limit=4096):
@@ -47,10 +48,19 @@ def main():
     args = parser.parse_args()
     bundle = Path(args.bundle)
     failure = 'launcher_failed'
+    launcher_error = ''
     try:
-        result = subprocess.run([sys.executable, '-I', str(bundle / 'launcher.py'),
-                                 '--bundle', str(bundle)], timeout=195,
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Anonymous storage in the service's quota-limited /tmp leaves the
+        # launcher's required fresh working directory empty.
+        with tempfile.TemporaryFile(dir='/tmp') as errors:
+            try:
+                result = subprocess.run([sys.executable, '-I', str(bundle / 'launcher.py'),
+                                         '--bundle', str(bundle)], timeout=195,
+                                        stdout=subprocess.DEVNULL, stderr=errors)
+            finally:
+                errors.seek(0, 2)
+                errors.seek(max(0, errors.tell() - 4096))
+                launcher_error = errors.read(4096).decode('utf-8', errors='replace')
         if result.returncode == 0:
             with Path('report.json').open('rb') as stream:
                 raw = stream.read(9 * 1024 * 1024 + 1)
@@ -65,8 +75,8 @@ def main():
         failure = 'report_or_launch_error'
     print(json.dumps({'ok': False, 'failure': failure,
                       'untrusted_failure_context': failure_context(Path('serial.txt')),
-                      'untrusted_diagnostics': {name: tail(Path(name))
-                                                for name in ('stderr.txt', 'serial.txt')}}))
+                      'untrusted_diagnostics': {'launcher-error.txt': launcher_error,
+                          **{name: tail(Path(name)) for name in ('stderr.txt', 'serial.txt')}}}))
     return 1
 
 

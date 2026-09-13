@@ -27,7 +27,9 @@ parser=argparse.ArgumentParser(description=__doc__)
 for name in ('guest','request-template','auth-home','codex-binary','python-runtime'):
  parser.add_argument('--'+name,type=pathlib.Path,required=True)
 parser.add_argument('--native-delivery',action='store_true')
+parser.add_argument('--crash-before-first-response',action='store_true')
 options=parser.parse_args()
+if options.crash_before_first_response and not options.native_delivery:parser.error('Crash probe requires native delivery')
 # Trusted inputs only. This controller creates no service identities or login.
 assert os.geteuid()==0
 for value in (v for v in vars(options).values() if isinstance(v,pathlib.Path)):
@@ -47,6 +49,8 @@ wrapper=bundle/'report-wrapper.py'
 for a,b in [(source/'seed.iso',p/'network-seed.iso'),(source/'config.json',p/'network-config.json'),(source/'probe.py',p/'network-probe.py'),(bundle/'bridge.py',p/'bridge.py')]:shutil.copyfile(a,b);b.chmod(0o444)
 rundir=pathlib.Path('/run/daia-lab');endpoint=rundir/'gateway.sock';assert not endpoint.exists()
 import ipaddress
+for name in ('crash-before-first-response','crash-ready'):(rundir/name).unlink(missing_ok=True)
+if options.crash_before_first_response:(rundir/'crash-before-first-response').touch(mode=0o600)
 model_socket=rundir/'model.sock';assert not model_socket.exists()
 gateway=pwd.getpwnam('daia-egress')
 shutil.copyfile(bundle/'model-bridge.py',p/'model-bridge.py');(p/'model-bridge.py').chmod(0o444)
@@ -210,8 +214,57 @@ with running_server(build_mcp_app(service)) as url:
   props['TemporaryFileSystem']=str(job)+':'+mount_options('512M',4096)+' '+' '.join(n+':'+mount_options('16M',256) for n in ('/tmp','/var/tmp','/dev/shm'))
   props['PrivateIPC']='yes';props['MemorySwapMax']='0';props['TasksMax']='64'
   for k,v in props.items():args+=['-p',k+'='+v]
+  crash_info={};crash_stop=threading.Event()
+  first_unit=unit
+  def crash_worker():
+   while not crash_stop.wait(.02):
+    if (rundir/'crash-ready').exists():
+     killed=subprocess.run(['systemctl','kill','--signal=SIGKILL','--kill-whom=all',first_unit],capture_output=True,timeout=5)
+     crash_info['kill_succeeded']=killed.returncode==0
+     (rundir/'crash-before-first-response').unlink(missing_ok=True)
+     return
+  crash_thread=None
+  if options.crash_before_first_response:
+   crash_thread=threading.Thread(target=crash_worker,daemon=True);crash_thread.start()
   try:
    r=subprocess.run(dependent(args)+['/usr/bin/python3','-I',str(wrapper),'--bundle',str(bundle)],capture_output=True,timeout=220)
+   if options.crash_before_first_response:
+    crash_stop.set();crash_thread.join(6)
+    if r.returncode==0 or not crash_info.get('kill_succeeded'):
+     fd=os.open('/run/daia-subscription-failure-private.json',os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
+     with os.fdopen(fd,'wb') as capture:capture.write(r.stdout[:64*1024])
+     raise RuntimeError('Crash injection not reached; private worker diagnostics retained')
+    thread.join(5);assert not thread.is_alive()
+    assert not any(job.iterdir()),'Killed worker storage survived'
+    prior=json.loads(host.path.read_text())
+    assert {k:prior[k] for k in before}==before and prior['pending'] is None
+    assert service.metrics()['results']==0
+    initial={}
+    for _ in range(100):
+     if (rundir/'subscription-audit.json').exists():
+      initial=json.loads((rundir/'subscription-audit.json').read_text())
+      if initial['forwarded']==1:break
+     time.sleep(.02)
+    assert initial['forwarded']==initial['attempts']==1
+    subprocess.run(['systemctl','stop',helperunit],capture_output=True,timeout=10)
+    helper.communicate(timeout=5)
+    old_helper=helperunit;helperunit='daia-controller-'+uuid.uuid4().hex
+    helperargs=[x.replace(old_helper,helperunit) for x in helperargs]
+    (private/'runtime-check.json').unlink(missing_ok=True)
+    helper=subprocess.Popen(dependent(helperargs)+['/opt/runtime/bin/python','-B','/opt/helper.py','/state/helper.json'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    for _ in range(100):
+     if (private/'runtime-check.json').exists():break
+     time.sleep(.05)
+    assert (private/'runtime-check.json').exists() and helper.poll() is None
+    errors.clear();thread=threading.Thread(target=relay,daemon=True);thread.start()
+    old_job=job;old_unit=unit
+    job=root/('job-'+uuid.uuid4().hex);job.mkdir(mode=0o700);os.chown(job,worker.pw_uid,worker.pw_gid)
+    unit='daia-assignment-'+uuid.uuid4().hex
+    args=[x.replace(str(old_job),str(job)).replace(old_unit,unit) for x in args]
+    crash_info.update(fresh_worker_directory=True,old_storage_removed=True,
+                      same_assignment=True,provider_calls_before_restart=1,
+                      gateway_restarted=False,transport_deadline_reset=False)
+    r=subprocess.run(dependent(args)+['/usr/bin/python3','-I',str(wrapper),'--bundle',str(bundle)],capture_output=True,timeout=220)
    if r.returncode:
     fd=os.open('/run/daia-subscription-failure-private.json',os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
     with os.fdopen(fd,'wb') as capture:capture.write(r.stdout[:64*1024])
@@ -241,7 +294,9 @@ with running_server(build_mcp_app(service)) as url:
    report['bounded_storage_and_export']=True
    model_audit=json.loads((rundir/'subscription-audit.json').read_text())
    model_counts={k:model_audit[k] for k in ['forwarded','denied','attempts']}
-   assert 1<=model_counts['forwarded']<=6 and model_counts['denied']==23
+   assert 1<=model_counts['forwarded']<=6
+   assert model_counts['denied'] in ((46,47) if options.crash_before_first_response else (23,))
+   if options.crash_before_first_response:report['worker_crash_recovery']=crash_info
    assert model_audit.get('credential_rotated') and model_audit.get('deadline_preserved')
    assert rotation_report.get('native_refresh_completed') and 'error_type' not in rotation_report
    report['rotation']=dict(rotation_report,deadline_preserved=True,rotation_after_provider_requests=1)
@@ -250,6 +305,8 @@ with running_server(build_mcp_app(service)) as url:
    report.update({'saved_identity_and_consent_unchanged':True,'results':1,'pending_cleared_after_exact_receipt':True,'synthetic_fixture':True,'real_model':True,'helper_nonroot':True,'helper_private_root':True,'other_service_state_read_denied':True})
    pathlib.Path('/tmp/daia-live-research-result.json').write_text(json.dumps(report));print(json.dumps(report))
   finally:
+   crash_stop.set()
+   if crash_thread:crash_thread.join(6)
    endpoint.unlink(missing_ok=True);subprocess.run(['systemctl','stop',helperunit],capture_output=True);helper.terminate()
    try:helper.communicate(timeout=5)
    except subprocess.TimeoutExpired:helper.kill();helper.communicate(timeout=5)
