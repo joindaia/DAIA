@@ -64,6 +64,11 @@ class LocalModelUpstream:
             sock = socket.socket(socket.AF_UNIX)
             self._active = sock
         conn = http.client.HTTPConnection("daia-upstream", timeout=min(5, left))
+        # A socket timeout only limits inactivity; a trickling peer can keep
+        # resetting it. Revoke at the assignment deadline even during I/O.
+        watchdog = threading.Timer(left, self.revoke)
+        watchdog.daemon = True
+        watchdog.start()
         try:
             sock.settimeout(min(5, left))
             sock.connect(self._path)
@@ -71,9 +76,11 @@ class LocalModelUpstream:
             with self._lock:
                 if self._revoked or time.monotonic() >= self._deadline:
                     raise Denied("upstream binding unavailable")
-                conn.request("POST", "/v1/responses", body=body, headers={
-                    "Authorization": "Bearer " + self._secret,
-                    "Content-Type": "application/json", "Connection": "close"})
+            # Never hold the state lock over blocking I/O: revoke must be able
+            # to shut down a blocked request as well as a blocked response.
+            conn.request("POST", "/v1/responses", body=body, headers={
+                "Authorization": "Bearer " + self._secret,
+                "Content-Type": "application/json", "Connection": "close"})
             response = conn.getresponse()
             if response.status != 200 or response.getheader("Content-Type") != "text/event-stream":
                 raise Denied("upstream response rejected")
@@ -95,6 +102,8 @@ class LocalModelUpstream:
         except (OSError, http.client.HTTPException):
             raise Denied("upstream transport failed") from None
         finally:
+            watchdog.cancel()
+            watchdog.join()
             conn.close()
             sock.close()
             with self._lock:

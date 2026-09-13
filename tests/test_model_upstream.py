@@ -24,7 +24,13 @@ def upstream(tmp_path):
                 self.send_response(state['status'])
                 self.send_header('Content-Type', 'text/event-stream')
                 self.send_header('Content-Length', str(len(state['body'])))
-                self.end_headers(); self.wfile.write(state['body'])
+                self.end_headers()
+                if state.get('drip'):
+                    for byte in state['body']:
+                        self.wfile.write(bytes([byte])); self.wfile.flush()
+                        time.sleep(.05)
+                else:
+                    self.wfile.write(state['body'])
             except BrokenPipeError: pass
     path = str(tmp_path / 'provider.sock')
     with socketserver.UnixStreamServer(path, Handler) as server:
@@ -144,3 +150,25 @@ def test_invalid_rotation_does_not_replace_current_credential(upstream):
     with pytest.raises(ValueError): binding.replace_credential('bad\r\nHeader: value')
     binding(b'{}')
     assert state['seen'][0][1] == 'Bearer before'
+
+
+def test_deadline_interrupts_continuously_arriving_body(upstream):
+    path, state = upstream
+    state.update(drip=True, body=b'x' * 100)
+    binding = LocalModelUpstream(path, 'synthetic-secret', seconds=.3, requests=2)
+    errors = []
+    def call():
+        try: binding(b'{}')
+        except Denied: errors.append(True)
+    thread = threading.Thread(target=call)
+    thread.start()
+    try:
+        assert state['started'].wait(2)
+        thread.join(1)
+        assert not thread.is_alive(), 'active response outlived assignment deadline'
+        assert errors == [True]
+        with pytest.raises(Denied): binding(b'{}')
+        assert len(state['seen']) == 1
+    finally:
+        binding.revoke()
+        thread.join(2)

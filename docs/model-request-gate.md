@@ -427,3 +427,15 @@ not autonomous problem solving, a real subscription contribution or a productivi
 benchmark. Public dependency downloads were in the evaluator; worker research and
 model access have not yet been demonstrated together. DAIA receipt submission was
 tested separately and is not part of this combined run.
+
+
+## Absolute deadline during active provider traffic
+
+A regression provider sent one response byte every 50 ms. With a 300 ms binding,
+the previous inactivity timeout left the request running beyond one second. The
+new test failed before the fix. The adapter now uses a deadline watchdog that
+revokes and shuts down the active socket; blocking request writes no longer hold
+the state lock needed by revocation. Cleanup cancels and joins the watchdog.
+The same regression now passes, and the combined request/channel/upstream suite
+passes 81 tests. This establishes interruption of continuous local-provider
+response traffic, not real HTTPS streaming or a subscription lifecycle test.
