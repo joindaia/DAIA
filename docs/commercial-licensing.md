@@ -5,6 +5,11 @@ and implement a sustainable commercial option. This supersedes the earlier polic
 against a commercial relicensing program, not the AGPL license or existing grants.
 **Status: program policy adopted; commercial licenses are not yet offered.**
 
+The [Core ownership decision](core-rights-decision-2026-09-13.md) now selects
+assignment of accepted new Core as the destination, with separately documented
+legacy licensing exceptions. Earlier supplemental-grant drafts are historical
+alternatives, not the default execution route. No current draft transfers rights.
+
 ## What DAIA offers
 
 DAIA Community remains the complete public core under AGPL-3.0-or-later, with no
@@ -93,7 +98,7 @@ must record all of the following:
    simply by receiving money. No provider or host is appointed by this document.
 
 Use the [rights register procedure](licensing-rights-register.md) and the
-[supplemental grant draft](contributor-commercial-grant.md). These documents prepare
+[Core ownership milestones](core-rights-decision-2026-09-13.md). These documents prepare
 execution; they do not assert that anyone has already signed or transferred rights.
 
 ## Project funds

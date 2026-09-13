@@ -1,5 +1,9 @@
 # Interim custody of supplemental licensing rights — proposal
 
+> **Superseded as the default implementation route.** See the
+> [Core ownership decision](core-rights-decision-2026-09-13.md). This historical
+> proposal is not an operative assignment or an agreement ready for acceptance.
+
 **Proposal for legal review, 13 September 2026. Not an executed contributor
 agreement and not a change to the foundation-only licensing policy.** The owner
 raised an interim custodian as a way to accept contributions before incorporation.

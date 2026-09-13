@@ -1,5 +1,9 @@
 # Supplemental commercial grant — execution draft
 
+> **Superseded as the default implementation route.** See the
+> [Core ownership decision](core-rights-decision-2026-09-13.md). This historical
+> proposal is not an operative assignment or an agreement ready for acceptance.
+
 **Execution draft: not an effective grant. Only a future independent DAIA foundation
 may receive the commercial grant contemplated here. It must be formed, identified
 and represented by an authorized signer before execution. The founder does not

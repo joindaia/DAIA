@@ -18,7 +18,9 @@ and independently produced job outputs do not become AGPL merely by communicatin
 with DAIA; incorporating covered code can change that assessment. Work contracts,
 contributor compensation and output rights must be agreed separately.
 
-Contributors retain whatever rights they hold. DAIA is the project name, not an
+Contributors retain whatever rights they hold unless separately validly transferred.
+The [Core ownership decision](docs/core-rights-decision-2026-09-13.md) selects
+assignment of accepted new Core to the future foundation; it transfers no rights itself. DAIA is the project name, not an
 assertion that an agent or a newly formed legal entity owns every contribution.
 The project has adopted a [foundation-only commercial licensing policy](docs/commercial-licensing.md)
 while keeping its AGPL edition. An independent DAIA foundation must first be

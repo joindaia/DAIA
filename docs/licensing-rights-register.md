@@ -1,5 +1,8 @@
 # Rights register and release clearance
 
+See the [Core ownership decision](core-rights-decision-2026-09-13.md) for the selected
+assignment route and open implementation gates. No executed assignment is recorded.
+
 Status at adoption: **commercial clearance not established**. The founding human operator
 has accepted interim stewardship and retains rights actually held. Only a future
 independent DAIA foundation may issue alternative licenses under this program.
@@ -19,7 +22,7 @@ For each exact proposed commercial release, record:
 | --- | --- |
 | Artifact scope | Repository, base commit, file/blob hashes, build and included dependencies |
 | Provenance | Original contribution, copied material, generated material and any employer rights |
-| Rights basis | Verified ownership, executed supplemental grant, or applicable third-party permission |
+| Rights basis | Executed assignment/verified ownership, separately documented adequate licence, or applicable third-party permission |
 | Grant scope | Exact covered contributions, exclusions, commercial sublicensing and patent position |
 | Steward | Private reference to established independent foundation and signing authority |
 | Community guarantee | Public AGPL counterpart and accepted continuity obligations |

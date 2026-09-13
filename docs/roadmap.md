@@ -17,6 +17,16 @@ Authorized bug bounties and customer job requests are possible paid routes along
 the research goal, after the platform can deliver and verify bounded work. Start with
 a sample contract and shadow cost record; see [paid-work scope](paid-work.md).
 
+## Core ownership and licensing milestone
+
+The [13 September Core ownership decision](core-rights-decision-2026-09-13.md)
+selects foundation ownership of accepted new Core while preserving AGPL and
+foundation-only alternative licensing. RIGHTS-01 through RIGHTS-07 track scope,
+legal instruments, formation, private assent, contribution clearance, legacy audit
+and commercial release clearance. All execution gates remain open; publishing
+research or approving the policy is not a copyright transfer. This work does not
+replace the active worker-security release gates below.
+
 ## Active security milestone
 
 The authorized [compromised-coordinator milestone](compromised-coordinator-milestone.md)
