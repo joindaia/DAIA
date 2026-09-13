@@ -609,3 +609,23 @@ the supervisor check. No provider calls occurred. The complete native subscripti
 run was not repeated for this deadline change. Full recovery and clean participant
 installation remain unestablished.
 [Evidence](research/frozen-authority-deadline-2026-09-13.json).
+
+
+### Full regression and explicit Linux boundary checks
+
+At commit `322b5a6`, the complete default test suite passed 667 tests with ten
+explicit skips and one Starlette/AnyIO deprecation warning. The opt-in real Linux
+namespace suites then passed nine tests, and the original hash-pinned Codex command
+sandbox probe passed using an empty configuration/credential home. These counts
+overlap; they are not additional distinct tests to sum into the default count.
+The two Windows file-sharing checks and Nginx runtime check remain unexecuted here.
+
+The current service-account/directory manifests also passed their real systemd
+installation probe against an empty temporary filesystem root, including repeat
+installation, four distinct nonroot accounts and five directory checks. Host
+accounts were unchanged. No provider credentials or model requests were used.
+[Evidence](research/subscription-integration-regression-2026-09-13.json).
+
+These results establish regression coverage and the finite tested Linux command,
+namespace and manifest behaviours. They do not certify the entire agent environment,
+private LAN/VPN isolation, clean participant installation or full crash recovery.
