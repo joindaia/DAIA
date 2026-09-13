@@ -158,3 +158,20 @@ No live provider refresh or model request was performed for this change.
 scope. Ancestor directories and the native client's own profile access remain
 part of the trusted installation boundary; this is not proof against a malicious
 profile owner or administrator changing files concurrently.
+
+
+## Live confirmation after authentication preflight changes
+
+At `3e9ac9f`, the existing bounded lab completed a fresh original-Codex Spark
+subscription run with six successful provider requests, 23 denied requests,
+native refresh/restart and unchanged account/deadline. One result was stored,
+pending delivery cleared, and supervisor cleanup completed. No limits changed.
+
+A fresh networkless evaluator then tested the exact stored source bytes: all ten
+version-comparison cases passed while the original implementation failed. The
+source hash matched the coordinator artifact; no normalization or source edit
+was introduced. Evaluator temporary storage was removed. See [live evidence](research/private-auth-live-subscription-2026-09-13.json).
+
+This closes the live compatibility check for the new identity/profile readers.
+It does not establish a clean participant installation, broader task usefulness,
+complete account/network confinement, or recovery after controller/host reboot.
