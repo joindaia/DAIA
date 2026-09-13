@@ -332,3 +332,19 @@ passed. [Evidence](research/verified-base-image-origin-2026-09-13.json).
 The verifier neither installs nor boots the image and will not accept a newer
 image automatically. Trusted keyring installation, vulnerability review and the
 complete clean-host installation still need their own evidence.
+
+
+### Fresh fixture preparation through native subscription delivery
+
+The two repository fixture builders were run into new directories and their
+output used in a live native Codex subscription run. Five provider requests
+completed; refresh/restart preserved the account and deadline; one result was
+stored with pending delivery cleared, and supervised cleanup completed. A fresh
+networkless evaluator processed the exact stored source and reported ten passing
+cases while the original failed. This is a separate execution check, not proof
+that arbitrary malicious code cannot falsify guest test reports.
+
+See [evidence](research/fresh-fixture-chain-2026-09-13.json) and the
+[rebuild commands](../deploy/subscription-lab/README.md#rebuilding-the-approved-development-input).
+Existing authentication and trusted installation artifacts were reused; the full
+fresh-host installation gate remains open. No admission or runtime limits changed.

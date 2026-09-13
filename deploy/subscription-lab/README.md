@@ -145,3 +145,36 @@ rejected. Seven verifier/bundle regressions passed. This identifies the current
 lab image; it does not establish an up-to-date vulnerability baseline, a future
 image's compatibility, or a complete fresh-host deployment. Image updates require
 reviewed new pins and a new acceptance run, never automatic fallback.
+
+
+## Rebuilding the approved development input
+
+The public development fixture can be rebuilt from this checkout before the
+native MCP delivery variant is produced. Use new output directories and the
+existing, separately reviewed request template; do not harvest personal prompts
+or credentials to create a template. The original Codex and bwrap binaries must
+be in the trusted native directory. The first builder checks their pinned hashes.
+The ISO builder is a trusted installation dependency, not supplied by task data.
+
+```sh
+python3 scripts/prepare_subscription_fixture.py \
+  --template "$DAIA_APPROVED_REQUEST_TEMPLATE" --native "$DAIA_NATIVE_DIRECTORY" \
+  --output "$DAIA_SOURCE_FIXTURE" --iso-builder "$DAIA_ISO_BUILDER" \
+  --base-sha256 612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354
+python3 scripts/prepare_native_delivery_fixture.py \
+  --source "$DAIA_SOURCE_FIXTURE" --output "$DAIA_NATIVE_FIXTURE" \
+  --native-directory "$DAIA_NATIVE_DIRECTORY" --iso-builder "$DAIA_ISO_BUILDER"
+```
+
+Protect these inputs, outputs and ancestors from workers throughout both steps.
+The native variant transforms the approved source fixture; it is not a validator
+for arbitrary cloud-init input. Neither builder logs in or calls the provider.
+Pass the final directory as `--guest` to the bounded lab supervisor. New nonces
+and generated ISO metadata mean this is functional reproducibility, not identical
+image bytes on repeated builds. Do not publish generated request templates or ISOs.
+
+A fresh two-stage build was used in the real subscription run recorded in
+[fresh fixture chain evidence](../../docs/research/fresh-fixture-chain-2026-09-13.json).
+This still reuses the trusted native binaries, ISO utility, base image, host
+services, approved template and participant login. Their acquisition and the
+complete fresh-host installation remain separate release requirements.
