@@ -103,3 +103,24 @@ See [mixed-address evidence](research/mixed-dns-canaries-2026-09-13.json). Resol
 answers in this probe are synthetic; the sockets and namespace are real. This
 does not add wire-DNS/CNAME or redirect/browser coverage and does not certify the
 full worker network. Those release gates remain open.
+
+
+## Real DNS packets for mixed answers and CNAMEs
+
+`probe_wire_dns_egress.py` now exercises the real libc resolver against a local
+UDP DNS fixture, without replacing `getaddrinfo`. Run only inside a dedicated
+network and mount namespace with loopback enabled, namespace-local aliases
+`1.1.1.1/32` and `2606:4700:4700::1111/128`, and a private bind-mounted resolver
+file containing `nameserver 127.0.0.1`. Do not change the host resolver or routes.
+The script refuses a non-loopback interface before creating listeners.
+
+The actual run made twelve A/AAAA queries. A public destination and a public
+CNAME succeeded; mixed A, mixed AAAA, public A plus private AAAA, and a private
+CNAME failed. Twenty-four direct control connections proved all TCP canaries
+reachable; zero unexpected connections arrived. Thirty-one regression tests
+passed. After the test the host did not use the lab resolver.
+
+See [wire DNS evidence](research/wire-dns-mixed-cname-2026-09-13.json). The CNAME
+target records were included in the same DNS answer. This does not prove recursive
+or multihop CNAME behavior, redirects, a browser's full path, or KVM integration.
+There were no model/provider calls or external routes.

@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-13",
+  "scope": "Real libc getaddrinfo through namespace-local UDP DNS; actual IPv4/IPv6 TCP canaries",
+  "mocked_resolver": false,
+  "wire_dns_queries": 12,
+  "query_types": [
+    "A",
+    "AAAA"
+  ],
+  "positive_controls": 24,
+  "allowed_cases": [
+    "public A destination",
+    "CNAME with public A target"
+  ],
+  "denied_cases": [
+    "Mixed public/private A answers",
+    "Mixed public/private AAAA answers",
+    "Public A plus private AAAA",
+    "CNAME with private A/AAAA targets"
+  ],
+  "unexpected_connections": 0,
+  "provider_calls": 0,
+  "external_routes": false,
+  "host_not_using_lab_resolver_after_test": true,
+  "regression_tests": 31,
+  "limitations": [
+    "Minimal controlled DNS fixture, not a production DNS implementation",
+    "CNAME target records returned in same answer; recursive/multihop resolution not tested",
+    "Gateway-level test, not KVM/browser/redirect integration",
+    "Public-address aliases existed only on private namespace loopback"
+  ]
+}
