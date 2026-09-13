@@ -10,11 +10,21 @@ import hashlib
 import http.server
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import threading
+
+
+DEFAULT_MODEL = "gpt-5.3-codex-spark"
+
+
+def model_identifier(value):
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", value):
+        return value
+    raise argparse.ArgumentTypeError("Explicit model identifier required")
 
 
 def serve_fixture():
@@ -33,10 +43,26 @@ def serve_fixture():
     asyncio.run(build_assignment_server(Host(), "a" * 32).run_stdio_async())
 
 
-def main():
+def assignment_tools(request):
+    tools = request.get("tools")
+    if not isinstance(tools, list):
+        raise RuntimeError(
+            "Unsupported native discovery protocol: enumerable top-level tools missing"
+        )
+    return tools
+
+
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serve-fixture", action="store_true")
     parser.add_argument("--binary", type=Path)
+    parser.add_argument("--model", type=model_identifier, default=DEFAULT_MODEL,
+                        help="Synthetic native model to observe (default: %(default)s)")
+    return parser
+
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
     if args.serve_fixture:
         serve_fixture()
@@ -65,7 +91,7 @@ def main():
             thread = threading.Thread(target=server.handle_request, daemon=True)
             thread.start()
             port = server.server_address[1]
-            config = f'''model = "gpt-5.3-codex-spark"
+            config = f'''model = {json.dumps(args.model)}
 model_provider = "discovery_fixture"
 approval_policy = "never"
 web_search = "disabled"
@@ -95,7 +121,9 @@ startup_timeout_sec = 10
                 thread.join(timeout=21)
             if len(requests) != 1:
                 raise RuntimeError("Expected exactly one rejected model request")
-            namespaces = [t for t in requests[0]["tools"]
+            if requests[0].get("model") != args.model:
+                raise RuntimeError("Captured request model mismatch")
+            namespaces = [t for t in assignment_tools(requests[0])
                           if t.get("name") == "mcp__daia_assignment"]
             if len(namespaces) != 1:
                 raise RuntimeError("Assignment namespace missing or ambiguous")
@@ -104,7 +132,8 @@ startup_timeout_sec = 10
                 raise RuntimeError("Unexpected assignment capabilities")
             if run.returncode == 0:
                 raise RuntimeError("Rejected inference must not complete a turn")
-            print(json.dumps({"native_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+            print(json.dumps({"model": args.model,
+                "native_binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
                 "captured_requests": len(requests), "provider_requests": 0,
                 "native_exit": run.returncode, "tools": tools,
                 "synthetic_helper": True, "provider_credentials_present": False,
