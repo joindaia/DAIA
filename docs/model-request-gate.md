@@ -694,3 +694,37 @@ must show an unchanged pending payload, a refused modified retry, one recovered
 receipt and no extra consent or job consumption.
 
 Validation: 34 assignment-host, source-evidence and assignment-relay tests passed.
+
+
+### Two channels in one KVM: credential-free integration
+
+The fixed assignment endpoint and a separate model endpoint were exercised in
+one fresh KVM. A synthetic local source-evidence assignment was admitted before
+execution, with a bounded invitation and signed assignment authority. This did
+not reuse or extend an existing participant grant. The non-root assignment helper
+ran in its existing private service root; worker and egress identities could not
+read its saved state.
+
+The model endpoint at `10.0.2.101:3128` returned one synthetic response and denied
+23 hostile requests, including MCP enumeration and authority-changing bodies.
+The assignment endpoint at `10.0.2.100:3128` exposed only heartbeat/submit_result;
+claim, registration, consent-stop and an invented model tool were denied. It
+accepted a source-bound packet, deliberately lost the committed receipt, refused
+a changed retry and returned the existing receipt for the exact retry. The local
+coordinator retained one result and the helper cleared pending state without
+changing identity, deadline or job budget.
+
+The run completed in 43.086 seconds and removed the guest overlay. See the
+[bounded result record](research/dual-channel-vm-trial-2026-09-13.json).
+An initial setup attempt was correctly refused because the synthetic source path
+was outside the accepted src/tests/docs roots; fixing the fixture path did not
+change admission policy.
+
+No native model client or provider credential was used in this combined trial.
+It proves tested channel separation and receipt recovery, not the complete live
+subscription workflow or general host/account confinement. The next integration
+must replace only the synthetic model endpoint with the existing fixed Spark
+binding while keeping the source assignment and helper authority established
+before execution. Preserve the separately tested external credential service,
+its resource/network limits, and independent evaluation; do not move credentials
+into this synthetic parent process merely to combine harnesses.
