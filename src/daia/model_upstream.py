@@ -44,7 +44,7 @@ class LocalModelUpstream:
             raise Denied("upstream content type rejected")
 
     def _check_output(self, output):
-        if self._secret.encode() in output:
+        if any(secret in output for secret in self._issued_secrets):
             raise Denied("upstream body rejected")
 
     def __init__(self, path: str, secret: str, *, seconds: float, requests: int):
@@ -53,6 +53,9 @@ class LocalModelUpstream:
             raise ValueError("invalid lab budget")
         self._path = path
         self._secret = secret
+        # Rotation does not establish provider-side revocation of earlier tokens.
+        # Keep their byte patterns private for this short-lived binding too.
+        self._issued_secrets = {secret.encode()}
         self._deadline = time.monotonic() + seconds
         self._remaining = requests
         self._lock = threading.Lock()
@@ -71,6 +74,7 @@ class LocalModelUpstream:
             if (self._revoked or time.monotonic() >= self._deadline
                     or self._remaining == 0 or self._active is not None):
                 raise Denied("upstream binding unavailable")
+            self._issued_secrets.add(secret.encode())
             self._secret = secret
 
     def revoke(self) -> None:

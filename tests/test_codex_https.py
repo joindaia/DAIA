@@ -237,3 +237,25 @@ def test_trusted_rotation_keeps_tls_account_destination_and_request_budget(provi
                headers['ChatGPT-Account-Id'] == 'synthetic-account'
                for path, headers, _ in state['seen'])
     assert state['connections'] == [('1.1.1.1', 443)] * 2
+
+
+@pytest.mark.parametrize('reflected', ['synthetic-token', 'synthetic-rotated-token'])
+def test_rotation_does_not_allow_current_or_retired_token_in_response(provider, reflected):
+    adapter = binding(provider, seconds=5, requests=3)
+    assert adapter(b'{}') == b'data: {}\n\n'
+    deadline = adapter._deadline
+    adapter.replace_credential('synthetic-rotated-token')
+    _, state = provider
+    wire = ('data: {"text":"' + reflected + '"}\n\n').encode()
+    state.update(wire=wire, framing=[('Content-Length', str(len(wire)))])
+    with pytest.raises(Denied, match='upstream body rejected') as error:
+        adapter(b'{}')
+    assert reflected not in str(error.value)
+    assert state['seen'][-1][1]['Authorization'] == 'Bearer synthetic-rotated-token'
+    assert adapter._deadline == deadline and adapter._remaining == 1
+    # A rejected reflection consumes its call but does not disable useful inference.
+    state.update(wire=b'data: {}\n\n', framing=[('Content-Length', '10')])
+    assert adapter(b'{}') == b'data: {}\n\n'
+    with pytest.raises(Denied):
+        adapter(b'{}')
+    assert len(state['seen']) == 3

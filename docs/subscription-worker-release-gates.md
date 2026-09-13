@@ -433,3 +433,25 @@ installed name appeared in the report and every installed version matched the
 lock. No runtime dependency was changed. See [audit evidence](research/subscription-runtime-advisory-audit-2026-09-13.json).
 This closes only this dated Python-runtime lookup; source review, other software
 layers and a fresh pre-release audit remain required.
+
+
+### Rotation preserves response filtering for retired credentials
+
+A local TLS regression exposed a response-filter gap: after trusted rotation,
+only the current bearer token was checked. A literal reflection of the previously
+used token was returned by the HTTPS adapter. The regression failed before the
+fix and passed afterward. The shared adapter now keeps the byte patterns of all
+credentials issued to that short-lived binding and rejects their literal presence
+in provider output. Only the current token is used for outgoing authentication.
+The patterns remain outside the worker and are not written to a log or journal.
+
+All 109 HTTPS, upstream and channel tests passed. The new tests cover current and
+retired token reflections, unchanged deadline, consumption of the rejected call,
+a succeeding clean response and denial when the original request budget is spent.
+See [evidence](research/retired-credential-response-filter-2026-09-13.json).
+
+This is a synthetic local TLS test, not a new live subscription run. Literal
+filtering is defence in depth, not a proof against encoded, fragmented or otherwise
+transformed secret disclosure by a hostile provider. Provider-side revocation of
+old tokens, controller/host reboot recovery and the full release gates remain
+separate requirements. No consent, provider quota or worker access was expanded.
