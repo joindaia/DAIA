@@ -4,7 +4,10 @@ import base64, hashlib, http.server, json, os, pathlib, subprocess, tempfile, th
 parser=argparse.ArgumentParser(description='Native Codex synthetic refresh/restart probe; uses no existing auth.')
 parser.add_argument('binary',type=pathlib.Path)
 parser.add_argument('--account-only',action='store_true',help='Use trusted native account/read without starting model work')
+parser.add_argument('--reject-refresh',action='store_true',help='Return synthetic revocation failure; requires account-only mode')
+parser.add_argument('--force-refresh',action='store_true',help='Ask the native account interface to refresh explicitly')
 args=parser.parse_args()
+if args.reject_refresh and not args.account_only:parser.error('--reject-refresh requires --account-only')
 binary=str(args.binary.resolve())
 assert hashlib.sha256(pathlib.Path(binary).read_bytes()).hexdigest()=='56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da'
 def jwt(exp):
@@ -20,7 +23,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
   raw=self.rfile.read(int(self.headers.get('Content-Length','0')))
   if self.path=='/oauth/token':
    body=json.loads(raw);assert body['refresh_token']=='synthetic-refresh'
-   calls.append('refresh');data=json.dumps({'access_token':new,'refresh_token':'synthetic-rotated'}).encode();mime='application/json'
+   calls.append('refresh')
+   if args.reject_refresh:
+    data=b'{"error":{"code":"refresh_token_invalidated"}}'
+    self.send_response(401);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
+   data=json.dumps({'access_token':new,'refresh_token':'synthetic-rotated'}).encode();mime='application/json'
   elif self.path=='/v1/responses':
    calls.append('model-refreshed' if self.headers.get('Authorization')=='Bearer '+new else 'model-wrong-auth')
    item={'id':'msg_fixture','type':'message','role':'assistant','status':'completed','content':[{'type':'output_text','text':'DAIA_AUTH_READY','annotations':[]}]}
@@ -71,9 +78,9 @@ supports_websockets = false
     try:
      send({'id':1,'method':'initialize','params':{'clientInfo':{'name':'daia-auth-lab','version':'0.1'}}});receive(1)
      send({'method':'initialized'})
-     send({'id':2,'method':'account/read','params':{'refreshToken':False}})
+     send({'id':2,'method':'account/read','params':{'refreshToken':args.force_refresh}})
      answer=receive(2)
-     assert answer['result']['account']['type']=='chatgpt',answer
+     if not args.reject_refresh:assert answer['result']['account']['type']=='chatgpt',answer
     finally:
      p.stdin.close()
      try:p.wait(timeout=5)
@@ -87,5 +94,11 @@ supports_websockets = false
     if p.returncode: print(p.stderr.decode()[-1500:])
   stored=json.loads(auth.read_text())
   result={'exits':exits,'markers':markers,'calls':calls,'rotated_persisted':stored['tokens']['refresh_token']=='synthetic-rotated','access_persisted':stored['tokens']['access_token']==new}
-  print(json.dumps(result));assert result=={'exits':[0,0],'markers':[True,True],'calls':(['refresh'] if args.account_only else ['refresh','model-refreshed','model-refreshed']),'rotated_persisted':True,'access_persisted':True}
+  print(json.dumps(result))
+  if args.reject_refresh:
+   assert exits==[0,0] and calls and set(calls)=={'refresh'}
+   assert not result['rotated_persisted'] and not result['access_persisted']
+   # Account metadata is not evidence of successful credential renewal.
+   assert stored['tokens']['access_token']==jwt(1)
+  else:assert result=={'exits':[0,0],'markers':[True,True],'calls':(['refresh'] if args.account_only else ['refresh','model-refreshed','model-refreshed']),'rotated_persisted':True,'access_persisted':True}
 finally:server.shutdown();server.server_close();thread.join()

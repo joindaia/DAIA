@@ -269,3 +269,23 @@ channel to the worker and a provider credential binding are still separate needs
 Source: pinned official [app-server account documentation](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/app-server/README.md).
 The native network-proxy [OpenAI credential provider](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/network-proxy/src/credential_broker/providers/openai.rs)
 handles `OPENAI_API_KEY`; it is not evidence of built-in ChatGPT OAuth brokerage.
+
+## Rejected native refresh does not authenticate an account response
+
+The refresh probe accepts `--account-only --reject-refresh`, optionally with
+`--force-refresh`. The local authority returns HTTP 401 with the synthetic
+`refresh_token_invalidated` code. Both variants completed two native processes
+with zero exit codes and normal account RPC responses, but neither replacement
+token was saved; the expired access token remained unchanged. Each observed run
+made four refresh attempts and no model requests. Retry count is observed evidence,
+not a promised client contract.
+
+An exploratory automatic-refresh run returned an account on one process and no
+account on another. The assertions deliberately do not require that incidental
+metadata outcome. The pinned [account processor](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/app-server/src/request_processors/account_processor.rs)
+invokes refresh but does not propagate its outcome as an account/read RPC error.
+Consequently a successful RPC or a remembered account cannot authorize a DAIA
+model binding. The trusted side must establish usable credential state, including
+freshness and expected account binding, and reject unavailable or failed renewal.
+This check is a remaining integration requirement, not implemented by this probe.
+The normal account-only refresh control still passes afterward.
