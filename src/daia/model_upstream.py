@@ -122,6 +122,12 @@ class LocalModelUpstream:
             transfers = response.headers.get_all("Transfer-Encoding", [])
             limit = 8 * 1024 * 1024
             phase = "body"
+            # Model output may pause longer than connection setup. The independent
+            # assignment watchdog and request count remain unchanged.
+            remaining = self._deadline - time.monotonic()
+            if remaining <= 0:
+                raise Denied("upstream binding unavailable")
+            sock.settimeout(min(30, remaining))
             if transfers:
                 # One unambiguous framing mode; HTTPResponse decodes chunking.
                 if lengths or len(transfers) != 1 or transfers[0].lower() != "chunked":

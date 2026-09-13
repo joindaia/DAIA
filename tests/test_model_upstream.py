@@ -25,6 +25,7 @@ def upstream(tmp_path):
                 self.send_header('Content-Type', 'text/event-stream')
                 self.send_header('Content-Length', str(len(state['body'])))
                 self.end_headers()
+                if state.get('body_delay'): time.sleep(state['body_delay'])
                 if state.get('drip'):
                     for byte in state['body']:
                         self.wfile.write(bytes([byte])); self.wfile.flush()
@@ -185,4 +186,15 @@ def test_private_transport_categories_do_not_retain_exception_payload(upstream, 
         binding(b'{}')
     assert binding.transport_failure == {'phase':'headers','kind':kind}
     assert 'synthetic-private' not in str(error.value) + str(binding.transport_failure)
+    with pytest.raises(Denied,match='binding unavailable'): binding(b'{}')
+
+
+def test_slow_model_body_fits_existing_absolute_budget(upstream):
+    path, state = upstream
+    state['body_delay'] = 5.5
+    binding = LocalModelUpstream(path,'synthetic-secret',seconds=10,requests=1)
+    deadline = binding._deadline
+    assert binding(b'{}') == state['body']
+    assert binding._deadline == deadline and binding._remaining == 0
+    assert binding.transport_failure is None
     with pytest.raises(Denied,match='binding unavailable'): binding(b'{}')

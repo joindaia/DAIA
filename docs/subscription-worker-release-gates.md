@@ -252,3 +252,27 @@ text or provider bytes; the worker still receives the same generic denial. Sixty
 transport regression tests passed, including secret-bearing exceptions and consumed
 failed-attempt budgets. No transport limit changed and no second provider run was
 performed. Full no-dev runtime subscription acceptance remains open.
+
+
+## Diagnosed body timeout and completed no-dev runtime trial
+
+A fresh diagnostic run at `7da7eb7` recorded HTTP 200 followed by a **body timeout**
+on its first provider attempt. This identifies that run's transport failure; the
+earlier generic incident remains less specific. The same five-second timeout had
+been applied to connection setup and reading model output.
+
+Connection setup remains bounded to five seconds. Body inactivity is now bounded
+to at most thirty seconds, capped by the remaining original assignment deadline.
+The independent watchdog, six-request budget, response-size limits and failed-call
+accounting are unchanged. A controlled provider delayed its body 5.5 seconds and
+completed under the original ten-second test deadline; all 66 transport tests passed.
+
+One fresh corrected subscription trial completed using the runtime without pytest
+and real MCP claim route: six provider requests, 23 denials, native refresh/restart,
+one stored result and complete cleanup. A separate networkless evaluator passed
+ten cases on identical stored source while the original failed, then removed its
+temporary storage. [Evidence](research/subscription-body-timeout-2026-09-13.json).
+
+This confirms the changed no-dev lab chain and a bounded handling improvement for
+slow model output. It does not make arbitrarily slow requests succeed or remove
+the remaining clean-installation, account and network release gates.
