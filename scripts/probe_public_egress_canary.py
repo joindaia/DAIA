@@ -12,6 +12,8 @@ from daia.public_egress import handle_connection
 
 
 def main():
+    if {name for _, name in socket.if_nameindex()} != {'lo'}:
+        raise RuntimeError('Dedicated loopback-only network namespace required')
     real_socket, real_resolver = socket.socket, socket.getaddrinfo
     listeners = []
     try:

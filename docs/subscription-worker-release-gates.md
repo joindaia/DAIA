@@ -89,3 +89,17 @@ These are actual namespace/process tests, not skipped checks counted as success.
 They support the specific command boundaries and assignment socket rules; they
 do not close whole-worker, comprehensive private-network, account-capability or
 clean-installation release gates. Windows and Nginx skips remain separate.
+
+
+## Mixed-address gateway canaries
+
+The public-egress canary was rerun in a dedicated loopback-only network namespace.
+Six pure-private or mixed public/private resolver-answer sets were rejected before
+any outgoing connect attempt. Real IPv4/IPv6 listeners accepted 24 control
+connections and zero gateway connections. Thirty targeted tests passed. The probe
+now refuses to bind listeners when any interface other than loopback is present.
+
+See [mixed-address evidence](research/mixed-dns-canaries-2026-09-13.json). Resolver
+answers in this probe are synthetic; the sockets and namespace are real. This
+does not add wire-DNS/CNAME or redirect/browser coverage and does not certify the
+full worker network. Those release gates remain open.
