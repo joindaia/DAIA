@@ -1,6 +1,8 @@
 # Private provider-account binding as a Sybil-resistance signal
 
-Status: research proposal, not an implemented admission or voting rule.
+Status: research returned; production integration deferred. No admission or voting change.
+
+See the [English assessment and actionable backlog](../research/provider-account-binding-assessment-2026-09-13.md) and its linked original report.
 Date: 2026-09-13.
 
 ## Direction
