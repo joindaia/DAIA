@@ -574,3 +574,27 @@ it must not discard or resubmit an already accepted result, reset the allowance
 or label a failed turn successful. Repeated model behavior within the finite
 budget remains a reliability limitation. Initial installation/authentication and
 comprehensive account/network validation remain open.
+
+
+## Delivery status when a client run fails
+
+The controller now checks the exact assignment row and the helper's saved receipt
+when a worker exits nonzero. It exports `acknowledged`, `stored_unacknowledged` or
+`unconfirmed`, always with `worker_completed: false` and no automatic retry
+authority. Matching receipt hashes and assignment binding are required; a client
+log or an unrelated coordinator result is insufficient. This describes delivery,
+not artifact correctness or promotion.
+
+The small outcome is written atomically with private permissions next to the
+existing assignment state and to the current lab outcome path. No key, credential,
+artifact or transcript is copied. The supervisor removes the previous current-run
+outcome and assembled-success report before starting, preventing stale success
+from being reused after failure. Per-assignment state remains available under the
+existing lab retention arrangement; this does not provide host-reboot persistence.
+
+A read-only replay against the real previously budget-exhausted run produced
+`acknowledged` with an incomplete worker and unchanged contributor state. No
+provider call or resubmission occurred. Fifty-five focused tests passed and two
+Windows file-sharing checks were skipped. See [outcome evidence](research/incomplete-run-outcome-2026-09-13.json).
+The integrated failure path still needs a fresh live test. Automatic recovery and
+reboot-safe state retention remain separate work; this exporter grants neither.

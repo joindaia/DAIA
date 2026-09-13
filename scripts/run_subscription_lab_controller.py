@@ -8,6 +8,7 @@ Inputs are trusted operator files, never worker-selected paths or configuration.
 """
 import atexit,signal,select,asyncio,json,os,pathlib,pwd,subprocess,sys,tempfile,shutil,socket,selectors,time,threading,uuid
 import re
+from subscription_lab_outcome import outcome, write_outcome
 parent_unit=os.environ.get('DAIA_CONTROLLER_UNIT','')
 if not re.fullmatch(r'daia-controller-job-[a-f0-9]{32}\.service',parent_unit):
  raise SystemExit('Run inside a dedicated DAIA controller systemd unit.')
@@ -268,7 +269,14 @@ with running_server(build_mcp_app(service)) as url:
    if r.returncode:
     fd=os.open('/run/daia-subscription-failure-private.json',os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
     with os.fdopen(fd,'wb') as capture:capture.write(r.stdout[:64*1024])
-    raise RuntimeError('Worker failed; private bounded diagnostics retained')
+    thread.join(5)
+    saved_failure=json.loads(host.path.read_text())
+    with service.store.connect() as db:
+     assignment_failure=db.execute('SELECT id,state,receipt_hash FROM assignments WHERE id=?', (lease['assignment_id'],)).fetchone()
+    failure_outcome=outcome(saved_failure,dict(assignment_failure) if assignment_failure else None)
+    write_outcome(private/'outcome.json',failure_outcome)
+    write_outcome('/run/daia-subscription-outcome.json',failure_outcome)
+    raise RuntimeError('Worker failed; private diagnostics and delivery outcome retained')
    thread.join(5);assert not thread.is_alive() and not errors
    saved=json.loads(host.path.read_text());assert {k:saved[k] for k in before}==before
    assert saved['pending'] is None and saved['lease'] is None

@@ -34,6 +34,8 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
         raise SystemExit("Lab endpoint exists; inspect its owner before starting.")
     result = Path("/tmp/daia-live-research-result.json")
     result.unlink(missing_ok=True)  # A previous successful run is never evidence.
+    for name in ('daia-assembled-subscription-result.json', 'daia-subscription-outcome.json'):
+        Path('/run', name).unlink(missing_ok=True)
     command = [
         "systemd-run", "--quiet", "--wait", "--unit=" + unit,
         "--setenv=DAIA_CONTROLLER_UNIT=" + unit,
