@@ -108,3 +108,53 @@ def test_native_include_and_inline_ids_are_normalized():
     assert cleaned['input'][0]['content'] == body['input'][0]['content']
     body['input'] = [{'type': 'item_reference', 'id': 'msg_untrusted'}]
     with pytest.raises(Denied): gate.validate('POST', '/v1/responses', encode(body))
+
+
+def test_reasoning_is_bound_to_exact_provider_output_and_assignment():
+    body = request()
+    gate = RequestGate(encode(body))
+    item = {"type": "reasoning", "id": "local", "summary": [],
+            "encrypted_content": "opaque-provider-state"}
+    body["input"] = [item]
+    with pytest.raises(Denied):
+        gate.validate("POST", "/v1/responses", encode(body))
+    gate.record_provider_output([item])
+    forwarded = json.loads(gate.validate("POST", "/v1/responses", encode(body)))
+    assert "id" not in forwarded["input"][0]
+    assert forwarded["input"][0]["encrypted_content"] == item["encrypted_content"]
+    with pytest.raises(Denied):
+        RequestGate(encode(request())).validate("POST", "/v1/responses", encode(body))
+    for key, value in [("encrypted_content", "foreign"),
+                       ("summary", [{"type": "summary_text", "text": "changed"}])]:
+        changed = dict(item); changed[key] = value
+        body["input"] = [changed]
+        with pytest.raises(Denied):
+            gate.validate("POST", "/v1/responses", encode(body))
+
+
+def test_reasoning_registration_is_bounded_and_atomic():
+    gate = RequestGate(encode(request()))
+    items = [{"type": "reasoning", "summary": [], "encrypted_content": str(i)}
+             for i in range(65)]
+    with pytest.raises(Denied):
+        gate.record_provider_output(items)
+    body = request(); body["input"] = [items[0]]
+    with pytest.raises(Denied):
+        gate.validate("POST", "/v1/responses", encode(body))
+    gate.record_provider_output(items[:64])
+    gate.validate("POST", "/v1/responses", encode(body))
+
+
+@pytest.mark.parametrize("role,phase,allowed", [
+    ("assistant", "commentary", True), ("assistant", "final_answer", True),
+    ("user", "commentary", False), ("assistant", "unknown", False),
+])
+def test_message_phase_is_explicit(role, phase, allowed):
+    body = request(); gate = RequestGate(encode(body))
+    body["input"] = [{"type": "message", "role": role, "phase": phase,
+                      "content": [{"type": "output_text", "text": "Checking files"}]}]
+    if allowed:
+        gate.validate("POST", "/v1/responses", encode(body))
+    else:
+        with pytest.raises(Denied):
+            gate.validate("POST", "/v1/responses", encode(body))

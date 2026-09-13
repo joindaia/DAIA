@@ -7,6 +7,7 @@ Unknown representations fail closed. This is not a complete credential proxy.
 from __future__ import annotations
 
 import json
+import hashlib
 
 
 class Denied(ValueError):
@@ -69,7 +70,7 @@ def _text_blocks(value) -> None:
         _require(part["type"] in ("input_text", "output_text") and type(part["text"]) is str)
 
 
-def _history(items) -> None:
+def _history(items, admitted_reasoning=frozenset()) -> None:
     _require(type(items) is list)
     for item in items:
         _require(type(item) is dict)
@@ -80,9 +81,14 @@ def _history(items) -> None:
             del item["id"]
         kind = item.get("type", "message")
         if kind == "message":
-            _require(set(item) <= {"type", "role", "content"})
+            _require(set(item) <= {"type", "role", "content", "phase"})
+            if "phase" in item:
+                _require(item.get("role") == "assistant" and
+                         item["phase"] in ("commentary", "final_answer"))
             _require(item.get("role") in ("system", "developer", "user", "assistant"))
             _text_blocks(item.get("content"))
+        elif kind == "reasoning":
+            _require(_reasoning_digest(item) in admitted_reasoning)
         elif kind == "function_call":
             _require(set(item) <= {"type", "name", "namespace", "call_id", "arguments"})
             _require(all(type(item.get(k)) is str for k in ("name", "call_id", "arguments")))
@@ -95,6 +101,19 @@ def _history(items) -> None:
         else:
             # Includes item_reference, file/image inputs and opaque reasoning state.
             raise Denied("unsupported input representation")
+
+
+def _reasoning_digest(item):
+    _require(set(item) == {"type", "summary", "encrypted_content"})
+    _require(item.get("type") == "reasoning")
+    _require(type(item["encrypted_content"]) is str and bool(item["encrypted_content"]))
+    _require(type(item["summary"]) is list)
+    for part in item["summary"]:
+        _require(type(part) is dict and set(part) == {"type", "text"})
+        _require(part["type"] == "summary_text" and type(part["text"]) is str)
+    raw = json.dumps(item, sort_keys=True, allow_nan=False).encode()
+    _require(len(raw) <= 1024 * 1024)
+    return hashlib.sha256(raw).digest()
 
 
 class RequestGate:
@@ -116,6 +135,26 @@ class RequestGate:
         _require(body.get("include", []) in ([], ["reasoning.encrypted_content"]))
         _history(body.pop("input", []))
         self._template = json.dumps(body, sort_keys=True, allow_nan=False)
+        self._reasoning = set()
+
+    def record_provider_output(self, items: list) -> None:
+        """Trusted caller only: output from a validated response for this binding.
+
+        Never expose this method through a worker tool or learn from worker input.
+        A fresh gate is required per assignment/account binding. This object is
+        sequential: record the completed response before accepting the next turn.
+        """
+        _require(type(items) is list)
+        admitted = set(self._reasoning)
+        for item in items:
+            _require(type(item) is dict)
+            if item.get("type") == "reasoning":
+                item = dict(item)
+                if "id" in item:
+                    _require(type(item.pop("id")) is str)
+                admitted.add(_reasoning_digest(item))
+        _require(len(admitted) <= 64)
+        self._reasoning = admitted
 
     def validate(self, method: str, path: str, raw: bytes) -> bytes:
         """Return fresh canonical JSON, never the ambiguous original wire bytes.
@@ -126,7 +165,7 @@ class RequestGate:
         _require(method == "POST" and path == "/v1/responses")
         body = _decode(raw)
         history = body.pop("input", None)
-        _history(history)
+        _history(history, self._reasoning)
         _require(json.dumps(body, sort_keys=True, allow_nan=False) == self._template)
         # Forward only validated inline history, with optional item IDs removed.
         body["input"] = history

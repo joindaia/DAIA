@@ -568,3 +568,39 @@ receipt submission still need to be combined and verified. A distinct Spark limi
 is observed for this account, not a promise about every participant's entitlement,
 available quota or provider terms. No fallback to API billing or another model was
 used. A worker must not silently switch model or quota when this route is exhausted.
+
+
+### Multi-turn Spark follow-up (2026-09-13)
+
+A real Spark turn executed a successful `ls` command inside a fresh KVM worker.
+The next request was refused before forwarding: its frozen configuration matched,
+but it contained a reasoning item with encrypted content and an assistant message
+with a phase. The worker did not modify the source or finish the development task.
+Twenty-three model-channel negative probes were denied in that run. The overlay
+was removed. This is evidence of real tool execution, not a completed coding job.
+
+The request gate now has an explicit trusted-controller method to register exact
+provider reasoning items for one assignment. Only their canonical SHA-256 digests
+are retained, with a maximum of 64 entries; registration is atomic. An incoming
+reasoning item must match a recorded item, including its summary and encrypted
+content. Optional IDs are removed before comparison/forwarding. A new assignment
+requires a fresh gate. Workers must never be able to call the registration method.
+Assistant phases are restricted to commentary/final_answer; other roles cannot
+supply them. Regression cases cover foreign assignments, changed content/summary,
+unknown phases and registration limits.
+
+This mechanism is not yet a working multi-turn subscription integration. In the
+private live harness, registering only `response.completed.output` admitted zero
+reasoning items. A subsequent attempt to register completed output items refused
+the provider response. Its precise item shape remains unverified. A diagnostic
+retry stopped during the negative-probe preflight with an empty reply, before any
+provider request, and produced no valid worker report. Do not count that retry as
+a model, isolation or development success. Do not loosen validation to accommodate
+an unknown shape. Next: reproduce the preflight failure without credentials, then
+capture only safe provider item schemas and test the missing representation.
+
+Validation: 129 focused model-gateway tests passed; the full suite passed with
+520 passed and 10 skipped. A preceding full-suite attempt in the restricted shell
+could not run socket-based fixtures and was terminated; the successful run used
+local socket permissions. No full account-confinement, refresh, or combined DAIA
+receipt claim follows from these results.
