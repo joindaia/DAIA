@@ -39,8 +39,16 @@
     "No real provider calls or subscription inference were performed.",
     "Absence of assignment declarations in the first request is not proof of unavailable MCP tools; deferred discovery remains to be tested.",
     "Only the existing Spark discovery path passed. No Luna, Astra or GPT-5.5 worker compatibility claim follows.",
-    "The companion has not been added to the worker seed or second host.",
-    "Current request gate remains unchanged and rejects the new unapproved representations."
+    "Current request gate remains unchanged and rejects the new unapproved representations.",
+    "The companion is installed on the second host but has not been added to a worker seed."
   ],
-  "next_action": "Use a synthetic model response to exercise native deferred discovery and obtain actual assignment catalog evidence, then review protocol binding outside the guest before any subscription trial."
+  "next_action": "Use a synthetic model response to exercise native deferred discovery and obtain actual assignment catalog evidence, then review protocol binding outside the guest before any subscription trial.",
+  "second_host": {
+    "source_revision": "08196efc3b3fce26308c36f9a1cc360cbe7b7df0",
+    "clean_checkout": true,
+    "companion_archive_and_binary_digests_verified": true,
+    "dependency_lock_unchanged": true,
+    "worker_started": false,
+    "provider_called": false
+  }
 }
