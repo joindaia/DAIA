@@ -194,3 +194,36 @@ OAuth credential, ChatGPT account function, refresh or revocation endpoint was u
 Exhaustion and active revocation remain unit/socket evidence until added to this
 same guest trial. No exhaustive credential-extraction or sandbox-escape claim is
 made from the absence of credentials in the prepared guest input.
+
+
+## Live budget exhaustion after native tool completion
+
+The next fresh KVM run completed 23 hostile/enumeration probes and the original
+Codex shell-canary task, then sent one otherwise-valid extra model request.
+The outside channel recorded three adapter attempts but only two forwarded calls;
+the distinct synthetic provider authenticated exactly two requests. Total denials
+were 24, including the exhausted-budget request. This establishes that the extra
+request passed request validation and was stopped before the provider by the budget.
+
+Native exit was zero; tool and turn completed; the overlay was removed. Runtime:
+47.277 seconds. This remains synthetic-provider evidence. Active revocation and
+real subscription lifecycle have not yet been demonstrated in the same KVM run.
+
+## Original-client logout against a synthetic authority
+
+`python3 scripts/probe_codex_logout.py /path/to/pinned/codex` runs the original
+0.153.4 binary with a fresh temporary HOME and synthetic auth only. It pins the
+binary digest, directs revocation to a loopback fixture, and checks both HTTP 200
+and HTTP 503 replies. Neither case loads an existing user profile or credential.
+
+Both cases passed: the client requested `/oauth/revoke` with the synthetic refresh
+token and `refresh_token` hint, removed local auth, and exited zero. Therefore a
+successful logout command is not proof of successful provider-side revocation.
+DAIA must terminate its local assignment capability independently of that request.
+This is a native-client local integration test, not real provider revocation,
+login, refresh, hostile-guest isolation or a complete subscription lifecycle test.
+
+Source: pinned official [revocation implementation](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/login/src/auth/revoke.rs)
+and [auth manager](https://github.com/openai/codex/blob/3d2ee51ca2d5db578f328aa75e20aa22c0197c9a/codex-rs/login/src/auth/manager.rs).
+The same manager supports proactive refresh and a test endpoint override; testing
+native refresh with synthetic credentials is the next lifecycle step.
