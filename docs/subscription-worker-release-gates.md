@@ -562,3 +562,31 @@ an entire controller or host. A stopped gateway deliberately leaves its authorit
 revoked. Safely resuming unfinished work, retaining prior credential-reflection
 patterns, automated post-stop authority verification, clean participant installation
 and the broader worker/network acceptance gates remain open. No limits were increased.
+
+
+### Supervisor success requires verified durable revocation
+
+The supervisor now verifies the retained authority after the controller service
+returns and before writing a successful assembled result. The controller records
+its exact service identity in private run metadata. Verification requires that
+identity, matching binding digests, integer zero remaining authority and a completed
+revocation marker. It reads bounded regular files through no-follow directory
+handles and checks owners, permissions and hard-link counts. Endpoint cleanup or
+a marker alone no longer satisfies the success condition.
+
+Fifty-two affected tests passed, including rejection of stale-controller records,
+missing or contradictory markers, nonzero/boolean budgets, wrong binding/owner,
+shared paths, symlinks, hardlinks, FIFOs and oversized records. Valid inspection
+leaves the records unchanged. The updated real service-crash probe reserved a
+synthetic attempt, killed its child, ran the actual stop handler and passed this
+same supervisor verification with zero authority and no model endpoint remaining.
+No model credentials or provider calls were used for these checks.
+[Evidence](research/supervisor-revocation-gate-2026-09-13.json).
+
+This closes the previously manual post-stop authority check in the supervisor
+code. The entire native subscription task has not been repeated after adding this
+final success gate; the preceding live result remains evidence for the ledger
+wiring, and this service probe covers the new verification separately. Historical
+run records without the controller identity are rejected rather than upgraded.
+Full controller recovery, host-reboot recovery and participant installation remain
+open, and no new resume permission follows from a successfully revoked run.

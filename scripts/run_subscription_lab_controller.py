@@ -169,7 +169,8 @@ with running_server(build_mcp_app(service)) as url:
  os.chown(authority_dir,gateway.pw_uid,gateway.pw_gid)
  for entry in authority_dir.iterdir():os.chown(entry,gateway.pw_uid,gateway.pw_gid)
  write_outcome(run_state/'run.json',{'assignment_id':lease['assignment_id'],
-     'model_authority_binding':authority_binding,'automatic_resume_authorized':False})
+     'model_authority_binding':authority_binding,'controller_unit':parent_unit,
+     'automatic_resume_authorized':False})
  subprocess.run(dependent(model_service_args)+['/usr/bin/python3','-I',str(p/'public-server.py')],check=True)
  for _ in range(100):
   if model_socket.exists():break

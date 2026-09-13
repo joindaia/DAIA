@@ -5,16 +5,17 @@ a disposable root directory with a synthetic ledger, read-only system libraries,
 private networking and no provider credentials. Reports whether the child reached
 reservation before SIGKILL and whether ExecStopPost revoked and removed its socket.
 """
-import json,os,pwd,shutil,subprocess,tempfile,sys
+import json,os,pwd,shutil,subprocess,tempfile,sys,uuid
 from pathlib import Path
 if os.geteuid()!=0: raise SystemExit('Requires the preconfigured isolated lab administrator')
 repo=Path(__file__).resolve().parents[1];sys.path.insert(0,str(repo/'src'))
 from daia.request_ledger import create
+from subscription_lab_shutdown import verify
 user=pwd.getpwnam('daia-egress')
 root=Path(tempfile.mkdtemp(prefix='daia-authority-service-',dir='/tmp'))
 report=[]
 try:
- jail=root/'jail';data=root/'authority';shared=root/'endpoint'
+ jail=root/'jail';data=root/'model-authority';shared=root/'endpoint'
  for name in ['usr','run/daia-authority','run/daia-lab','proc/sys/kernel/random','var/lib/daia-lab/templates']:(jail/name).mkdir(parents=True,exist_ok=True)
  for name,target in [('lib','usr/lib'),('lib64','usr/lib64')]: (jail/name).symlink_to(target)
  (jail/'proc/sys/kernel/random/boot_id').touch()
@@ -35,7 +36,8 @@ os.kill(os.getpid(),signal.SIGKILL)
  create(data/'requests.json','a'*64,seconds=30,requests=6)
  (data/'binding.json').write_text(json.dumps({'binding':'a'*64}));(data/'binding.json').chmod(0o600)
  for path in [data,shared,*data.iterdir()]:os.chown(path,user.pw_uid,user.pw_gid)
- unit='daia-authority-probe-'+root.name.split('-')[-1]
+ unit='daia-controller-job-'+uuid.uuid4().hex+'.service'
+ metadata=root/'run.json';metadata.write_text(json.dumps({'controller_unit':unit,'model_authority_binding':'a'*64}));metadata.chmod(0o600)
  props={'RootDirectory':str(jail),'BindReadOnlyPaths':'/usr /proc/sys/kernel/random/boot_id',
         'BindPaths':str(data)+':/run/daia-authority '+str(shared)+':/run/daia-lab',
         'User':'daia-egress','Group':str(user.pw_gid),'NoNewPrivileges':'yes','ProtectSystem':'strict',
@@ -51,7 +53,8 @@ os.kill(os.getpid(),signal.SIGKILL)
  evidence={'forced_service_exit_nonzero':result.returncode!=0,'child_reserved_before_kill':(data/'probe-ready.json').exists() and json.loads((data/'probe-ready.json').read_text())['remaining']==5,'authority_remaining':ledger['remaining'],
            'stop_handler_persisted_revocation':marker.exists() and json.loads(marker.read_text())=={'persisted':True},
            'model_endpoint_removed':not(shared/'model.sock').exists(), 'private_network':True,
-           'real_credentials_used':False,'provider_requests':0}
+           'real_credentials_used':False,'provider_requests':0,
+           'supervisor_revocation_check':verify(root,controller_unit=unit,model_uid=user.pw_uid)}
  print(json.dumps(evidence))
  if not all([evidence['forced_service_exit_nonzero'],evidence['child_reserved_before_kill'],ledger['remaining']==0,evidence['stop_handler_persisted_revocation'],evidence['model_endpoint_removed']]):
   print(result.stderr.decode()[-1500:]);raise RuntimeError('Service revocation probe failed')

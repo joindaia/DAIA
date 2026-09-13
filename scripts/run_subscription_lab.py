@@ -10,10 +10,12 @@ import argparse
 import fcntl
 import json
 import os
+import pwd
 from pathlib import Path
 import subprocess
 import uuid
 from subscription_lab_identity import check_identities
+from subscription_lab_shutdown import verify as verify_revocation
 
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ("guest", "request-template", "auth-home", "codex-binary", "python-runtime"):
@@ -62,12 +64,17 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
                           "supervised_endpoints_and_handoffs_removed": clean}), flush=True)
         if run.returncode or not clean:
             raise RuntimeError("Lab failed; inspect bounded private diagnostics.")
+        recorded = json.loads(Path('/run/daia-subscription-run.json').read_text())
+        revoked = verify_revocation(recorded['state_directory'], controller_unit=unit,
+                                    model_uid=pwd.getpwnam('daia-egress').pw_uid)
         data = json.loads(result.read_text())
-        data.update(normal_supervised_controller_exit=0, supervised_cleanup_complete=clean)
+        data.update(normal_supervised_controller_exit=0, supervised_cleanup_complete=clean,
+                    persistent_model_authority_revoked=revoked)
         Path("/run/daia-assembled-subscription-result.json").write_text(json.dumps(data))
         print(json.dumps({k: data[k] for k in (
             "results", "overlay_removed", "rotation", "model_channel_counts",
             "normal_supervised_controller_exit", "supervised_cleanup_complete",
+            "persistent_model_authority_revoked",
         )}))
     finally:
         subprocess.run(["systemctl", "stop", unit], capture_output=True, timeout=20)
