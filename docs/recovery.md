@@ -349,3 +349,21 @@ cutover: source writers were not frozen for ongoing service migration. A final
 handoff must freeze all source writers, take and verify a fresh snapshot, reconcile
 helper state and certificates, and keep the old source frozen after destination
 writes begin. Whole-worker and provider-isolation acceptance remains outstanding.
+
+
+## Repeatable snapshot status comparison
+
+The operator can run `python -m daia.snapshot_probe SNAPSHOT --at UNIX_SECONDS`
+against a checked, private standalone backup on both runtimes, using exactly the
+same snapshot bytes and clock. The original is never opened by SQLite: validation
+and coordinator inspection operate on private temporary copies. Output contains
+only the snapshot hash, status digest, agent count and clock. Non-revoked agents
+under non-revoked contributors are compared, including denied outcomes when grants
+have expired. No new work is requested and expiry processing is disabled.
+
+Three targeted regressions cover unchanged source bytes, changed usage, expired
+grants, corrupt input and refusal of a database with sidecars. The tool is not proof
+that writers are frozen: a writer could introduce a WAL after the initial check.
+Use a published standalone backup, never a live database, and enforce source freeze
+separately before the final handoff. Matching status does not replace authenticated
+MCP migration, helper-state reconciliation or deployment-isolation acceptance.
