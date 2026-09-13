@@ -30,12 +30,13 @@ def provider(tmp_path, monkeypatch):
     keyfile = tmp_path / 'key.pem'; keyfile.write_bytes(key.private_bytes(
         serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
     keyfile.chmod(0o600)
-    state = {'status': 200, 'seen': [], 'connections': []}
+    state = {'status': 200, 'seen': [], 'connections': [], 'started': threading.Event()}
     class Handler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *args): pass
         def do_POST(self):
             body = self.rfile.read(int(self.headers['Content-Length']))
             state['seen'].append((self.path, dict(self.headers), body))
+            state['started'].set()
             self.send_response(state['status'])
             for value in state.get('content_types', ['text/event-stream']):
                 self.send_header('Content-Type', value)
@@ -69,9 +70,9 @@ def provider(tmp_path, monkeypatch):
         finally: server.shutdown(); thread.join(5)
 
 
-def binding(provider, *, trust=True, seconds=3):
+def binding(provider, *, trust=True, seconds=3, requests=1):
     certfile, _ = provider
-    result = CodexHTTPSUpstream('1.1.1.1', 'synthetic-token', 'synthetic-account', seconds=seconds, requests=1)
+    result = CodexHTTPSUpstream('1.1.1.1', 'synthetic-token', 'synthetic-account', seconds=seconds, requests=requests)
     if trust: result._tls.load_verify_locations(cafile=str(certfile))
     return result
 
@@ -187,3 +188,52 @@ def test_missing_media_type_requires_complete_responses_stream(provider):
 def test_missing_media_type_rejects_nonresponses_or_incomplete_stream(provider, wire):
     provider[1].update(content_types=[], framing=[('Content-Length', str(len(wire)))], wire=wire)
     with pytest.raises(Denied): binding(provider)(b'{}')
+
+
+def test_explicit_revocation_interrupts_tls_and_cannot_be_revived(provider):
+    state = provider[1]
+    state.update(framing=[('Transfer-Encoding', 'chunked')], drip=True)
+    adapter = binding(provider, seconds=10, requests=2)
+    results = []
+    def request():
+        try:
+            results.append(adapter(b'{}'))
+        except Denied:
+            results.append('denied')
+    thread = threading.Thread(target=request)
+    thread.start()
+    try:
+        assert state['started'].wait(2)
+        with pytest.raises(Denied):
+            adapter.replace_credential('replacement-during-request')
+        started = time.monotonic()
+        adapter.revoke()
+        thread.join(1)
+        assert not thread.is_alive()
+        assert time.monotonic() - started < 1
+        assert results == ['denied']
+        with pytest.raises(Denied):
+            adapter.replace_credential('replacement-after-stop')
+        with pytest.raises(Denied):
+            adapter(b'{}')
+        assert len(state['connections']) == len(state['seen']) == 1
+    finally:
+        adapter.revoke(); thread.join(2)
+
+
+def test_trusted_rotation_keeps_tls_account_destination_and_request_budget(provider):
+    adapter = binding(provider, requests=2)
+    assert adapter(b'{}') == b'data: {}\n\n'
+    deadline = adapter._deadline
+    adapter.replace_credential('synthetic-replacement')
+    assert adapter._deadline == deadline
+    assert adapter(b'{}') == b'data: {}\n\n'
+    with pytest.raises(Denied):
+        adapter(b'{}')
+    state = provider[1]
+    assert [headers['Authorization'] for _, headers, _ in state['seen']] == [
+        'Bearer synthetic-token', 'Bearer synthetic-replacement']
+    assert all(path == '/backend-api/codex/responses' and
+               headers['ChatGPT-Account-Id'] == 'synthetic-account'
+               for path, headers, _ in state['seen'])
+    assert state['connections'] == [('1.1.1.1', 443)] * 2

@@ -762,3 +762,29 @@ but remains a controlled fixture with harness-driven submission. It does not pro
 public research, downloads, native provider refresh/revocation, comprehensive
 private-network or provider-account confinement, production scheduling, or an
 automatically accepted repository improvement. Keep those release gates open.
+
+
+### Native subscription refresh and TLS revocation
+
+The pinned original Codex 0.153.4 app-server was started on the trusted host
+with the already authorized dedicated participant profile. The documented
+`account/read` operation with `refreshToken: true` returned a ChatGPT account;
+both saved access and refresh credentials changed, the account binding stayed
+the same and credential-file permissions remained private. A second fresh
+app-server process read the persisted account without forced refresh; both
+credentials remained unchanged and both processes exited zero. No raw account
+response or credential was published. No model turn, guest or new login occurred.
+See the [bounded record](research/native-subscription-refresh-2026-09-13.json)
+and [official account API documentation](https://learn.chatgpt.com/docs/app-server).
+
+This establishes live native refresh and persistence across an auth-client
+restart. It does not yet establish a guest inference request spanning refresh,
+provider-side logout/revocation, or complete account confinement. Account metadata
+is not by itself evidence that a subsequent model request will be authorized.
+
+Separately, 62 HTTPS/upstream tests passed. The added local TLS tests confirm
+that explicit binding revocation interrupts an active dripping response within
+one second, rejects subsequent requests and cannot be reversed by replacing the
+credential. Between requests, trusted credential replacement preserves the fixed
+account, destination, deadline and request budget. These use synthetic credentials
+and a local TLS fixture, not provider-side token revocation.
