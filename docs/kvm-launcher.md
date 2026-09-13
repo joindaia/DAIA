@@ -624,3 +624,24 @@ for new lab assignment state, but does not implement service restart, coordinato
 endpoint restoration, reconstruction of an expiring model budget, or renewed
 consent. Backup, retention and cleanup of accumulated private runs still need an
 explicit implementation. No automatic work is authorized by a retained record.
+
+
+## Inspect retained state without resuming it
+
+`python scripts/inspect_subscription_run.py --run "$PRIVATE_RUN_DIRECTORY"`
+reads the recorded assignment, the single saved contributor state and the exact
+coordinator row using a read-only database connection. It requires private regular
+paths and rejects changes to contributor state during inspection. Run this as the
+trusted operator after the old controller is quiescent; output is private metadata.
+
+Matching receipts yield `acknowledged`; this does not establish that the original
+client completed its final turn or that the artifact is correct. No automatic
+resume, replay or model-budget reconstruction is authorized. Missing or mismatched
+evidence remains unconfirmed. The inspector opens no provider connection and
+never loads the signing helper or executes the candidate.
+
+Seven focused tests passed. A new process inspected the actual retained run and
+recognized its acknowledged result; hashes of the database and contributor state
+were identical before and after. See [inspection evidence](research/retained-run-inspection-2026-09-13.json).
+No host reboot occurred. Endpoint restoration, backup/retention, expiring budget
+recovery and clean participant installation remain outstanding.
