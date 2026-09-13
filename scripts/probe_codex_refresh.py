@@ -1,12 +1,16 @@
 import argparse
 import selectors
+import socket
+import socketserver
 import base64, hashlib, http.server, json, os, pathlib, subprocess, tempfile, threading, time
 parser=argparse.ArgumentParser(description='Native Codex synthetic refresh/restart probe; uses no existing auth.')
 parser.add_argument('binary',type=pathlib.Path)
 parser.add_argument('--account-only',action='store_true',help='Use trusted native account/read without starting model work')
+parser.add_argument('--binding',action='store_true',help='Use native auth on the trusted side of the local model channel')
 parser.add_argument('--reject-refresh',action='store_true',help='Return synthetic revocation failure; requires account-only mode')
 parser.add_argument('--force-refresh',action='store_true',help='Ask the native account interface to refresh explicitly')
 args=parser.parse_args()
+if args.binding and not args.account_only:parser.error('--binding requires --account-only')
 if args.reject_refresh and not args.account_only:parser.error('--reject-refresh requires --account-only')
 binary=str(args.binary.resolve())
 assert hashlib.sha256(pathlib.Path(binary).read_bytes()).hexdigest()=='56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da'
@@ -58,6 +62,7 @@ supports_websockets = false
   env={'PATH':'/usr/bin:/bin','HOME':root,'CODEX_HOME':root,'CODEX_REFRESH_TOKEN_URL_OVERRIDE':url+'/oauth/token','HTTP_PROXY':url,'HTTPS_PROXY':url,'NO_PROXY':'127.0.0.1'}
   exits=[]
   markers=[]
+  admitted=[]
   for i in range(2):
    if args.account_only:
     p=subprocess.Popen([binary,'app-server'],env=env,cwd=root,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1)
@@ -80,6 +85,39 @@ supports_websockets = false
      send({'method':'initialized'})
      send({'id':2,'method':'account/read','params':{'refreshToken':args.force_refresh}})
      answer=receive(2)
+     if args.binding:
+      send({'id':3,'method':'getAuthStatus','params':{'includeToken':True,'refreshToken':False}})
+      credential=receive(3)['result'].get('authToken')
+      if args.reject_refresh:
+       assert credential is None
+       admitted.append(False)
+      else:
+       # Lab oracle: require the exact fixture-issued, refreshed token.
+       assert credential==new
+       from daia.model_upstream import LocalModelUpstream
+       from daia.model_request import RequestGate
+       from daia.model_channel import serve_once
+       route=str(home/'model.sock')
+       with socketserver.UnixStreamServer(route,Handler) as upstream:
+        worker=threading.Thread(target=upstream.serve_forever);worker.start()
+        binding=LocalModelUpstream(route,credential,seconds=5,requests=1)
+        try:
+         body=json.dumps({'model':'daia-fixture','store':False,'stream':True,'tools':[],'input':[{'role':'user','content':[{'type':'input_text','text':'hello'}]}]}).encode()
+         client,channel=socket.socketpair()
+         forwarder=threading.Thread(target=serve_once,args=(channel,RequestGate(body),binding));forwarder.start()
+         with client:
+          client.settimeout(5)
+          client.sendall(b'POST /v1/responses HTTP/1.1\r\nHost: daia-model\r\nContent-Type: application/json\r\nContent-Length: '+str(len(body)).encode()+b'\r\n\r\n'+body)
+          reply=b''
+          while chunk:=client.recv(65536):reply+=chunk
+         forwarder.join(5)
+         assert not forwarder.is_alive()
+         assert reply.startswith(b'HTTP/1.1 200') and b'DAIA_AUTH_READY' in reply
+         assert credential.encode() not in reply
+         admitted.append(True)
+        finally:
+         binding.revoke();upstream.shutdown();worker.join(5)
+       pathlib.Path(route).unlink()
      if not args.reject_refresh:assert answer['result']['account']['type']=='chatgpt',answer
     finally:
      p.stdin.close()
@@ -94,11 +132,15 @@ supports_websockets = false
     if p.returncode: print(p.stderr.decode()[-1500:])
   stored=json.loads(auth.read_text())
   result={'exits':exits,'markers':markers,'calls':calls,'rotated_persisted':stored['tokens']['refresh_token']=='synthetic-rotated','access_persisted':stored['tokens']['access_token']==new}
+  if args.binding:
+   result['bindings_admitted']=admitted
+   assert admitted==[not args.reject_refresh]*2
   print(json.dumps(result))
+  result.pop('bindings_admitted',None)
   if args.reject_refresh:
    assert exits==[0,0] and calls and set(calls)=={'refresh'}
    assert not result['rotated_persisted'] and not result['access_persisted']
    # Account metadata is not evidence of successful credential renewal.
    assert stored['tokens']['access_token']==jwt(1)
-  else:assert result=={'exits':[0,0],'markers':[True,True],'calls':(['refresh'] if args.account_only else ['refresh','model-refreshed','model-refreshed']),'rotated_persisted':True,'access_persisted':True}
+  else:assert result=={'exits':[0,0],'markers':[True,True],'calls':(['refresh'] if args.account_only and not args.binding else ['refresh','model-refreshed','model-refreshed']),'rotated_persisted':True,'access_persisted':True}
 finally:server.shutdown();server.server_close();thread.join()

@@ -71,3 +71,17 @@ def test_expired_binding_does_not_connect(upstream):
     time.sleep(.01)
     with pytest.raises(Denied): binding(b'{}')
     assert state['seen'] == []
+
+
+@pytest.mark.parametrize('secret', ['', None, 'a\r\nX-Evil: yes', 'with space', 'x' * 8193])
+def test_invalid_credential_rejected_before_connect(secret):
+    with pytest.raises(ValueError):
+        LocalModelUpstream('/nonexistent', secret, seconds=5, requests=1)
+
+
+def test_jwt_shaped_credential_is_injected_exactly(upstream):
+    path, state = upstream
+    secret = 'synthetic.header.signature'
+    binding = LocalModelUpstream(path, secret, seconds=5, requests=1)
+    assert binding(b'{}') == state['body']
+    assert state['seen'] == [('/v1/responses', 'Bearer ' + secret, b'{}')]

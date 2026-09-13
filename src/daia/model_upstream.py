@@ -13,7 +13,7 @@ from .model_request import Denied
 
 class LocalModelUpstream:
     def __init__(self, path: str, secret: str, *, seconds: float, requests: int):
-        if not secret or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for c in secret):
+        if not isinstance(secret, str) or not 0 < len(secret) <= 8192 or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_." for c in secret):
             raise ValueError("invalid lab credential")
         if not 0 < seconds <= 300 or type(requests) is not int or not 0 < requests <= 100:
             raise ValueError("invalid lab budget")

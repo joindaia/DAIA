@@ -289,3 +289,32 @@ model binding. The trusted side must establish usable credential state, includin
 freshness and expected account binding, and reject unavailable or failed renewal.
 This check is a remaining integration requirement, not implemented by this probe.
 The normal account-only refresh control still passes afterward.
+
+## Native refresh connected to the local model binding
+
+Run with `PYTHONPATH=src python3 scripts/probe_codex_refresh.py
+/path/to/pinned/codex --account-only --binding`, and repeat with
+`--reject-refresh`. The native private `getAuthStatus` request returns the
+refreshed synthetic access token on success and no token after the fixture's
+permanent refresh failure. This RPC remains entirely on the trusted side.
+
+On success, the probe supplies that exact fixture-issued credential to
+`LocalModelUpstream`, sends an unauthenticated request through `serve_once` and
+`RequestGate`, and receives the synthetic model marker. The provider observes the
+new bearer credential; the channel response does not contain it. A fresh native
+process repeats the operation using persisted auth. Observed sequence: one refresh,
+two authenticated model calls, two admitted bindings. On rejection: four observed
+refresh attempts, no model calls and zero admitted bindings. Both runs exit zero.
+
+The adapter now accepts bounded JWT-shaped credential strings containing dots;
+whitespace, header injection, nonstrings and oversized values remain rejected.
+All 75 gate/channel/adapter tests pass, including exact JWT-shaped header injection
+and malformed credential rejection before connection.
+
+This integration uses local sockets in a test process, not the hostile KVM path.
+The probe's admission oracle requires the exact synthetic token issued by its
+fixture. It is **not** a production validator for arbitrary credentials, token
+freshness, account identity or provider authorization. No real subscription is
+accessed, and no broader native account interface is exposed through the model
+channel. Next: transfer the combined flow into the restricted external service
+and fresh KVM trial, preserving the existing assignment deadline and request budget.
