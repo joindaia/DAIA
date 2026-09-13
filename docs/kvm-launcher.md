@@ -63,3 +63,20 @@ failure before any work-directory file is created. The valid bundle then boots a
 credential-free guest and removes its overlay. This tests startup and hashing,
 not the three relays, provider login, model execution or broad worker safety.
 See the [measured result](research/packaged-kvm-launch-2026-09-13.json).
+
+
+## Bridge backpressure prerequisite
+
+The repository's `model_channel_bridge.py` now uses nonblocking socket and pipe
+writes. Its previous synchronous stdout write could block beyond the nominal
+30-second deadline when QEMU stopped reading. The revised relay limits total
+bidirectional transfer to 16 MiB, applies backpressure to bounded directional
+queues and checks its deadline even when a destination never becomes writable.
+Unix connection setup has a five-second timeout. Upstream upload rejection still
+allows the reply to drain; a disconnected output consumer ends the bridge.
+
+Real socket/pipe tests cover stalled upload, stalled download, early HTTP rejection
+and excess bytes. Together with the assignment relay suite: 12 passed on Linux.
+This changes the repository bridge, not immutable prepared lab bundles. Those
+must be rebuilt, pinned and tested before the complete launcher can use it; no
+new live-subscription or KVM result is asserted for this revision.
