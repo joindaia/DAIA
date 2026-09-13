@@ -115,3 +115,33 @@ or pass `-O`/`-OO`. They stop before imports or side effects in those modes beca
 some lab invariant checks still use assertions. This is separate from the native
 authentication probe, whose security checks are explicit and remain enforced with
 optimization. Do not remove the entrypoint guard to bypass a refused launch.
+
+## Exact Ubuntu base image
+
+The tested base is `noble-server-cloudimg-amd64.img` from the dated
+[Ubuntu 20260911 directory](https://cloud-images.ubuntu.com/noble/20260911/).
+Obtain that image, `SHA256SUMS` and `SHA256SUMS.gpg` from the same directory on the
+trusted installation side. Do not substitute the mutable `current` directory.
+The installation host must have Ubuntu's trusted cloudimage keyring at
+`/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg` and `gpgv` available; a keyring
+supplied with untrusted task input is not an acceptable replacement.
+
+```sh
+python3 scripts/verify_lab_base_image.py --image "$DAIA_BASE_IMAGE" \
+  --checksums "$DAIA_IMAGE_SUMS" --signature "$DAIA_IMAGE_SIGNATURE"
+```
+
+The offline verifier checks immutable temporary copies of the checksum/signature
+inputs, requires the single approved image entry, and streams the image hash.
+It requires SHA-256
+`612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354`
+and exactly 625256960 bytes. It neither mounts nor boots nor installs the image.
+A trusted installer must copy the verified bytes into protected template storage;
+`prepare_kvm_bundle.py` separately rechecks copied bytes before launch.
+
+The live verification used freshly downloaded dated signature/checksum metadata
+against the existing image and passed. Tampered metadata and a wrong image were
+rejected. Seven verifier/bundle regressions passed. This identifies the current
+lab image; it does not establish an up-to-date vulnerability baseline, a future
+image's compatibility, or a complete fresh-host deployment. Image updates require
+reviewed new pins and a new acceptance run, never automatic fallback.

@@ -319,3 +319,16 @@ identity, credential and crash-rendezvous regressions: 36 tests in total. No ser
 or provider call started. [Evidence](research/lab-optimized-execution-refusal-2026-09-13.json).
 This is not an all-repository assertion audit or proof about arbitrary guest code.
 Normal execution is unchanged; full VM execution was not repeated for this guard.
+
+
+## Base-image origin and offline verification
+
+The existing base hash now has a reproducible dated source and an offline verifier.
+Fresh Ubuntu 20260911 checksum/signature metadata verified against the system
+cloudimage keyring, and the existing 625256960-byte image matched the exact pinned
+hash. Altered metadata and a wrong image were refused; seven verifier/bundle tests
+passed. [Evidence](research/verified-base-image-origin-2026-09-13.json).
+
+The verifier neither installs nor boots the image and will not accept a newer
+image automatically. Trusted keyring installation, vulnerability review and the
+complete clean-host installation still need their own evidence.
