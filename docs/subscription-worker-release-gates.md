@@ -175,3 +175,17 @@ was introduced. Evaluator temporary storage was removed. See [live evidence](res
 This closes the live compatibility check for the new identity/profile readers.
 It does not establish a clean participant installation, broader task usefulness,
 complete account/network confinement, or recovery after controller/host reboot.
+
+
+## Declarative account and directory installation
+
+[Native systemd manifests](../deploy/subscription-lab/README.md) now define the
+four separate lab accounts and required state/socket directories. The repository
+probe ran sysusers and tmpfiles against an empty temporary root twice: four
+distinct nonroot identities and five directory owner/mode checks passed; repeated
+account files were identical and the host account files remained unchanged.
+No credentials or running services were involved. [Evidence](research/lab-installation-basis-2026-09-13.json).
+
+This is an actual fresh-root provisioning check, not a full participant install.
+It leaves runtime/image/client provisioning, trusted first login, existing-state
+migration and complete execution under newly installed identities open.
