@@ -241,3 +241,42 @@ no worker started. Two negative preflight tests confirm an incorrect binary or
 symlink is rejected before execution and leaves a synthetic auth file untouched.
 This packages the lifecycle probe, not the initial interactive login, an external
 identity proof, provider revocation, or the complete production credential broker.
+
+
+## Repository-native subscription lab controller
+
+`run_subscription_lab.py` now supervises `run_subscription_lab_controller.py`
+from the checkout. The assignment helper and public-research service are also
+repository files. Native authentication invokes `probe_codex_native_auth.py` as
+the existing dedicated profile owner, with a cleared environment; it does not
+request a new login. The former private controller scripts are not needed by this
+entry point.
+
+On the already configured, dedicated Linux lab host, supply trusted operator paths:
+
+```sh
+sudo python3 scripts/run_subscription_lab.py \
+  --guest "$APPROVED_GUEST_FIXTURE" \
+  --request-template "$APPROVED_NATIVE_REQUEST" \
+  --auth-home "$DEDICATED_PRIVATE_PROFILE" \
+  --codex-binary "$PINNED_NATIVE_CODEX" \
+  --python-runtime "$APPROVED_PYTHON_RUNTIME"
+```
+
+The guest directory must contain the existing approved `seed.iso`, `config.json`
+and `probe.py`. The runtime needs the repository's development/MCP dependencies.
+Four restricted lab users, KVM, the pinned base image and lab directories must
+already exist. The controller never creates accounts or logs a participant in.
+Inputs and this checkout are trusted administrator code, not worker-controlled.
+
+The supervisor holds an exclusive process lock because templates are shared,
+refuses existing endpoints, removes the previous result before starting, and
+creates an independent 210-second systemd limit with explicit credential-handoff
+and socket cleanup. Child services are bound to that parent. Existing model
+limits remain six requests and 150 seconds. No broader consent is requested.
+
+This remains an experimental lab route, not a clean-machine installer or a
+production authority boundary around the administrator. Task-seed generation,
+initial authentication setup and the independent evaluator still require lab
+preparation. Submissions are harness-driven. The profile, request template,
+private reports and task seed are not published.
