@@ -172,3 +172,17 @@ def test_deadline_interrupts_continuously_arriving_body(upstream):
     finally:
         binding.revoke()
         thread.join(2)
+
+
+@pytest.mark.parametrize('failure,kind', [(TimeoutError, 'timeout'), (OSError, 'socket'),
+    (http.client.HTTPException, 'http_framing')])
+def test_private_transport_categories_do_not_retain_exception_payload(upstream, monkeypatch, failure, kind):
+    path, state = upstream
+    binding = LocalModelUpstream(path,'synthetic-secret',seconds=5,requests=1)
+    def broken(connection): raise failure('synthetic-private-response-and-secret')
+    monkeypatch.setattr(http.client.HTTPConnection,'getresponse',broken)
+    with pytest.raises(Denied,match='upstream transport failed') as error:
+        binding(b'{}')
+    assert binding.transport_failure == {'phase':'headers','kind':kind}
+    assert 'synthetic-private' not in str(error.value) + str(binding.transport_failure)
+    with pytest.raises(Denied,match='binding unavailable'): binding(b'{}')

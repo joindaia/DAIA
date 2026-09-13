@@ -235,3 +235,20 @@ and exact retry completed with unchanged identity/consent and one result.
 Thirty-five targeted tests passed. [Evidence](research/lab-without-test-imports-2026-09-13.json).
 The changed controller has not yet completed a full VM/subscription run. The
 approved source checkout is still required; this does not finish packaging.
+
+
+## Failed no-dev runtime integration trial
+
+The first full VM trial at `6cd9569` reached the provider but did not complete its
+first response: one attempt, HTTP 200, zero completed forwards, and 24 denials
+including the failed call. The controller exited nonzero, delivery was unconfirmed,
+and supervised endpoints/handoffs were removed. No automatic retry, renewed
+budget or independent artifact evaluation was authorized. [Evidence](research/no-dev-runtime-transport-failure-2026-09-13.json).
+
+The old generic transport error does not identify whether timeout, socket failure
+or HTTP framing caused this incident. Do not infer a specific cause from HTTP 200.
+The adapter now records fixed operator-only phase/kind categories, never exception
+text or provider bytes; the worker still receives the same generic denial. Sixty-five
+transport regression tests passed, including secret-bearing exceptions and consumed
+failed-attempt budgets. No transport limit changed and no second provider run was
+performed. Full no-dev runtime subscription acceptance remains open.

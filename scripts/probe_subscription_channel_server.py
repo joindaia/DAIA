@@ -45,6 +45,7 @@ def forward(raw):
   out=binding(raw)
  except Denied as error:
   counts['upstream_failure']=str(error)
+  counts['transport_failure']=binding.transport_failure
   raise
  counts['forwarded']+=1
  if counts['forwarded']==1 and (root/'crash-before-first-response').exists():

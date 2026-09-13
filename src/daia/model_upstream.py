@@ -58,6 +58,7 @@ class LocalModelUpstream:
         self._lock = threading.Lock()
         self._revoked = False
         self._active = None
+        self.transport_failure = None
 
     def replace_credential(self, secret: str) -> None:
         """Trusted controller only: rotate between calls without renewing authority.
@@ -97,6 +98,8 @@ class LocalModelUpstream:
         watchdog = threading.Timer(left, self.revoke)
         watchdog.daemon = True
         watchdog.start()
+        phase = "connect"
+        self.transport_failure = None
         try:
             sock.settimeout(min(5, left))
             sock = self._connect(sock)
@@ -106,7 +109,9 @@ class LocalModelUpstream:
                     raise Denied("upstream binding unavailable")
             # Never hold the state lock over blocking I/O: revoke must be able
             # to shut down a blocked request as well as a blocked response.
+            phase = "send"
             conn.request("POST", self._target, body=body, headers=self._headers())
+            phase = "headers"
             response = conn.getresponse()
             if response.status != 200:
                 raise Denied("upstream response rejected")
@@ -116,6 +121,7 @@ class LocalModelUpstream:
             lengths = response.headers.get_all("Content-Length", [])
             transfers = response.headers.get_all("Transfer-Encoding", [])
             limit = 8 * 1024 * 1024
+            phase = "body"
             if transfers:
                 # One unambiguous framing mode; HTTPResponse decodes chunking.
                 if lengths or len(transfers) != 1 or transfers[0].lower() != "chunked":
@@ -137,7 +143,11 @@ class LocalModelUpstream:
                 if self._revoked or time.monotonic() >= self._deadline:
                     raise Denied("upstream binding unavailable")
             return output
-        except (OSError, http.client.HTTPException):
+        except (OSError, http.client.HTTPException) as error:
+            # Operator-only fixed categories: never retain exception text or bytes.
+            kind = "timeout" if isinstance(error, TimeoutError) else (
+                "http_framing" if isinstance(error, http.client.HTTPException) else "socket")
+            self.transport_failure = {"phase": phase, "kind": kind}
             raise Denied("upstream transport failed") from None
         finally:
             watchdog.cancel()
