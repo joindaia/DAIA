@@ -47,7 +47,9 @@ The supervisor must remove the overlay even when this script is killed; its
 `finally` clause covers ordinary failures, not SIGKILL. Also bound filesystem
 usage externally: the post-run 8 MiB serial-size check bounds parsing, not how much
 an actively running guest can write to disk. This is an unresolved installation
-gate, not a claim that disk quotas are already installed.
+gate, not a claim that whole-worker disk quotas are installed. The subsequent
+[bounded storage trial](worker-storage.md) verifies a service-private work quota;
+other writable paths and full supervisor integration remain open.
 
 The private `report.json` contains the guest's correlated output. A matching nonce
 only establishes correlation. `guest_claims_verified: false` is deliberate; the

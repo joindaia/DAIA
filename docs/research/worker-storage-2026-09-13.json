@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-13",
+  "credential_free": true,
+  "model_requests": 0,
+  "storage_probe": {
+    "byte_limit": 16777216,
+    "enospc_after_bytes": 16777216,
+    "inode_limit": 64,
+    "enospc_after_files": 63,
+    "normal_write_after_cleanup": true,
+    "direct_execution_denied": true,
+    "host_work_directory_unchanged": true
+  },
+  "kvm_probe": {
+    "real_kvm_boot": true,
+    "filesystem_limit_bytes": 536870912,
+    "filesystem_inode_limit": 4096,
+    "overlay_removed": true,
+    "private_report_read_before_teardown": true,
+    "files_remaining_inside": 3,
+    "host_directory_unchanged": true
+  },
+  "limitations": [
+    "Work-directory limit only; other writable temporary/shared-memory paths remain to bound",
+    "No live subscription or relay test in the bounded-filesystem boot",
+    "Normal teardown tested, not forced termination/recovery for this layout",
+    "Temporary filesystem consumes cgroup memory; keep swap disabled and budget guest plus filesystem pages"
+  ]
+}
