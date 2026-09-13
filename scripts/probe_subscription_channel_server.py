@@ -30,7 +30,7 @@ if sys.argv[1:] == ['--revoke-only']:
   (root/'model.sock').unlink(missing_ok=True)
  raise SystemExit(0)
 if sys.argv[1:]:raise SystemExit('Unsupported model service mode')
-template=json.loads(Path('/var/lib/daia-lab/templates/model-template.json').read_text());template['model']='gpt-5.3-codex-spark'
+template=json.loads(Path('/var/lib/daia-lab/templates/model-template.json').read_text())
 credentials=json.loads((root/'subscription-auth.json').read_text());(root/'subscription-auth.json').unlink()
 binding=CodexHTTPSUpstream(credentials['address'],credentials['access_token'],credentials['account_id'],seconds=150,requests=6,request_authority=request_authority)
 credentials.clear();counts={'forwarded':0,'denied':0,'attempts':0,'statuses':[]}

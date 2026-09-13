@@ -22,3 +22,17 @@ def load_task(source, config):
         raise ValueError('Expected frozen task document')
     # Coordinator.admit_evidence applies the full source/schema constraints.
     return task
+
+
+def load_model_template(path, pinned):
+    """Require the gateway and prepared guest to use the same operator choice."""
+    with Path(path).open('rb') as stream:
+        raw = stream.read(256 * 1024 + 1)
+    if len(raw) > 256 * 1024:
+        raise ValueError('Request template too large')
+    request = json.loads(raw)
+    # Older prepared guests contain the literal Spark model.
+    if (not isinstance(request, dict) or not isinstance(request.get('model'), str)
+            or not request['model'] or request['model'] != pinned.get('model', 'gpt-5.3-codex-spark')):
+        raise ValueError('Prepared guest and approved request model differ')
+    return request

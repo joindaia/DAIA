@@ -1,0 +1,54 @@
+{
+  "date": "2026-09-13",
+  "scope": "Second-host native subscription authentication lifecycle; no model work",
+  "native_version": "0.153.4",
+  "device_login_completed": true,
+  "profile_role": "separate provider identity outside worker",
+  "runs": [
+    {
+      "forced_refresh_requested": true,
+      "chatgpt_account_returned": true,
+      "exit_code": 0,
+      "access_token_changed": true,
+      "refresh_token_changed": true,
+      "account_unchanged": true,
+      "auth_file_private": true
+    },
+    {
+      "forced_refresh_requested": false,
+      "chatgpt_account_returned": true,
+      "exit_code": 0,
+      "access_token_changed": false,
+      "refresh_token_changed": false,
+      "account_unchanged": true,
+      "auth_file_private": true
+    }
+  ],
+  "model_requests_requested": 0,
+  "raw_credentials_published": false,
+  "worker_started_by_auth_probe": false,
+  "limits": [
+    "No account tier, model availability or quota claims were established by this probe.",
+    "This is trusted-side login, refresh and process restart evidence; it does not establish worker account confinement or a completed development task.",
+    "A second offline guest boot was running separately; it had no provider credentials."
+  ],
+  "model_catalog": {
+    "source": "original client app-server model/list",
+    "advertised": [
+      "gpt-6-astra",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5"
+    ],
+    "default": "gpt-6-astra",
+    "has_more": false,
+    "spark_advertised": false,
+    "inference_availability_proven": false
+  },
+  "model_configuration_change": "Builder uses operator-selected model from approved request; controller refuses guest/request mismatch instead of silently replacing it with Spark.",
+  "regression_tests": {
+    "passed": 9,
+    "scope": "model selection, generated config, mismatch refusal, task binding, request authority and actual gateway startup preserving the approved model"
+  }
+}

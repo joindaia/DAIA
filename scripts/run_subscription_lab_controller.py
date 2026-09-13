@@ -47,8 +47,9 @@ import hashlib
 import runpy
 prepare=runpy.run_path(str(repo/'scripts/prepare_kvm_bundle.py'))['prepare']
 pinned=json.loads((source/'config.json').read_text())
-from subscription_lab_task import load_task
+from subscription_lab_task import load_task, load_model_template
 task_document=load_task(source,pinned)
+approved_model=load_model_template(options.request_template,pinned)
 bundle=root/('subscription-bundle-'+uuid.uuid4().hex)
 bundle_hashes=prepare(p/'base.qcow2',source/'seed.iso',bundle,
  base_sha256=pinned['base_sha256'],seed_sha256=pinned['seed_sha256'],nonce=pinned['nonce'])
@@ -66,7 +67,6 @@ shutil.copyfile(bundle/'model-bridge.py',p/'model-bridge.py');(p/'model-bridge.p
 shutil.copyfile(repo/'scripts/probe_subscription_channel_server.py',p/'public-server.py');(p/'public-server.py').chmod(0o444)
 for name in ['model_request.py','model_response.py','model_channel.py','model_upstream.py','codex_https.py','request_ledger.py']:
  shutil.copyfile(repo/'src/daia'/name,p/name);(p/name).chmod(0o444)
-approved_model=json.loads(options.request_template.read_text());approved_model['model']='gpt-5.3-codex-spark'
 (p/'model-template.json').write_text(json.dumps(approved_model,sort_keys=True));(p/'model-template.json').chmod(0o444)
 jail=root/'gateway-root'
 for name in ['etc','usr','run/daia-lab','run/daia-authority','proc/sys/kernel/random','var/lib/daia-lab/templates']:(jail/name).mkdir(parents=True,exist_ok=True)

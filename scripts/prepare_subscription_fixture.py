@@ -29,6 +29,9 @@ def prepare(template, native, output, iso_builder, base_sha256):
     request = json.loads(raw)
     if not isinstance(request, dict):
         raise ValueError('Approved request object required')
+    model = request.get('model')
+    if not isinstance(model, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model):
+        raise ValueError('Explicit model identifier required')
     output = Path(output); output.mkdir()
     nonce = uuid.uuid4().hex
     fixture = Path(__file__).parents[1] / 'tests/fixtures/subscription-development'
@@ -37,6 +40,9 @@ def prepare(template, native, output, iso_builder, base_sha256):
     if code.count(old) != 1:
         raise ValueError('Unexpected nonce template')
     code = code.replace(old, nonce)
+    if code.count('gpt-5.3-codex-spark') != 1:
+        raise ValueError('Unexpected guest model template')
+    code = code.replace('gpt-5.3-codex-spark', model)
     compile(code, 'development-guest', 'exec')
     cloud = {'users': [], 'package_update': False, 'package_upgrade': False,
              'write_files': [
@@ -54,7 +60,7 @@ def prepare(template, native, output, iso_builder, base_sha256):
         '-volid', 'CIDATA', '-joliet', '-rock',
         *[str(output / name) for name in ('user-data', 'meta-data', 'network-config')],
         *[str(native / name) for name in pins]], check=True)
-    config = {'nonce': nonce, 'base_sha256': base_sha256,
+    config = {'nonce': nonce, 'model': model, 'base_sha256': base_sha256,
               'seed_sha256': hashlib.sha256((output / 'seed.iso').read_bytes()).hexdigest()}
     (output / 'config.json').write_text(json.dumps(config))
     # Compatibility input for the current lab controller; never executed by builder.

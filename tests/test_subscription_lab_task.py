@@ -28,3 +28,19 @@ def test_task_is_accepted_by_real_coordinator(tmp_path):
     coordinator=Coordinator(Store(str(tmp_path/'network.sqlite3')))
     result=coordinator.admit_evidence(document)
     assert result
+
+
+def test_model_choice_is_preserved_and_mismatch_refused(tmp_path):
+    load_model = runpy.run_path(str(Path(__file__).parents[1]/'scripts/subscription_lab_task.py'))['load_model_template']
+    path = tmp_path/'request.json'
+    request = {'model': 'gpt-5.6-sol', 'input': [], 'tools': []}
+    path.write_text(json.dumps(request))
+    assert load_model(path, {'model': 'gpt-5.6-sol'}) == request
+    for pinned in ({'model': 'gpt-6-astra'}, {}, {'model': None}):
+        with pytest.raises(ValueError, match='model differ'):
+            load_model(path, pinned)
+    path.write_text(json.dumps({'model': 'gpt-5.3-codex-spark'}))
+    assert load_model(path, {})['model'] == 'gpt-5.3-codex-spark'
+    path.write_bytes(b' ' * (256*1024+1))
+    with pytest.raises(ValueError, match='too large'):
+        load_model(path, {})
