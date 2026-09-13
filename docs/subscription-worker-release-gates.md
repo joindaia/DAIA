@@ -276,3 +276,15 @@ temporary storage. [Evidence](research/subscription-body-timeout-2026-09-13.json
 This confirms the changed no-dev lab chain and a bounded handling improvement for
 slow model output. It does not make arbitrarily slow requests succeed or remove
 the remaining clean-installation, account and network release gates.
+
+
+## First-login profile preparation
+
+A trusted-side preparation tool now verifies the pinned original binary and
+creates an exclusive private profile without copying credentials or starting a
+login. The documented next step is a separate participant-run native device-code
+flow with a cleared environment. Five negative/positive tests passed; the real
+pinned client's login help worked against a temporary prepared profile and left
+no auth file. [Evidence](research/native-profile-preparation-2026-09-13.json).
+The full first login still requires participant interaction and was not repeated.
+This does not replace the outside-worker credential/account boundary.
