@@ -40,12 +40,14 @@ def test_failed_launch_exports_only_bounded_private_diagnostics(tmp_path):
     import subprocess
     import sys
     bundle = tmp_path / 'bundle'; bundle.mkdir()
-    (bundle / 'launcher.py').write_text("from pathlib import Path\nPath('serial.txt').write_bytes(b'x'*20000)\nraise SystemExit(1)\n")
+    (bundle / 'launcher.py').write_text("from pathlib import Path\nPath('serial.txt').write_bytes(b'DAIA_NATIVE_FAILURE synthetic error\\n'+b'x'*20000)\nraise SystemExit(1)\n")
     wrapper = Path(__file__).parents[1] / 'scripts/run_kvm_lab_report.py'
     result = subprocess.run([sys.executable, '-I', str(wrapper), '--bundle', str(bundle)],
                             cwd=tmp_path, capture_output=True, text=True, timeout=5)
     assert result.returncode == 1 and not result.stderr
     report = json.loads(result.stdout)
     assert report['ok'] is False
+    assert 'DAIA_NATIVE_FAILURE synthetic error' in report['untrusted_failure_context']
+    assert len(report['untrusted_failure_context'].encode()) <= 8192
     assert report['untrusted_diagnostics']['serial.txt'] == 'x' * 4096
     assert report['untrusted_diagnostics']['stderr.txt'] == ''

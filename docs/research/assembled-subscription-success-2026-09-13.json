@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-13",
+  "trial": {
+    "exit": 0,
+    "uid_nonroot": true,
+    "private_network": true,
+    "bundle_verified": true,
+    "overlay_removed": true,
+    "assembled_bundle_sha256": {
+      "base.qcow2": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+      "bridge.py": "68c12e98839dce91010ed328f9aecbb3c71388d2016cb10068b88f635c400afa",
+      "launcher.py": "4124a2991b148ec0e48882ad21a0f5ce57f01a929c3e97edb83c1fada016ad76",
+      "model-bridge.py": "d14fc3ed7ef94ea0e41d67ae8fd3df10d2f5e023a21b8b8df5ef32bfbc49e129",
+      "network-config.json": "3c41a7bc27ccf074203c7a4bc0690402b6241827960b861c829de849c1d0f3c2",
+      "network-seed.iso": "e91ce2356ebca343e79db5a05fd1d1b257870e62382de1c878210bc9b49b4cdb",
+      "report-wrapper.py": "688be88ac837fe4dd05c613c212950386b29ad31ee0a8604a4268020b70d63db",
+      "research-bridge.py": "ec1472c1d6e36299766ba1f7a4d08be95fd9f840315cca34bf23f9b0472b2d09"
+    },
+    "bounded_storage_and_export": true,
+    "rotation": {
+      "native_refresh_completed": true,
+      "account_unchanged": true,
+      "native_restart_completed": true,
+      "deadline_preserved": true,
+      "rotation_after_provider_requests": 1
+    },
+    "model_channel_counts": {
+      "forwarded": 4,
+      "denied": 23,
+      "attempts": 4
+    },
+    "provider_credentials_used": true,
+    "saved_identity_and_consent_unchanged": true,
+    "results": 1,
+    "pending_cleared_after_exact_receipt": true,
+    "helper_nonroot": true,
+    "helper_private_root": true,
+    "other_service_state_read_denied": true,
+    "normal_supervised_controller_exit": 0,
+    "supervised_cleanup_complete": true
+  },
+  "guest": {
+    "native_exit": 0,
+    "turn_completed": true,
+    "test_unchanged": true,
+    "scoped_tools": true,
+    "wrong_retry_denied": true,
+    "exact_retry": true,
+    "attacks_denied": 23,
+    "research_negative_requests_denied": 6
+  },
+  "artifact": {
+    "stored_source_matches_worker": true,
+    "stored_source_sha256": "f32b89b40b33b4256ea76b7f8ea27fffce40ac6fa0f5a982f2a83a780f2e248c",
+    "result_state": "in_review",
+    "results": 1
+  },
+  "evaluator": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "f32b89b40b33b4256ea76b7f8ea27fffce40ac6fa0f5a982f2a83a780f2e248c",
+    "model_source_changed": false,
+    "provider_credentials_present": false
+  },
+  "limits": [
+    "Full controller/auth setup still uses private lab scripts.",
+    "Submission is driven by the guest harness, not independently chosen by the native agent.",
+    "Earlier assembled trials failed; this successful run does not establish their root cause or long-term reliability."
+  ]
+}

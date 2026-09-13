@@ -192,3 +192,29 @@ The private audit reported three forwarded requests, four attempts and 24 refusa
 with credential rotation and the original deadline preserved. The next trial must
 use the bounded wrapper to retain guest failure context. Earlier successful
 subscription results remain separate evidence from this failed integration.
+
+
+## Successful assembled subscription trial
+
+A subsequent run used the offline builder, all three bounded bridges, the report
+wrapper and the four service-private storage mounts for the original Codex client
+with the participant's subscription. It completed four provider requests, native
+credential refresh/restart and one DAIA result. Twenty-three negative model-channel
+requests were refused. Original identity/consent and the model deadline remained
+unchanged; exact retry recovered the receipt and a changed retry was refused.
+The controller captured the result before mount destruction and its underlying
+work directory remained empty. Supervised sockets/handoffs and the overlay were
+removed. The [record](research/assembled-subscription-success-2026-09-13.json)
+contains all eight bundle file hashes and the candidate digest.
+
+The coordinator-stored source matched the worker output exactly. A fresh evaluator
+with no NIC or provider credentials passed the same ten regression cases on those
+unchanged source bytes; the original version failed. This verifies a useful task
+through the assembled components, not a clean participant installation: controller
+services, native authentication setup and task-seed generation still use lab code.
+Submission remains harness-driven. Earlier failed trials remain unexplained.
+
+Failure export additionally scans at most 8 MiB of serial data and retains up to
+8 KiB of selected error context, capped per line, so shutdown messages do not
+necessarily displace an earlier native failure. This output remains untrusted and
+private. Synthetic tests verify retention after 20,000 bytes of later chatter.
