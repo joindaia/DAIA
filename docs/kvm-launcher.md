@@ -550,3 +550,27 @@ explicit skips and one dependency deprecation warning in 63.28 seconds. Five
 focused checks passed afterward. See [build evidence](research/repository-development-fixture-2026-09-13.json).
 The next installation work still includes service identities/runtime setup and
 initial trusted-side authentication; new ISO construction is not live readiness.
+
+
+## Live run of the repository-built development input
+
+The new native input from repository fixtures was booted with the existing
+participant subscription and unchanged six-request limit. The client produced
+a candidate, submitted it through native MCP and received `already_recorded`
+after the intentionally lost first receipt. The coordinator retained one result
+and pending state cleared. However, the client requested a seventh model call
+before completing its final turn. The binding refused it; the controller failed
+and cleaned up. This is not a fully successful native-client run.
+
+The actual stored source was extracted by receipt and evaluated through the
+repository seed builder, pinned bundle builder and supervised networkless
+evaluator. All ten cases passed, the original failed, and the stored source hash
+matched exactly. Evaluation used no provider call. The evaluator also removed its
+private storage normally. See [live budget evidence](research/repository-fixture-live-budget-2026-09-13.json).
+
+This distinguishes a useful, acknowledged artifact from a completed model turn.
+The next product work must export that distinction durably on incomplete runs;
+it must not discard or resubmit an already accepted result, reset the allowance
+or label a failed turn successful. Repeated model behavior within the finite
+budget remains a reliability limitation. Initial installation/authentication and
+comprehensive account/network validation remain open.
