@@ -80,3 +80,26 @@ and excess bytes. Together with the assignment relay suite: 12 passed on Linux.
 This changes the repository bridge, not immutable prepared lab bundles. Those
 must be rebuilt, pinned and tested before the complete launcher can use it; no
 new live-subscription or KVM result is asserted for this revision.
+
+
+## Bounded bridges in the real KVM lab
+
+The [follow-up run](research/bounded-bridge-kvm-2026-09-13.json) rebuilt the three
+lab bridge files from `model_channel_bridge.py` at `122e24c`. The only source
+substitution was the fixed Unix destination: assignment uses
+`/run/daia-lab/gateway.sock`, model uses `/run/daia-lab/model.sock`, and research
+uses `/run/daia-research/gateway.sock`. No worker-selected destination was added.
+Exact bridge SHA-256 values are retained in the report.
+
+From the real guest, assignment MCP initialization succeeded, a forbidden model
+route returned HTTP 403, and the research gateway allowed controlled public-IP
+canaries but refused the same names after actual DNS answers changed to loopback,
+for both IPv4 and IPv6. The external receiver observed 20 positive control
+connections and zero unexpected private connections. This uses the existing
+DNS-rebinding guest/server fixtures, not public provider credentials.
+
+After SIGKILL of the parent controller, all five cgroups became empty, all three
+sockets became unreachable and the overlay/temporary credential handoffs were
+removed in 0.053 seconds. Python exit cleanup did not run. This verifies the new
+bridges within the existing lab boundary; it does not package that boundary or
+repeat a full subscription development/receipt workflow.
