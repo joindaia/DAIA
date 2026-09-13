@@ -288,3 +288,19 @@ pinned client's login help worked against a temporary prepared profile and left
 no auth file. [Evidence](research/native-profile-preparation-2026-09-13.json).
 The full first login still requires participant interaction and was not repeated.
 This does not replace the outside-worker credential/account boundary.
+
+
+## Native authentication checks survive optimized Python
+
+A regression reproduced a bypass in `probe_codex_native_auth.py`: Python `-O`
+removed assert-based checks and allowed an unapproved synthetic binary (including
+a symlink) to start beside a synthetic profile. Both cases failed before the fix.
+All checks in this probe now use explicit runtime guards, including the final
+lifecycle verification, so optimization cannot erase them.
+
+Twenty targeted tests passed after correction. A separate check using the actual
+pinned client and a nonprivate empty profile also refused startup under `-O`
+before any login. No real credentials or provider request was used.
+[Evidence](research/native-auth-optimized-checks-2026-09-13.json). This fixes this
+probe's optimization bypass; it is not an audit of all lab scripts or a new live
+refresh result. Trusted installation/path assumptions still apply.

@@ -12,14 +12,20 @@ parser.add_argument('--binary',type=pathlib.Path,required=True)
 parser.add_argument('--home',type=pathlib.Path,required=True)
 args=parser.parse_args()
 binary=args.binary
-assert not binary.is_symlink() and binary.is_file()
-assert hashlib.sha256(binary.read_bytes()).hexdigest()=='56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da'
+if not (not binary.is_symlink() and binary.is_file()):
+ raise RuntimeError('Native client must be a regular unlinked file')
+if not (hashlib.sha256(binary.read_bytes()).hexdigest()=='56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da'):
+ raise RuntimeError('Native client digest mismatch')
 home=args.home
-assert home.is_absolute() and not home.is_symlink() and home.is_dir()
+if not (home.is_absolute() and not home.is_symlink() and home.is_dir()):
+ raise RuntimeError('Dedicated authentication directory required')
 auth=home/'auth.json'
-assert not auth.is_symlink() and auth.is_file()
-assert home.stat().st_uid==os.getuid() and auth.stat().st_uid==os.getuid()
-assert home.stat().st_mode & 0o077 == 0 and auth.stat().st_mode & 0o077 == 0
+if not (not auth.is_symlink() and auth.is_file()):
+ raise RuntimeError('Regular authentication file required')
+if not (home.stat().st_uid==os.getuid() and auth.stat().st_uid==os.getuid()):
+ raise RuntimeError('Authentication profile owner mismatch')
+if not (home.stat().st_mode & 0o077 == 0 and auth.stat().st_mode & 0o077 == 0):
+ raise RuntimeError('Authentication profile must be private')
 before=json.loads(auth.read_text())
 results=[]
 for force in (True,False):
@@ -59,7 +65,10 @@ for force in (True,False):
  results[-1].update({'exit_code':p.returncode,'access_token_changed':before['tokens']['access_token']!=after['tokens']['access_token'],'refresh_token_changed':before['tokens']['refresh_token']!=after['tokens']['refresh_token'],'account_unchanged':before['tokens']['account_id']==after['tokens']['account_id'],'auth_file_private':auth.stat().st_mode & 0o077 == 0})
  before=after
 report={'native_version':'0.153.4','runs':results,'model_requests_requested':0,'raw_credentials_published':False,'worker_started':False}
-assert all(r['chatgpt_account_returned'] and r['account_unchanged'] and r['auth_file_private'] and r['exit_code']==0 for r in results)
-assert results[0]['access_token_changed'] and results[0]['refresh_token_changed']
-assert not results[1]['access_token_changed'] and not results[1]['refresh_token_changed']
+if not (all(r['chatgpt_account_returned'] and r['account_unchanged'] and r['auth_file_private'] and r['exit_code']==0 for r in results)):
+ raise RuntimeError('Native authentication lifecycle verification failed')
+if not (results[0]['access_token_changed'] and results[0]['refresh_token_changed']):
+ raise RuntimeError('Native credential refresh not established')
+if not (not results[1]['access_token_changed'] and not results[1]['refresh_token_changed']):
+ raise RuntimeError('Native restart unexpectedly changed credentials')
 print(json.dumps(report))
