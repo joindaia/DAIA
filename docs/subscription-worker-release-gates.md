@@ -348,3 +348,29 @@ See [evidence](research/fresh-fixture-chain-2026-09-13.json) and the
 [rebuild commands](../deploy/subscription-lab/README.md#rebuilding-the-approved-development-input).
 Existing authentication and trusted installation artifacts were reused; the full
 fresh-host installation gate remains open. No admission or runtime limits changed.
+
+
+### Real HTTPS redirect transport probe
+
+The credential-free `scripts/probe_https_redirect_egress.py` runs curl with
+certificate verification through the actual research CONNECT handler. In a
+private network/mount namespace a synthetic public-address HTTPS server returned
+redirects. The allowed public redirect completed; private IPv4/IPv6 hostnames,
+a literal IPv4 address and an unlisted hostname each failed with proxy 403.
+All five initial HTTPS requests and the positive follow-up reached the server.
+Ten direct canary control connections succeeded; no canary connection arrived
+through the proxy. No provider calls or host network changes were made.
+
+Reproduce only in a disposable network/mount namespace: make mount propagation
+private, bind a test hosts file over `/etc/hosts`, bring up loopback, add
+`1.1.1.1/32` to loopback, and run the script with the approved DAIA source on
+`PYTHONPATH`. The hosts file must map `public.daia.invalid` to `1.1.1.1`,
+`private4.daia.invalid` to `127.0.0.1`, and `private6.daia.invalid` to `::1`.
+The script requires curl and openssl, generates a temporary test certificate and
+removes its key when finished. Do not apply these aliases or hosts mappings to
+the ordinary host network. The script refuses non-loopback network interfaces.
+
+[Recorded results](research/https-redirect-egress-2026-09-13.json) establish this
+real client/TLS/CONNECT redirect route, not browser behavior, wire DNS, live
+LAN/VPN isolation or the complete worker deployment. TLS payloads remain opaque
+to the research proxy; account confinement on shared hosts is a separate gate.

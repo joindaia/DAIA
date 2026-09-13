@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-13",
+  "base_commit": "4254252",
+  "real_curl": true,
+  "tls_verified": true,
+  "isolated_network_and_mount_namespaces": true,
+  "mocked_resolver": false,
+  "wire_dns": false,
+  "hosts_file_mapping": true,
+  "positive_canary_controls": 10,
+  "unexpected_canary_connections": 0,
+  "https_requests": 6,
+  "allowed_redirect_succeeded": true,
+  "explicit_proxy_403": [
+    "private_ipv4_hostname",
+    "private_ipv6_hostname",
+    "literal_ipv4",
+    "unlisted_hostname"
+  ],
+  "provider_credentials_used": false,
+  "whole_worker_test": false,
+  "limitations": [
+    "Controlled local hosts mapping, not wire DNS or live LAN/VPN",
+    "Real curl client, not a browser or native agent in KVM",
+    "CONNECT transport restricts destinations; this does not establish account confinement on shared allowed hosts"
+  ]
+}
