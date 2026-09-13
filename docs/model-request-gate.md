@@ -1012,3 +1012,30 @@ bind privileged port 443. Only the test listener service received
 was changed. These are real guest requests and real TCP canaries, but hosts-file
 resolution is not wire-level DNS rebinding. Live LAN/VPN routes, other private
 ranges and the complete production packaging remain separate release gates.
+
+### Real UDP DNS changes across KVM requests
+
+The next isolated KVM trial replaced hosts-file resolution with an actual UDP
+DNS fixture and the OS resolver (`hosts: dns`). For each of two allowed names,
+the DNS fixture first returned a public-classified address assigned only to
+loopback in the research service's private network namespace. The guest received
+CONNECT 200 and the exact server payload, proving useful forwarding. On the next
+request for the same name, a zero-TTL answer changed to `127.0.0.1` or `::1`;
+the guest received 403. The external DNS log contains both phases for each name.
+Twenty control connections established private-listener liveness; neither
+private listener received an unexpected connection. No Internet request occurred.
+
+After SIGKILL of the controller, all five cgroups emptied, all three endpoints
+became unreachable and temporary overlay/handoffs disappeared within 0.104 seconds.
+The host had neither test address afterward. The first setup attempt failed
+before guest readiness because a command symlink targeted a missing path in the
+jail; using the actual executable fixed the fixture. Worker permissions and
+production policy were unchanged.
+
+[Results and limitations](research/kvm-dns-rebinding-2026-09-13.json),
+[test DNS/server fixture](../scripts/probe_kvm_dns_rebinding_server.py), and
+[exact guest probe](../scripts/probe_kvm_dns_rebinding_guest.py) are preserved.
+This is evidence for rebinding between consecutive requests through the real
+VM relay. Recursive caches, CNAMEs, mixed responses, intra-request races, HTTPS
+redirects and live LAN/VPN targets remain outside this trial. The private lab
+launcher is still not a packaged production controller.
