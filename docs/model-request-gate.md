@@ -400,3 +400,30 @@ trigger is a private lab mechanism, not a worker capability or production IPC.
 No real credentials, inference billing, provider account operation or external
 communication was involved. The positive workload remains a shell canary; useful
 patch production and independent evaluation must be demonstrated separately.
+
+
+## Native tool-produced patch and separate evaluator
+
+The positive task now runs the existing version-comparison fixture through the
+original Codex tool-execution path, the bounded model channel and the on-demand
+synthetic native refresh service. Public pip 25.2 and packaging 25.0 wheels were
+hash-checked into the clean seed; installation and candidate code execution occurred
+inside the worker. The supplied correction generated a bounded unified patch and
+passed six cases while the original lexical comparison failed. Runtime: 52.241s.
+The 23 negative probes and exhausted-budget rejection still passed.
+
+Only the candidate artifact was incorporated into a fresh evaluator seed. That VM
+independently downloaded the pinned wheels through its restricted public egress,
+checked the base/patch hashes and exact single-file fixture hunk, reconstructed the
+candidate and passed six different version cases. The original failed. Its patch
+hash matches the actual worker output; the evaluator has a distinct fresh nonce
+and overlay. Runtime: 43.389s. Both overlays were removed. Candidate code was not
+executed on the host. [Structured evidence and patch](research/native-development-evaluation-2026-09-13.json)
+are retained without private runtime identifiers.
+
+The model response and correction were supplied fixtures. This is proof of native
+tool execution, patch transport and separate execution of independent test cases,
+not autonomous problem solving, a real subscription contribution or a productivity
+benchmark. Public dependency downloads were in the evaluator; worker research and
+model access have not yet been demonstrated together. DAIA receipt submission was
+tested separately and is not part of this combined run.
