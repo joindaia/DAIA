@@ -81,3 +81,30 @@ def test_input_cannot_change_template_and_get_is_denied():
     body['tools'][0]['name'] = 'different'
     with pytest.raises(Denied): gate.validate('POST', '/v1/responses', encode(body))
     with pytest.raises(Denied): gate.validate('GET', '/v1/responses', encode(request()))
+
+
+def test_duplicate_key_in_otherwise_valid_request():
+    body = request(); gate = RequestGate(encode(body))
+    raw = encode(body).replace(b'"store": false', b'"store": true, "store": false')
+    # A permissive last-key-wins parser would accept this exact approved profile.
+    assert json.loads(raw) == body
+    with pytest.raises(Denied): gate.validate('POST', '/v1/responses', raw)
+
+
+@pytest.mark.parametrize('literal', [b'NaN', b'Infinity', b'-Infinity', b'1e999'])
+def test_nonfinite_template_not_hidden_by_profile_mismatch(literal):
+    body = request(); body['reasoning'] = {'effort': 12345}
+    raw = encode(body).replace(b'12345', literal)
+    with pytest.raises(Denied): RequestGate(raw)
+
+
+
+def test_native_include_and_inline_ids_are_normalized():
+    body = request(); body['include'] = ['reasoning.encrypted_content']
+    body['input'][0]['id'] = 'msg_untrusted'
+    gate = RequestGate(encode(body))
+    cleaned = json.loads(gate.validate('POST', '/v1/responses', encode(body)))
+    assert 'id' not in cleaned['input'][0]
+    assert cleaned['input'][0]['content'] == body['input'][0]['content']
+    body['input'] = [{'type': 'item_reference', 'id': 'msg_untrusted'}]
+    with pytest.raises(Denied): gate.validate('POST', '/v1/responses', encode(body))

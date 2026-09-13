@@ -73,6 +73,11 @@ def _history(items) -> None:
     _require(type(items) is list)
     for item in items:
         _require(type(item) is dict)
+        # Full inline items need no provider-side lookup. Remove optional IDs
+        # rather than forwarding an untrusted cross-session identifier.
+        if "id" in item:
+            _require(type(item["id"]) is str)
+            del item["id"]
         kind = item.get("type", "message")
         if kind == "message":
             _require(set(item) <= {"type", "role", "content"})
@@ -108,7 +113,7 @@ class RequestGate:
         _require(type(body.get("model")) is str and bool(body["model"]))
         _require(body.get("store") is False and body.get("stream") is True)
         _local_tools(body.get("tools"))
-        _require(body.get("include", []) == [])
+        _require(body.get("include", []) in ([], ["reasoning.encrypted_content"]))
         _history(body.pop("input", []))
         self._template = json.dumps(body, sort_keys=True, allow_nan=False)
 
@@ -120,7 +125,9 @@ class RequestGate:
         """
         _require(method == "POST" and path == "/v1/responses")
         body = _decode(raw)
-        _history(body.pop("input", None))
+        history = body.pop("input", None)
+        _history(history)
         _require(json.dumps(body, sort_keys=True, allow_nan=False) == self._template)
-        # Decode again to return a complete, canonical copy with history retained.
-        return json.dumps(_decode(raw), separators=(",", ":"), allow_nan=False).encode()
+        # Forward only validated inline history, with optional item IDs removed.
+        body["input"] = history
+        return json.dumps(body, separators=(",", ":"), allow_nan=False).encode()
