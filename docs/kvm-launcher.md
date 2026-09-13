@@ -103,3 +103,40 @@ sockets became unreachable and the overlay/temporary credential handoffs were
 removed in 0.053 seconds. Python exit cleanup did not run. This verifies the new
 bridges within the existing lab boundary; it does not package that boundary or
 repeat a full subscription development/receipt workflow.
+
+
+## Offline bundle assembly
+
+`prepare_kvm_bundle.py` assembles the approved base and seed plus the repository's
+launcher and three fixed bridges. Supply independently approved base/seed SHA-256
+values, the task's correlation nonce and a new output directory. It hashes copied
+bytes, refuses input symlinks and existing output, and removes its own incomplete
+directory on failure. No source file is executed, downloaded or linked to mutable
+input. The output files become read-only; the printed hash list includes the
+launcher as well as every other file, without source paths or credentials.
+
+```sh
+python scripts/prepare_kvm_bundle.py \
+  --base "$APPROVED_BASE" --base-sha256 "$BASE_SHA256" \
+  --seed "$APPROVED_SEED" --seed-sha256 "$SEED_SHA256" \
+  --nonce "$ASSIGNMENT_NONCE" --output "$NEW_BUNDLE"
+```
+
+Identical inputs and repository scripts produce identical file bytes/hashes. This
+is assembly of existing approved artifacts, not reproducible compilation of the
+base image or client, seed generation, or a signed release. The trusted installer
+must approve the builder/scripts and output, protect ancestor directories and keep
+untrusted code out of the installation identity. Hashes supplied by a worker do
+not constitute approval. Do not activate partially built directories.
+
+The offline test checks identical assemblies, bridge destinations, read-only files,
+refusal to overwrite existing output, pin mismatch cleanup and symlink refusal.
+
+
+The first real assembled-bundle trial passed input verification but failed during
+QEMU execution. The service reported exit status 1; the precise QEMU cause was
+not retained because its private diagnostic file disappeared with the work mount.
+See the [failed trial record](research/assembled-kvm-bundle-2026-09-13.json).
+This is an unresolved integration failure, not a passing boot result. The next
+trial must retain bounded private failure diagnostics before teardown while
+preserving storage, network and watchdog limits.
