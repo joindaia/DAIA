@@ -134,3 +134,25 @@ The template and tracing normalization are the same controlled lab concessions a
 above. Real credential injection, provider scope enforcement, independent patch
 evaluation and subscription lifecycle remain untested. Do not infer protection
 against every HTTP attack or sandbox escape from these ten bounded cases.
+
+## Local credential adapter prototype
+
+`LocalModelUpstream` sends canonical gate output to one controller-selected Unix
+socket and fixed `/v1/responses` path. It supplies its own synthetic bearer header;
+worker headers and destination selectors are absent. Only one call may be active.
+Attempts consume a finite request budget. Expiration rejects new calls and late
+responses; revocation shuts down an active socket and rejects future calls.
+The send phase is serialized with revocation and has a bounded socket timeout.
+
+56 combined tests pass. Six new cases exercise a real local HTTP provider socket:
+fixed credential/path, exhausted budget, redirects, error responses, literal secret
+reflection, interrupted in-flight response and expiration before connection (some
+properties share a case). All are synthetic and run inside the test process; this
+is not evidence of OS-level credential separation or live KVM credential isolation.
+
+No TLS/internet/provider-account integration is implemented. The provider response
+is buffered, requires one bounded Content-Length and cannot be compressed/chunked.
+Literal-secret reflection is rejected, but encoded/transformed exfiltration is not
+covered: this is not a general response data-loss prevention mechanism. A trusted
+provider route, response contract and process boundary remain required. A separate
+watchdog is still necessary to enforce total execution time against slow traffic.
