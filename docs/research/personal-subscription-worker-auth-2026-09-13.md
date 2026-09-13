@@ -9,7 +9,7 @@ the project steward, not a verbatim transcript or a DAIA verification report.
 Personal identifiers have been omitted. The supplied report used conversation-local
 `filecite` and `cite` references rather than retrievable source URLs. Those references
 cannot serve as public evidence and have not been reproduced as working citations.
-Provider claims below remain **reported, not independently verified**. In particular,
+Provider claims below remain **reported unless verified in the follow-up below**. In particular,
 new authentication features, token lifetimes, subscription budgets and terms must be
 checked against current official sources before implementation depends on them.
 
@@ -139,3 +139,47 @@ subscription task with external credential and account confinement. Claude is th
 report's suggested first candidate, conditional on verifying its inference-only claim.
 Codex remains an explicit research track. Public admission and production cutover do
 not follow automatically from either a successful model response or this report.
+
+
+## Primary-source follow-up — 13 September 2026
+
+Official [Claude authentication documentation](https://code.claude.com/docs/en/authentication#generate-a-long-lived-token)
+confirms a one-year subscription setup-token for Pro, Max, Team and Enterprise. It
+permits model requests but not Remote Control or retrieval of Claude.ai connectors.
+Locally configured MCP remains usable. Bare mode does not read that OAuth variable.
+This verifies the documented capability, not a DAIA integration or complete endpoint audit.
+
+The [programmatic CLI guide](https://code.claude.com/docs/en/headless) supports
+`claude -p`. It warns that ordinary print mode discovers project hooks and MCP
+configuration without an interactive trust prompt. The subscription probe therefore
+needs a clean guest HOME and curated initial task configuration. All later task code
+remains untrusted. The inspected page did not establish the report's specific
+June 15 subscription-credit change; that billing claim remains unverified.
+
+Docker's [credential documentation](https://docs.docker.com/ai/sandboxes/configuration/credentials/)
+confirms external credential injection and guest sentinels, with OAuth passthrough
+explicitly reducing isolation. Its [Claude guide](https://docs.docker.com/ai/sandboxes/agents/claude-code/)
+and [kit reference](https://docs.docker.com/ai/sandboxes/customize/kit-reference/)
+are the starting points for a pinned integration. General OAuth proxy support is
+not proof that the inference-only setup-token route works unchanged.
+
+### Concrete preparation gate
+
+Before asking a participant to authenticate:
+
+1. Pin the original Claude binary and runtime; start without inherited credentials.
+2. Use a synthetic sentinel and a synthetic upstream secret to test the selected
+   runtime's credential injection. Do not implement a new general-purpose broker
+   merely because the runtime integration has not yet been examined.
+3. Confirm the upstream sees the synthetic secret while the guest sees only the
+   sentinel. Reject other destinations; stop the binding and confirm subsequent
+   requests fail. Check logs and returned errors do not expose the synthetic secret.
+4. Repeat through the full guest networking path, not just a proxy unit test.
+5. Only then request participant login for one bounded real development task and
+   provider-side negative checks, without placing real credentials in the guest.
+
+Current execution status: source verification completed; no Claude binary was found
+on the current shell PATH. Existing native KVM harness files are present. No Claude
+installation, login, real inference, token transfer or provider-account test occurred
+in this follow-up. A login request would currently be premature: the external token
+binding still needs credential-free integration evidence.
