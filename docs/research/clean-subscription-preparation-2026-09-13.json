@@ -1,0 +1,22 @@
+{
+  "revision": "25d62fdc94090d2530015b14ddc4dbd689c308de",
+  "lock_sha256": "f0520969c2ad850cc9103874ed0dd7b443082af0a9308124a2d4f879f9cc7c3d",
+  "runtime_installed": true,
+  "guest_prepared": true,
+  "provider_called": false,
+  "guest_booted": false,
+  "host_provisioned": false,
+  "date": "2026-09-13",
+  "public_git_fetch": true,
+  "initial_dependency_cache_empty": true,
+  "installed_distributions": 31,
+  "signed_base_verified": true,
+  "native_binary_pins_verified": true,
+  "installed_cli_help_passed": true,
+  "regression_tests_passed": 3,
+  "limits": [
+    "Existing trusted native tools, approved request template and base image were reused.",
+    "No fresh-host setup, VM boot or provider call in this preparation test.",
+    "Second representative development task and separate-machine test remain outstanding."
+  ]
+}

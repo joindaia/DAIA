@@ -202,3 +202,43 @@ This is a dated advisory lookup, not a source review or assurance against unknow
 vulnerabilities. Repeat before release. Host/guest OS packages, native binaries,
 optional extras and the website need separate checks. Tool behavior and limits
 are documented by [PyPA pip-audit](https://github.com/pypa/pip-audit).
+
+
+## One-command clean preparation
+
+The trusted installer can now prepare a new checkout, locked non-editable runtime
+and native-delivery guest together. Supply a reviewed full 40-character commit,
+trusted tools, signed image metadata, approved native binaries and request template:
+
+```sh
+python3 scripts/prepare_clean_subscription_lab.py \
+  --repository https://github.com/joindaia/DAIA.git --revision "$DAIA_COMMIT" \
+  --output "$DAIA_NEW_PREPARATION" --cache "$DAIA_BUILD_CACHE" \
+  --uv "$DAIA_UV" --python /usr/bin/python3.12 \
+  --image "$DAIA_BASE_IMAGE" --checksums "$DAIA_IMAGE_SUMS" \
+  --signature "$DAIA_IMAGE_SIGNATURE" --template "$DAIA_APPROVED_REQUEST_TEMPLATE" \
+  --native "$DAIA_NATIVE_DIRECTORY" --iso-builder "$DAIA_ISO_BUILDER"
+```
+
+Output must be a new absolute directory under protected installer-owned ancestors.
+It contains `source`, `runtime`, `source-fixture`, `guest` and `prepared.json`.
+The build uses a new HOME and a small explicit environment. It does not import
+personal Git configuration or credentials. Public repository access is required;
+no authentication prompt is enabled. A local trusted Git repository also works.
+Only the exact commit is checked out; uncommitted personal files are not copied.
+A failed build leaves its private partial destination for inspection; use another
+new destination after resolving the failure. Nothing is automatically deleted.
+
+`--offline` applies to Python dependency installation only; Git fetching remains
+a separate operation. A new empty cache needs downloads. The base verifier checks
+Ubuntu's system-trusted signature and image pin before installation. Native binary
+pins are checked by the existing fixture builder. The installer, build backend,
+Git, uv, interpreter and ISO utility remain trusted, not sandboxed task code.
+The output contains the approved request template and must remain private.
+
+This is preparation, not a full host installer: no service accounts, firewall,
+KVM configuration, participant login, model calls or VM launches occur. It still
+requires separately acquired native tools, base image and approved request input.
+Use `guest` and `runtime` with the existing lab supervisor after host setup.
+The actual online fresh-checkout/empty-cache build is recorded in
+[clean preparation evidence](../../docs/research/clean-subscription-preparation-2026-09-13.json).
