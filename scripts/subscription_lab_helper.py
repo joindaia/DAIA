@@ -20,4 +20,4 @@ async def wrapped(name,**args):
   raise ValueError('Synthetic response loss after committed submission')
  return result
 host.remote=wrapped
-asyncio.run(build_assignment_server(host,c['assignment']).run_stdio_async())
+asyncio.run(build_assignment_server(host,c['assignment'],retry_receipt=c.get('retry_receipt',False)).run_stdio_async())

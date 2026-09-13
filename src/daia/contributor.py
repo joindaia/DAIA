@@ -630,7 +630,23 @@ def build_server(host):
     return server
 
 
-def build_assignment_server(host, assignment_id):
+async def submit_assignment_result(host, assignment_id, artifact, verdict, *, retry_receipt=False):
+    """At most one exact saved-receipt retry; never obtain new work or authority."""
+    arguments = dict(assignment_id=assignment_id, artifact=artifact, verdict=verdict)
+    try:
+        return await host.perform('submit_result', **arguments)
+    except (OSError, ValueError):
+        pending = host.state.get('pending')
+        if (retry_receipt is not True or not isinstance(pending, dict)
+                or pending.get('assignment_id') != assignment_id
+                or pending.get('artifact') != artifact or pending.get('verdict') != verdict):
+            raise
+        # perform rechecks scope/stopping, persists the same signed envelope,
+        # and validates its receipt. A second failure remains pending for recovery.
+        return await host.perform('submit_result', **arguments)
+
+
+def build_assignment_server(host, assignment_id, *, retry_receipt=False):
     """Trusted-side interface for one assignment; not an OS isolation boundary."""
     if host.job_authority is None or not host.state['registered']:
         raise ValueError('Existing identity and job authority required')
@@ -647,8 +663,8 @@ def build_assignment_server(host, assignment_id):
     @server.tool()
     async def submit_result(artifact: str, verdict: str) -> dict:
         """Submit this assignment only; retry the exact content after response loss."""
-        return await host.perform('submit_result', artifact=artifact, verdict=verdict,
-                                  assignment_id=assignment_id)
+        return await submit_assignment_result(host, assignment_id, artifact, verdict,
+                                              retry_receipt=retry_receipt)
 
     return server
 

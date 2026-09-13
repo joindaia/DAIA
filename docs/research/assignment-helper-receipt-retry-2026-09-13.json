@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-13",
+  "change": "Opt-in single exact receipt retry in assignment helper",
+  "default_enabled": false,
+  "model_can_enable": false,
+  "regressions": {
+    "passed": 88,
+    "skipped": 2,
+    "skipped_scope": "Windows file-sharing semantics",
+    "local_http_stdio_access_required": true
+  },
+  "direct_mcp_test": {
+    "one_tool_call": true,
+    "coordinator_submissions": 2,
+    "signed_arguments_identical": true,
+    "stored_results": 1,
+    "receipt_status": "already_recorded",
+    "pending_cleared": true
+  },
+  "failure_tests": {
+    "second_failure_stops": true,
+    "default_no_automatic_retry": true,
+    "identity_consent_and_job_count_unchanged": true
+  },
+  "live_attempts": [
+    {
+      "profile": "helper-retry",
+      "forwarded": 6,
+      "attempts": 7,
+      "denied": 24,
+      "stored_results": 0,
+      "worker_completed": false
+    },
+    {
+      "profile": "helper-retry-with-private-diagnostics",
+      "forwarded": 6,
+      "attempts": 7,
+      "denied": 24,
+      "stored_results": 0,
+      "worker_completed": false,
+      "durable_revocation_verified": true
+    }
+  ],
+  "evidence_limits": [
+    "The live workers exhausted the fixed request allowance before submission; helper receipt retry was not reached in those runs.",
+    "Earlier useful contribution and separate operator recovery remain recorded separately.",
+    "The first expanded diagnostic was truncated. A compact tool-kind/name/exit-code diagnostic was subsequently prepared and syntax-checked, not yet live-tested.",
+    "No claim of complete native unattended task completion or release readiness."
+  ]
+}

@@ -290,3 +290,18 @@ run. No accounts, receipts or paths are included in that summary.
 [Full evidence and failed attempts](../../docs/research/outcome-summary-subscription-task-2026-09-13.json)
 record 33 targeted regression checks. The client turn itself did not complete;
 this is a recovered useful contribution, not a passing unattended-turn release gate.
+
+### Helper-side receipt retry
+
+The outcome-summary preparation now explicitly enables `retry_receipt` in its
+trusted configuration. The assignment-only helper can then retry one failed
+submission with the same saved artifact, verdict, assignment and signature. It
+uses the existing submission validation and idempotent receipt path; it does not
+request work, renew consent, replenish model requests or sign a replacement result.
+A second failure remains pending. Cancellation is not intercepted.
+
+This option is disabled by default for other assignment helpers and is not a
+model-facing tool argument. The worker calls `submit_result` once. The simulated
+first response loss still occurs outside the worker; the helper, rather than a
+second model turn, obtains the receipt. A complete worker turn is still a separate
+requirement from successful delivery.

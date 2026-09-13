@@ -644,3 +644,20 @@ receipt. One result was already persisted; the existing bounded recovery route
 recovered that exact receipt without model use or consent changes. Do not mark
 native unattended completion, generalized development or separate-host installation
 as satisfied by this trial. Earlier unsuccessful attempts are included in evidence.
+
+
+## Assignment helper handles one lost receipt without another model turn
+
+An installer-selected helper option now retries the same saved signed submission
+once within a single MCP tool call. It leaves the existing identity, consent,
+assignment and request allowance intact. The real coordinator/MCP regression
+returned `already_recorded`, with one stored result and cleared pending state.
+Eighty-eight regressions passed; two Windows-only tests were skipped.
+
+Two bounded subscription attempts exhausted six forwarded requests before result
+submission, so they did not reach this helper path. They are failures, not proof of
+native completion. The final failed run's persisted model authority was verified
+revoked. Expanded private diagnostics were truncated; compact metadata-only
+diagnostics have been prepared for the next useful investigation. Do not repeatedly
+run unchanged trials or infer that increasing budgets is authorized by this result.
+See [scoped evidence](research/assignment-helper-receipt-retry-2026-09-13.json).

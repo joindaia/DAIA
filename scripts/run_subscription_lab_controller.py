@@ -180,7 +180,7 @@ with running_server(build_mcp_app(service)) as url:
   if model_socket.exists():break
   time.sleep(.05)
  assert model_socket.exists(),'model service not ready'
- cfg=private/'helper.json';cfg.write_text(json.dumps({'invite':'/state/'+invite.name,'assignment':lease['assignment_id'],'authority':approve(host,lease,['read_input','heartbeat','submit_result'])}));cfg.chmod(0o600)
+ cfg=private/'helper.json';cfg.write_text(json.dumps({'invite':'/state/'+invite.name,'assignment':lease['assignment_id'],'retry_receipt':pinned.get('retry_receipt') is True,'authority':approve(host,lease,['read_input','heartbeat','submit_result'])}));cfg.chmod(0o600)
  os.chown(private,controller.pw_uid,controller.pw_gid)
  for entry in private.iterdir():os.chown(entry,controller.pw_uid,controller.pw_gid);entry.chmod(0o600)
  jail=root/('controller-root-'+uuid.uuid4().hex)

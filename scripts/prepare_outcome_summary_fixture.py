@@ -27,8 +27,8 @@ def prepare(source, output, native, iso_builder):
               'print only the added function. The existing module is supplied here so you can design the addition before the terminal call: ' + source_text + '\nRequirement: ' + task['objective'] +
               ' Then call submit_result with verdict candidate and artifact equal to a JSON '
               'string of this packet, replacing suggested_change with ONLY the appended function (maximum 1200 characters), not the original module. Append the function without editing existing source: ' +
-              json.dumps(packet) + ' The first response is intentionally lost after persistence. '
-              'Retry once with exactly the same artifact and verdict. Finish after the receipt. '
+              json.dumps(packet) + ' The helper handles one lost receipt internally. '
+              'Do not submit twice after a successful receipt. Finish after the receipt. '
               'Maximum six model requests. No additional heartbeat. Do not invoke MCP via shell.')
     cloud = json.loads((source/'user-data').read_text().split('\n', 1)[1])
     entry = next(f for f in cloud['write_files'] if f['path']=='/tmp/probe.py')
@@ -54,6 +54,13 @@ def prepare(source, output, native, iso_builder):
     code = ast.unparse(TaskLiterals().visit(ast.parse(entry['content']))) + '\n'
     if replaced != {'source','tests','prompt','nonce'}:
         raise ValueError('Expected native task fixture required')
+    code=code.replace("assert len(mcp_items) >= 3", "assert len(mcp_items) >= 2")
+    # Private diagnostics only: retain bounded tool outcomes on failed turns.
+    failure_write = "with open('/dev/ttyS0', 'w') as out:\n        out.write('DAIA_NATIVE_FAILURE "
+    if code.count(failure_write) != 1:
+        raise ValueError('Expected native failure diagnostic')
+    details = "diagnostic = {'native_exit': r.returncode, 'items': [[{'command_execution':'command','mcp_tool_call':'mcp','agent_message':'message'}.get(i.get('type'),'other'), str(i.get('tool',''))[-48:], i.get('exit_code') if type(i.get('exit_code')) is int else None] for i in items[-10:]]}\n    "
+    code = code.replace(failure_write, details + failure_write)
     compile(code, 'outcome-summary-guest', 'exec')  # Syntax only.
     entry['content'] = code
     output.mkdir()
@@ -68,7 +75,7 @@ def prepare(source, output, native, iso_builder):
         '-volid','CIDATA','-joliet','-rock',
         *[str(output/name) for name in ('user-data','meta-data','network-config')],
         str(native/'codex'),str(native/'bwrap')],check=True)
-    config.update(nonce=nonce,task_sha256=hashlib.sha256(raw).hexdigest(),
+    config.update(retry_receipt=True,nonce=nonce,task_sha256=hashlib.sha256(raw).hexdigest(),
                   seed_sha256=hashlib.sha256((output/'seed.iso').read_bytes()).hexdigest())
     (output/'config.json').write_text(json.dumps(config))
     return config
