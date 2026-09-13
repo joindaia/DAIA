@@ -72,3 +72,20 @@ one warning**, in 63.28 seconds. The skips retain the native Codex, namespace,
 Windows sharing and Nginx integration boundaries listed above. The warning is
 the same AnyIO dependency deprecation. This is local regression evidence, not
 a current GitHub CI result or completion of the live release gates.
+
+
+## Explicit Linux boundary integrations
+
+The previously opt-in namespace/MCP checks were run explicitly: nine passed with
+`DAIA_RUN_ISOLATION_TESTS=1`. A strengthened host-loopback test first establishes
+a real control connection, then checks both failure inside the sandbox and absence
+of a connection at the external listener. The pinned original Codex binary also
+passed the corresponding clean-home command-sandbox test with
+`DAIA_RUN_CODEX_SANDBOX_TESTS=1`; it now includes external listener observation.
+No provider credential or model request was used.
+
+See [live command boundary evidence](research/live-command-boundaries-2026-09-13.json).
+These are actual namespace/process tests, not skipped checks counted as success.
+They support the specific command boundaries and assignment socket rules; they
+do not close whole-worker, comprehensive private-network, account-capability or
+clean-installation release gates. Windows and Nginx skips remain separate.
