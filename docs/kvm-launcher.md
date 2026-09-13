@@ -381,3 +381,40 @@ Sixty-eight focused checks passed before the live runs; the expanded resource
 checks subsequently passed in the 54-test assignment/request subset. Full guest
 crash recovery, clean participant installation, initial login packaging, broader
 boundary evidence and repeated performance across tasks remain open.
+
+
+## Recovering the receipt from a real failed native run
+
+The earlier native run that exhausted its model budget had persisted its candidate
+but never obtained the receipt. Its guest and helper were gone. Reopening the same
+coordinator database at the saved loopback endpoint and starting a fresh restricted
+helper recovered `already_recorded` with the same receipt hash and one result.
+The original consent had expired; only the already-signed pending submission was
+replayed. Identity, used allowance and deadline remained unchanged. New work and
+registration were explicitly forbidden during the probe. No worker, provider
+credential or model request was needed.
+
+An initial direct launch selected an older installed module and rejected the CLI
+arguments. The successful route bound the current repository source at
+`/opt/source`, verified the imported module came from that path, and used the
+existing non-root controller identity in a private service root. Personal home
+and Windows mounts remained inaccessible; network access was limited to loopback.
+
+`run_pending_receipt_lab.py --invite "$SAVED_INVITE" --authority "$SAVED_AUTHORITY"`
+`--assignment "$EXISTING_ASSIGNMENT" --python-runtime "$APPROVED_RUNTIME"`
+packages that restricted service. Run it as the trusted lab administrator only
+when the existing coordinator endpoint is available. It has a 20-second service
+limit, 256 MiB memory limit, no capabilities, no devices and no model binding.
+The underlying contributor CLI refuses non-pending, wrong-assignment, stopped
+or release-pending state. The wrapper never claims work or renews consent.
+
+A separate synthetic integration run through this repository entrypoint restored
+one receipt and refused a repeated recovery without changing saved state.
+`probe_pending_receipt_lab.py --python-runtime "$APPROVED_RUNTIME"` reproduces
+that integration on the configured lab host. Eleven assignment-host regressions
+also passed. See [real pending recovery evidence](research/real-native-pending-recovery-2026-09-13.json).
+
+This closes the committed-but-unacknowledged receipt case after actual native
+worker failure. It does not yet prove resuming unfinished research or development
+in a newly created guest, retaining partial artifacts, or preserving the remaining
+model budget across that restart. Those remain separate release gates.
