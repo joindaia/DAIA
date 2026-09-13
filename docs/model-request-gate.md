@@ -1039,3 +1039,28 @@ This is evidence for rebinding between consecutive requests through the real
 VM relay. Recursive caches, CNAMEs, mixed responses, intra-request races, HTTPS
 redirects and live LAN/VPN targets remain outside this trial. The private lab
 launcher is still not a packaged production controller.
+
+### Packaged assignment-channel composition
+
+`AssignmentModelChannel` now binds the existing HTTP/request gate and completed
+provider-response admission in repository code. Construct one instance per
+assignment/account with an independently approved template and a fixed,
+authenticated upstream callback. Call `serve(connection)` for one request. Only
+a fully parsed completed response can admit opaque reasoning for the next turn;
+partial responses are not released. A concurrent connection is closed rather
+than queued, preserving sequential admission without accumulating waiting threads.
+
+The callback still owns upstream authentication, budgets, expiry and revocation;
+the launcher still owns isolation, listener access and the external watchdog.
+There is no worker API for registering reasoning, selecting an upstream, rotating
+credentials or changing the template. This composition does not itself implement
+OAuth or make an arbitrary callback trusted.
+
+Validation: 87 request/channel/response tests passed, including real local-socket
+exchanges for cross-assignment opaque-state refusal, incomplete response denial,
+concurrent admission refusal and reuse after a failed call. Illustrative account
+paths, query/path-normalization variants and encoded routes never invoked the
+callback. These were credential-free tests, not provider endpoint enumeration.
+The prior live harness still normalizes native client metadata explicitly; this
+new composition has not yet replaced that harness or undergone a live native
+subscription run. Its strict frozen template does not silently strip metadata.

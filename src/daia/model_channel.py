@@ -5,9 +5,11 @@ The trusted forward callback owns destination, credentials and response handling
 Guest headers are never forwarded. No CONNECT, upgrade, redirect or keep-alive.
 """
 import socket
+import threading
 from collections.abc import Callable
 
 from .model_request import Denied, RequestGate
+from .model_response import completed_output
 
 
 def serve_once(connection: socket.socket, gate: RequestGate,
@@ -73,3 +75,37 @@ def serve_once(connection: socket.socket, gate: RequestGate,
             except OSError:
                 pass
             return False
+
+
+class AssignmentModelChannel:
+    """One assignment's request gate and completed-response admission sequence.
+
+    Construct outside the worker with an independently approved template and a
+    fixed authenticated upstream callback. The callback owns credentials,
+    deadline, request budget and revocation. A new object is required for every
+    assignment/account binding; neither its state nor methods are worker tools.
+    This does not supply a listener, process isolation or native OAuth login.
+    """
+
+    def __init__(self, approved_template: bytes, forward: Callable[[bytes], bytes],
+                 *, authority: str = "daia-model"):
+        self._gate = RequestGate(approved_template)
+        self._forward = forward
+        self._authority = authority
+        self._busy = threading.Lock()
+
+    def serve(self, connection: socket.socket) -> bool:
+        # A queued request must not race the preceding response's reasoning
+        # admission. Reject rather than allocate unbounded waiting threads.
+        if not self._busy.acquire(blocking=False):
+            connection.close()
+            return False
+        try:
+            def forward(cleaned):
+                output = self._forward(cleaned)
+                self._gate.record_provider_output(completed_output(output))
+                return output
+            return serve_once(connection, self._gate, forward,
+                              authority=self._authority)
+        finally:
+            self._busy.release()

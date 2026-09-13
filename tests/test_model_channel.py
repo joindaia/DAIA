@@ -3,7 +3,7 @@ import socket
 import threading
 
 import pytest
-from daia.model_channel import serve_once
+from daia.model_channel import serve_once, AssignmentModelChannel
 from daia.model_request import RequestGate
 
 BODY = {"model": "fixture", "store": False, "stream": True, "tools": [],
@@ -138,3 +138,103 @@ def test_jsonrpc_discovery_on_model_route_is_not_dispatched(method):
     reply, seen = exchange(wire(body))
     assert reply == b'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'
     assert seen == []
+
+
+def bound_exchange(channel, raw):
+    client, server = socket.socketpair()
+    worker = threading.Thread(target=channel.serve, args=(server,))
+    worker.start()
+    with client:
+        client.settimeout(3)
+        client.sendall(raw)
+        client.shutdown(socket.SHUT_WR)
+        chunks = []
+        while True:
+            try:
+                chunk = client.recv(4096)
+            except ConnectionResetError:
+                break
+            if not chunk:
+                break
+            chunks.append(chunk)
+    worker.join(5)
+    assert not worker.is_alive()
+    return b"".join(chunks)
+
+
+def test_bound_channel_admits_only_its_completed_provider_reasoning():
+    item = {"type": "reasoning", "summary": [],
+            "encrypted_content": "synthetic-bound-state"}
+    output = b"data: " + json.dumps({"type": "response.completed", "response": {
+        "status": "completed", "output": [item]}}).encode() + b"\n\n"
+    seen = []
+    def forward(raw):
+        seen.append(json.loads(raw))
+        return output
+    channel = AssignmentModelChannel(json.dumps(BODY).encode(), forward)
+    history = dict(BODY, input=[item])
+    # A guest cannot pre-register opaque state through its own request.
+    assert bound_exchange(channel, wire(history)).startswith(b"HTTP/1.1 403")
+    assert not seen
+    assert bound_exchange(channel, wire()).startswith(b"HTTP/1.1 200")
+    assert bound_exchange(channel, wire(history)).startswith(b"HTTP/1.1 200")
+    assert len(seen) == 2
+    other = AssignmentModelChannel(json.dumps(BODY).encode(), forward)
+    assert bound_exchange(other, wire(history)).startswith(b"HTTP/1.1 403")
+    assert len(seen) == 2
+
+
+def test_bound_channel_does_not_admit_or_release_partial_response():
+    item = {"type": "reasoning", "summary": [],
+            "encrypted_content": "synthetic-incomplete-state"}
+    calls = []
+    def forward(raw):
+        calls.append(raw)
+        return b"data: " + json.dumps({"type": "response.output_item.done",
+            "item": item}).encode() + b"\n\n"
+    channel = AssignmentModelChannel(json.dumps(BODY).encode(), forward)
+    reply = bound_exchange(channel, wire())
+    assert reply.startswith(b"HTTP/1.1 403") and b"synthetic-incomplete-state" not in reply
+    assert bound_exchange(channel, wire(dict(BODY,input=[item]))).startswith(b"HTTP/1.1 403")
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("route", [
+    b"GET /backend-api/conversations HTTP/1.1",
+    b"POST /backend-api/connectors/invoke HTTP/1.1",
+    b"POST /v1/responses?target=account HTTP/1.1",
+    b"POST /v1/../backend-api/accounts HTTP/1.1",
+    b"POST /v1/%72esponses HTTP/1.1",
+])
+def test_bound_channel_alternate_account_routes_cannot_call_upstream(route):
+    calls = []
+    channel = AssignmentModelChannel(json.dumps(BODY).encode(), lambda body: calls.append(body))
+    assert bound_exchange(channel, wire(route=route)).startswith(b"HTTP/1.1 403")
+    assert not calls
+
+
+def test_bound_channel_rejects_concurrent_calls_and_releases_lock_after_failure():
+    entered, release = threading.Event(), threading.Event()
+    calls = []
+    def forward(raw):
+        calls.append(raw); entered.set()
+        assert release.wait(3)
+        raise ValueError("synthetic upstream failure")
+    channel = AssignmentModelChannel(json.dumps(BODY).encode(), forward)
+    first, first_server = socket.socketpair()
+    thread = threading.Thread(target=channel.serve, args=(first_server,))
+    thread.start()
+    try:
+        first.settimeout(3); first.sendall(wire())
+        assert entered.wait(2)
+        second, second_server = socket.socketpair()
+        with second:
+            second.settimeout(1)
+            assert channel.serve(second_server) is False
+            assert second.recv(1) == b""
+        assert len(calls) == 1
+    finally:
+        release.set(); thread.join(5); first.close()
+    assert not thread.is_alive()
+    assert bound_exchange(channel, wire()).startswith(b"HTTP/1.1 403")
+    assert len(calls) == 2
