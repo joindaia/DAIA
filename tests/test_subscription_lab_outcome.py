@@ -71,3 +71,37 @@ def test_summary_counts_without_leaking_or_mutating_records():
         'acknowledged':1,'stored_unacknowledged':1,'unconfirmed':2}
     assert json.dumps(records) == before
     assert summarize([]) == dict.fromkeys(summarize(records), 0)
+
+
+def test_failure_survives_runtime_cleanup_as_bounded_private_data(tmp_path):
+    import shutil
+    import subprocess
+    run = scope['new_run_directory'](tmp_path / 'runs')
+    runtime = tmp_path / 'runtime'; runtime.mkdir()
+    result = subprocess.CompletedProcess([], 7, b'x' * 70000, b'bad byte: \xff')
+    scope['retain_worker_failure'](run, result)
+    shutil.rmtree(runtime)
+    path = run / 'worker-failure-private.json'
+    data = json.loads(path.read_text())
+    assert data == {'returncode': 7, 'stdout': 'x' * 65536,
+                    'stderr': 'bad byte: \ufffd'}
+    assert path.stat().st_mode & 0o077 == 0
+    assert set(p.name for p in run.iterdir()) == {
+        'assignment', 'coordinator', 'worker-failure-private.json'}
+
+
+def test_retained_model_counts_exclude_credentials_and_preserve_unknown(tmp_path):
+    audit = tmp_path / 'audit.json'
+    retain = scope['retain_model_counts']
+    retain(tmp_path, audit)
+    path = tmp_path / 'model-counts.json'
+    assert json.loads(path.read_text()) == {'available': False}
+    audit.write_text(json.dumps({'forwarded': 2, 'denied': 23, 'attempts': 2,
+                                'token': 'synthetic-secret'}))
+    retain(tmp_path, audit)
+    assert json.loads(path.read_text()) == {
+        'available': True, 'forwarded': 2, 'denied': 23, 'attempts': 2}
+    assert path.stat().st_mode & 0o077 == 0
+    for bad in ('{', 'x' * 65537, json.dumps({'forwarded': True, 'denied': 0, 'attempts': 0})):
+        audit.write_text(bad); retain(tmp_path, audit)
+        assert json.loads(path.read_text()) == {'available': False}

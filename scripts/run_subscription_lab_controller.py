@@ -11,7 +11,7 @@ if not __debug__:
 
 import atexit,signal,select,asyncio,json,os,pathlib,pwd,subprocess,sys,tempfile,shutil,socket,selectors,time,threading,uuid
 import re
-from subscription_lab_outcome import outcome, write_outcome, new_run_directory
+from subscription_lab_outcome import outcome, write_outcome, new_run_directory, retain_worker_failure, retain_model_counts
 from subscription_lab_identity import check_identities
 from subscription_lab_auth import read_auth
 parent_unit=os.environ.get('DAIA_CONTROLLER_UNIT','')
@@ -124,6 +124,7 @@ def model_cleanup():
 
  subprocess.run(['systemctl','stop',gunit],capture_output=True,timeout=15)
  model_socket.unlink(missing_ok=True);authfile.unlink(missing_ok=True)
+ retain_model_counts(run_state, rundir/'subscription-audit.json')
 atexit.register(model_cleanup)
 model_service_args=args
 
@@ -258,6 +259,7 @@ with running_server(build_mcp_app(service)) as url:
    if options.crash_before_first_response:
     crash_stop.set();crash_thread.join(6)
     if r.returncode==0 or not crash_info.get('kill_succeeded'):
+     retain_worker_failure(run_state, r)
      fd=os.open('/run/daia-subscription-failure-private.json',os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
      with os.fdopen(fd,'wb') as capture:capture.write(r.stdout[:64*1024])
      raise RuntimeError('Crash injection not reached; private worker diagnostics retained')
@@ -293,6 +295,7 @@ with running_server(build_mcp_app(service)) as url:
                       gateway_restarted=False,transport_deadline_reset=False)
     r=subprocess.run(dependent(args)+['/usr/bin/python3','-I',str(wrapper),'--bundle',str(bundle)],capture_output=True,timeout=220)
    if r.returncode:
+    retain_worker_failure(run_state, r)
     fd=os.open('/run/daia-subscription-failure-private.json',os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
     with os.fdopen(fd,'wb') as capture:capture.write(r.stdout[:64*1024])
     thread.join(5)

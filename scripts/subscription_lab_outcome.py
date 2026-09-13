@@ -40,6 +40,33 @@ def write_outcome(path, data):
         Path(temporary).unlink(missing_ok=True)
 
 
+def retain_model_counts(run, audit):
+    """Keep counters only; absent/invalid audit is unknown, never zero usage."""
+    result = {'available': False}
+    try:
+        with Path(audit).open('rb') as stream:
+            raw = stream.read(65537)
+        if len(raw) > 65536:
+            raise ValueError('Oversized audit')
+        data = json.loads(raw)
+        counts = {key: data[key] for key in ('forwarded', 'denied', 'attempts')}
+        if any(type(value) is not int or value < 0 for value in counts.values()):
+            raise ValueError('Invalid counters')
+        result = dict(available=True, **counts)
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    write_outcome(Path(run) / 'model-counts.json', result)
+
+
+def retain_worker_failure(run, process):
+    """Private, bounded evidence survives runtime cleanup; never replay it."""
+    write_outcome(Path(run) / 'worker-failure-private.json', {
+        'returncode': process.returncode,
+        'stdout': process.stdout[:64 * 1024].decode('utf-8', errors='replace'),
+        'stderr': process.stderr[:64 * 1024].decode('utf-8', errors='replace'),
+    })
+
+
 def new_run_directory(root):
     """Allocate isolated persistent lab state; never reuse or migrate a run."""
     root = Path(root)
