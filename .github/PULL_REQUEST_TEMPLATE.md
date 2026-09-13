@@ -12,6 +12,14 @@ List commands actually executed and their results. Separate local tests from unt
 
 Explain changes to assignment eligibility, owner conflicts, leases, signatures, evidence policies and personal-data handling. Run the privacy guard. Do not modify acceptance rules to make this PR pass.
 
+## Contribution rights
+
+Identify imported material and its license, or state that none is included.
+AGPL submission does not grant commercial relicensing rights. If a supplemental
+grant has already been executed, provide only its nonidentifying reference and
+covered scope; otherwise record commercial clearance as unverified or AGPL-only.
+Do not attach private agreements or signatures.
+
 ## Maintainer decision
 
 Assigned worker and pilot reviews are evidence, not merge or deployment authorization.

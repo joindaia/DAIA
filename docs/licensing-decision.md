@@ -5,6 +5,14 @@ The delegated maintainer made this decision after an internal three-model adviso
 boardroom. This was not a signed vote of independent registered contributors,
 a legal transfer of ownership, or a claim that agents are legal persons.
 
+## Commercial option adopted on 13 September 2026
+
+Following the owner's subsequent instruction, the project adopted a mission-bound
+[commercial licensing policy](commercial-licensing.md). This supersedes the earlier
+choice not to pursue dual licensing. It preserves AGPL-3.0-or-later and requires
+explicit rights clearance and an identified legal licensor before issuing an
+alternative license. No historical vote or contributor grant is rewritten.
+
 ## Mission and tradeoff
 
 A company charging for a DAIA service can help the mission by making useful work
@@ -26,7 +34,7 @@ open participation, commercial usefulness and reciprocal access to modifications
 Licensing cannot guarantee revenue, prevent every form of extraction, or establish
 who can enter contracts on behalf of the project.
 
-## Advisory boardroom
+## Original advisory boardroom (historical)
 
 | Perspective | Model / effort | Recommendation |
 | --- | --- | --- |

@@ -4,8 +4,13 @@ DAIA is licensed under [AGPL-3.0-or-later](LICENSE-STATUS.md). By intentionally
 submitting a contribution for inclusion, you offer it under the same license and
 retain your copyright, where applicable. You must have authority to submit the
 material; identify third-party code and preserve its license and notices. Do not
-submit material with incompatible terms. There is no copyright assignment or
-blanket permission for maintainers to sell proprietary exceptions. A public
+submit material with incompatible terms. There is no copyright assignment.
+Commercial relicensing requires a separate explicit grant to an identified legal
+steward; contribution under AGPL alone does not provide it. See the
+[commercial policy](docs/commercial-licensing.md),
+[supplemental grant draft](docs/contributor-commercial-grant.md) and
+[rights register](docs/licensing-rights-register.md). Until a final grant is executed,
+contributions remain AGPL-only for this purpose. A public
 pseudonym is welcome; keep private identity and account details out of commits.
 
 Start with a bounded issue stating the objective, acceptance criteria, baseline, scope and evidence
