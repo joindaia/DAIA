@@ -458,9 +458,33 @@ Only test wiring redirects the requested public socket to the loopback fixture.
 These tests make no real provider request. The shared adapter retains bounded
 responses, deadline interruption, rotation and revocation.
 
-This is not ready for personal credentials: it currently accepts only bounded
-Content-Length SSE, not real chunked streaming; provider header compatibility,
+This first transport revision accepted only bounded Content-Length SSE. The
+chunked-response extension below removes that framing limitation. It is still not
+ready for personal credentials: provider header compatibility,
 reasoning continuity, actual account-capability negatives and native subscription
 authentication remain unverified. The existing RequestGate must precede it, and
 the isolated runtime must enforce public destination policy outside the process.
 The transport is not proof of provider approval or exhaustive account confinement.
+
+
+## Chunked HTTPS responses and public TLS reachability
+
+The adapter now accepts one unambiguous `Transfer-Encoding: chunked` response
+without Content-Length, using the standard library HTTP decoder. The decoded body
+remains bounded to 8 MiB and is buffered before any output reaches the worker.
+This supports HTTP chunk framing, not incremental SSE delivery to the client.
+The same literal credential check covers tokens split across chunks. Unsupported
+transfer encodings, duplicate transfer headers, mixed framing, truncated chunks
+and over-limit bodies are rejected. The existing assignment watchdog interrupts
+a continuously arriving TLS chunk stream without allowing another request.
+
+The combined request/channel/upstream/TLS suite passes 110 tests. This includes a
+local trusted test certificate, synthetic credentials and a 300 ms deadline with
+a provider sending another chunk every 50 ms. No actual subscription was used.
+
+A separate public-network check resolved chatgpt.com, confirmed public IP results
+and completed certificate-verified TLS 1.3 handshakes to two returned addresses,
+with SNI/hostname verification for chatgpt.com. It sent **zero HTTP requests** and
+used **no credentials**. This proves reachability from the development execution
+environment, not from the final restricted gateway service or worker VM. It does
+not prove Responses compatibility, login, subscription use or account confinement.

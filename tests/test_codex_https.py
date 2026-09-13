@@ -3,6 +3,7 @@ import http.server
 import socket
 import ssl
 import threading
+import time
 
 import pytest
 from cryptography import x509
@@ -37,9 +38,19 @@ def provider(tmp_path, monkeypatch):
             state['seen'].append((self.path, dict(self.headers), body))
             self.send_response(state['status'])
             self.send_header('Content-Type', 'text/event-stream')
-            self.send_header('Content-Length', '10')
+            for name, value in state.get('framing', [('Content-Length', '10')]):
+                self.send_header(name, value)
             self.send_header('Location', 'https://example.invalid/account')
-            self.end_headers(); self.wfile.write(b'data: {}\n\n')
+            self.end_headers()
+            try:
+                if state.get('drip'):
+                    for _ in range(100):
+                        self.wfile.write(b'1\r\nx\r\n'); self.wfile.flush()
+                        time.sleep(.05)
+                else:
+                    self.wfile.write(state.get('wire', b'data: {}\n\n'))
+            except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
+                pass
     with http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler) as server:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(certfile, keyfile)
@@ -57,9 +68,9 @@ def provider(tmp_path, monkeypatch):
         finally: server.shutdown(); thread.join(5)
 
 
-def binding(provider, *, trust=True):
+def binding(provider, *, trust=True, seconds=3):
     certfile, _ = provider
-    result = CodexHTTPSUpstream('1.1.1.1', 'synthetic-token', 'synthetic-account', seconds=3, requests=1)
+    result = CodexHTTPSUpstream('1.1.1.1', 'synthetic-token', 'synthetic-account', seconds=seconds, requests=1)
     if trust: result._tls.load_verify_locations(cafile=str(certfile))
     return result
 
@@ -104,3 +115,40 @@ def test_redirect_or_auth_failure_never_retried(provider, status):
 def test_nonpublic_or_nonliteral_address_rejected(address):
     with pytest.raises(ValueError):
         CodexHTTPSUpstream(address, 'synthetic-token', 'account', seconds=1, requests=1)
+
+
+def test_chunked_sse_is_decoded(provider):
+    provider[1].update(framing=[('Transfer-Encoding', 'chunked')],
+                       wire=b'5\r\ndata:\r\n5\r\n {}\n\n\r\n0\r\n\r\n')
+    assert binding(provider)(b'{}') == b'data: {}\n\n'
+
+
+@pytest.mark.parametrize('framing,wire', [
+    ([('Transfer-Encoding', 'chunked'), ('Content-Length', '0')], b'0\r\n\r\n'),
+    ([('Transfer-Encoding', 'chunked'), ('Transfer-Encoding', 'chunked')], b'0\r\n\r\n'),
+    ([('Transfer-Encoding', 'gzip, chunked')], b'0\r\n\r\n'),
+    ([('Transfer-Encoding', 'chunked')], b'not-hex\r\n'),
+    ([('Transfer-Encoding', 'chunked')], b'a\r\nshort'),
+    ([('Transfer-Encoding', 'chunked')], b'5\r\nhello\r\n'),
+    ([('Transfer-Encoding', 'chunked')], b'a\r\nsynthetic-\r\n5\r\ntoken\r\n0\r\n\r\n'),
+])
+def test_invalid_or_secret_bearing_chunks_are_rejected(provider, framing, wire):
+    provider[1].update(framing=framing, wire=wire)
+    with pytest.raises(Denied): binding(provider)(b'{}')
+
+
+def test_chunked_size_limit(provider):
+    data = b'x' * (8 * 1024 * 1024 + 1)
+    provider[1].update(framing=[('Transfer-Encoding', 'chunked')],
+                       wire=f'{len(data):x}\r\n'.encode() + data + b'\r\n0\r\n\r\n')
+    with pytest.raises(Denied): binding(provider)(b'{}')
+
+
+def test_continuous_tls_chunks_stop_at_deadline(provider):
+    provider[1].update(framing=[('Transfer-Encoding', 'chunked')], drip=True)
+    adapter = binding(provider, seconds=.3)
+    start = time.monotonic()
+    with pytest.raises(Denied): adapter(b'{}')
+    assert time.monotonic() - start < 1.5
+    with pytest.raises(Denied): adapter(b'{}')
+    assert len(provider[1]['connections']) == 1

@@ -96,16 +96,28 @@ class LocalModelUpstream:
             response = conn.getresponse()
             if response.status != 200 or response.getheader("Content-Type") != "text/event-stream":
                 raise Denied("upstream response rejected")
-            if response.getheader("Transfer-Encoding") or response.getheader("Content-Encoding"):
+            if response.getheader("Content-Encoding"):
                 raise Denied("upstream encoding rejected")
             lengths = response.headers.get_all("Content-Length", [])
-            if len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdecimal():
-                raise Denied("upstream length rejected")
-            size = int(lengths[0])
-            if size > 8 * 1024 * 1024:
-                raise Denied("upstream response too large")
-            output = response.read(size)
-            if len(output) != size or self._secret.encode() in output:
+            transfers = response.headers.get_all("Transfer-Encoding", [])
+            limit = 8 * 1024 * 1024
+            if transfers:
+                # One unambiguous framing mode; HTTPResponse decodes chunking.
+                if lengths or len(transfers) != 1 or transfers[0].lower() != "chunked":
+                    raise Denied("upstream framing rejected")
+                output = response.read(limit + 1)
+                if len(output) > limit:
+                    raise Denied("upstream response too large")
+            else:
+                if len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdecimal():
+                    raise Denied("upstream length rejected")
+                size = int(lengths[0])
+                if size > limit:
+                    raise Denied("upstream response too large")
+                output = response.read(size)
+                if len(output) != size:
+                    raise Denied("upstream body rejected")
+            if self._secret.encode() in output:
                 raise Denied("upstream body rejected")
             with self._lock:
                 if self._revoked or time.monotonic() >= self._deadline:
