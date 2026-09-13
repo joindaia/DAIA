@@ -18,6 +18,7 @@ from daia.contributor import Contributor
 from daia.mcp_server import build_mcp_app
 from daia.service import Coordinator
 from daia.store import Store
+from daia.assignment_relay import relay as assignment_relay
 from test_contributor import direct,invite_file
 from test_assignment_host import approve
 from test_mcp import running_server
@@ -143,6 +144,10 @@ service=Coordinator(Store(str(coordinator_dir/'network.sqlite3')));service.admit
 with running_server(build_mcp_app(service)) as url:
  invite=invite_file(private,service,url);host=direct(Contributor(invite,minutes=5),service)
  lease=asyncio.run(host.perform('request_work'));before={k:host.state[k] for k in ['key','used','deadline','max_jobs']}
+ # Freeze before helper/VM startup. Neither connection nor heartbeat resets it.
+ remaining=min(150,lease['hard_deadline']-host.clock(),host.state['deadline']-host.clock())
+ if remaining<=0:raise RuntimeError('Assignment transport already expired')
+ transport_deadline=time.monotonic()+remaining
  cfg=private/'helper.json';cfg.write_text(json.dumps({'invite':'/state/'+invite.name,'assignment':lease['assignment_id'],'authority':approve(host,lease,['read_input','heartbeat','submit_result'])}));cfg.chmod(0o600)
  os.chown(private,controller.pw_uid,controller.pw_gid)
  for entry in private.iterdir():os.chown(entry,controller.pw_uid,controller.pw_gid);entry.chmod(0o600)
@@ -181,33 +186,17 @@ with running_server(build_mcp_app(service)) as url:
 
  errors=[]
  with socket.socket(socket.AF_UNIX) as listener:
-  listener.bind(str(endpoint));os.chown(endpoint,0,worker.pw_gid);endpoint.chmod(0o660);listener.listen(1);listener.settimeout(150)
+  listener.bind(str(endpoint));os.chown(endpoint,0,worker.pw_gid);endpoint.chmod(0o660);listener.listen(1)
   def relay():
    try:
+    remaining=transport_deadline-time.monotonic()
+    if remaining<=0:raise TimeoutError('Assignment transport expired before accept')
+    listener.settimeout(remaining)
     connection,_=listener.accept()
     with connection:
-     incoming=connection.fileno();reply=helper.stdout.fileno();request=helper.stdin.fileno()
-     for fd in (incoming,reply,request):os.set_blocking(fd,False)
-     destinations={incoming:request,reply:incoming};queues={request:bytearray(),incoming:bytearray()}
-     end=time.monotonic()+30;total=0;closing=set()
-     while time.monotonic()<end:
-      ready,writable,_=select.select(list(destinations),[fd for fd,data in queues.items() if data],[],max(0,end-time.monotonic()))
-      for fd in ready:
-       chunk=os.read(fd,8192)
-       if not chunk:
-        closing.add(destinations.pop(fd));continue
-       total+=len(chunk);assert total<=256*1024
-       queues[destinations[fd]].extend(chunk)
-      for fd in writable:
-       try:count=os.write(fd,queues[fd])
-       except BlockingIOError:continue
-       del queues[fd][:count]
-      for fd in list(closing):
-       if queues[fd]:continue
-       if fd==request:helper.stdin.close();helper.stdin=None
-       else:connection.shutdown(socket.SHUT_WR)
-       closing.remove(fd)
-      if not destinations and not any(queues.values()):return
+     if assignment_relay(connection,helper,seconds=150,max_bytes=256*1024,
+                         deadline=transport_deadline)!='complete':
+      raise TimeoutError('Assignment transport expired')
    except Exception as exc:errors.append(type(exc).__name__)
   thread=threading.Thread(target=relay,daemon=True);thread.start()
   job=root/('job-'+uuid.uuid4().hex);job.mkdir(mode=0o700);os.chown(job,worker.pw_uid,worker.pw_gid);unit='daia-assignment-'+uuid.uuid4().hex

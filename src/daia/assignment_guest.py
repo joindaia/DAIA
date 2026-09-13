@@ -31,7 +31,9 @@ def main():
             # helper EOF from a client that has not closed its request stream.
             os.close(1)
             sys.stdout = None
-            result = relay(connection, streams, seconds=30, max_bytes=256 * 1024)
+            # Local liveness cap only; the outside-VM controller enforces the
+            # earlier assignment/consent deadline, including startup time.
+            result = relay(connection, streams, seconds=150, max_bytes=256 * 1024)
             return 0 if result == 'complete' else 124
     except (OSError, ValueError):
         print('Assignment guest transport refused or disconnected', file=sys.stderr)

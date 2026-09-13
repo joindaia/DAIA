@@ -40,13 +40,18 @@ def prepare(base, seed, output, *, base_sha256, seed_sha256, nonce):
         shutil.copyfile(scripts / 'run_kvm_lab_report.py', output / 'report-wrapper.py')
         bridge = (scripts / 'model_channel_bridge.py').read_text()
         original = '/run/daia-lab/gateway.sock'
-        if bridge.count(original) != 1:
+        if bridge.count(original) != 1 or bridge.count('relay(connection, 0, 1)') != 1:
             raise ValueError('Unexpected bridge template')
         destinations = {'bridge.py': original,
                         'model-bridge.py': '/run/daia-lab/model.sock',
                         'research-bridge.py': '/run/daia-research/gateway.sock'}
         for name, destination in destinations.items():
-            (output / name).write_text(bridge.replace(original, destination))
+            rendered = bridge.replace(original, destination)
+            if name == 'bridge.py':
+                # Persistent assignment MCP, bounded earlier by the controller.
+                rendered = rendered.replace('relay(connection, 0, 1)',
+                    'relay(connection, 0, 1, seconds=150, max_bytes=256 * 1024)')
+            (output / name).write_text(rendered)
         config = {'nonce': nonce, 'base_sha256': base_sha256,
                   'seed_sha256': seed_sha256,
                   'bridge_sha256': {name: digest(output / name) for name in destinations}}

@@ -17,6 +17,9 @@ def test_reproducible_bundle_and_rejected_inputs(tmp_path):
     one = prepare(base, seed, first, **args)
     assert prepare(base, seed, second, **args) == one
     assert len(one) == 8
+    assert 'seconds=150, max_bytes=256 * 1024' in (first / 'bridge.py').read_text()
+    for name in ('model-bridge.py', 'research-bridge.py'):
+        assert 'relay(connection, 0, 1)' in (first / name).read_text()
     manifest = json.loads((first / 'network-config.json').read_text())
     assert manifest['base_sha256'] == args['base_sha256']
     for name, expected in manifest['bridge_sha256'].items():

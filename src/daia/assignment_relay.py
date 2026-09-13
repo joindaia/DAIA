@@ -12,19 +12,27 @@ import sys
 import time
 
 
-def relay(connection, helper, *, seconds=30, max_bytes=256 * 1024):
+def relay(connection, helper, *, seconds=30, max_bytes=256 * 1024, deadline=None):
     """Forward opaque bytes; return 'complete' or 'timeout', reject excess output.
 
     Endpoints are consumed and left nonblocking. On worker EOF, drain its request
     queue before closing helper stdin; clear that Popen property for safe later
     communicate(). On helper EOF, drain replies before half-closing the socket.
     The caller must close endpoints and terminate the helper on every exit path,
-    including timeout, output rejection and exceptions. An independent process
-    watchdog remains necessary if the launcher itself dies.
+    including timeout, output rejection and exceptions. An optional trusted absolute
+    monotonic deadline includes setup time and can only shorten the relative cap.
+    An independent process watchdog remains necessary if the launcher itself dies.
     """
     if (sys.platform != 'linux' or not math.isfinite(seconds) or seconds <= 0
             or type(max_bytes) is not int or max_bytes < 1):
         raise ValueError('Linux and finite positive relay limits required')
+    if deadline is not None and not math.isfinite(deadline):
+        raise ValueError('Finite monotonic deadline required')
+    end = time.monotonic() + seconds
+    if deadline is not None:
+        end = min(end, deadline)
+    if end <= time.monotonic():
+        return 'timeout'
     incoming = connection.fileno()
     reply = helper.stdout.fileno()
     request = helper.stdin.fileno()
@@ -33,17 +41,16 @@ def relay(connection, helper, *, seconds=30, max_bytes=256 * 1024):
     destinations = {incoming: request, reply: incoming}
     queues = {request: bytearray(), incoming: bytearray()}
     closing = set()
-    deadline = time.monotonic() + seconds
     received = 0
     while True:
         if not destinations and not any(queues.values()):
             return 'complete'
-        remaining = deadline - time.monotonic()
+        remaining = end - time.monotonic()
         if remaining <= 0:
             return 'timeout'
         readable, writable, _ = select.select(
             list(destinations), [fd for fd, data in queues.items() if data], [], remaining)
-        if time.monotonic() >= deadline:
+        if time.monotonic() >= end:
             return 'timeout'
         for fd in readable:
             try:

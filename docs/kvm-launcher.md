@@ -305,3 +305,29 @@ the controller and guest relay's 30-second connection lifetime must be reconcile
 with the already authorized task deadline, without renewing consent. Native Codex
 starts MCP during initialization, so a short synthetic submission run does not
 prove that the connection survives a complete research/development task.
+
+
+## Fixed lifetime for persistent assignment MCP
+
+The lab controller now freezes one monotonic transport deadline immediately after
+assignment acquisition and before helper/VM startup. Its remaining lifetime is
+the minimum of 150 seconds, the assignment hard deadline and existing contributor
+consent. Accepting a connection consumes that same lifetime; neither late startup,
+traffic nor heartbeat resets it. Expired relays refuse before touching endpoints.
+The common relay's optional absolute deadline can only shorten its relative cap.
+The controller reuses that tested relay instead of its former duplicate loop.
+
+The guest stdio adapter and the pinned QEMU assignment bridge now allow up to
+150 seconds locally, with the earlier deadline enforced outside the VM by the
+controller. The bridge's aggregate limit is 256 KiB, matching the assignment relay.
+The model and research bridges retain their existing limits. There is no new
+consent, additional assignment, credential authority or model budget.
+
+`python3 scripts/probe_assignment_deadline.py` exercises a real socket and helper
+subprocess for 34 seconds without credentials. Traffic was echoed at 31.003
+seconds, beyond the previous connection limit; shutdown occurred at 34.003
+seconds on the original deadline. Traffic did not renew it. Eighteen focused
+tests passed, including expired deadlines, upper bounds, byte limits, EOF,
+backpressure and bundled bridge configuration. This is transport evidence, not
+a new full-VM or real-subscription native MCP delivery result. That combined run
+still requires the approved tool-bearing model template and prepared guest seed.
