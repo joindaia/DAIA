@@ -8,7 +8,7 @@ import ipaddress
 import socket
 import ssl
 
-from .model_request import Denied
+from .model_request import Denied, _decode
 from .model_upstream import LocalModelUpstream, _check_secret
 
 
@@ -53,3 +53,61 @@ class CodexHTTPSUpstream(LocalModelUpstream):
     def _headers(self):
         return {**super()._headers(), "ChatGPT-Account-Id": self._account,
                 "Accept": "text/event-stream"}
+
+    def _check_media_type(self, response):
+        self._missing_media_type = not response.headers.get_all("Content-Type", [])
+        if not self._missing_media_type:
+            super()._check_media_type(response)
+
+    def _check_output(self, output):
+        super()._check_output(output)
+        if not self._missing_media_type:
+            return
+        # The fixed provider has been observed omitting Content-Type for Spark.
+        # Require a complete structured Responses stream before releasing bytes.
+        try:
+            text = output.decode("utf-8").replace("\r\n", "\n")
+        except UnicodeError:
+            raise Denied("invalid provider stream") from None
+        if not text.endswith("\n\n"):
+            raise Denied("incomplete provider stream")
+        completed = False
+        for block in text.split("\n\n"):
+            if not block.strip():
+                continue
+            data, event = [], None
+            for line in block.split("\n"):
+                if line.startswith(":"):
+                    continue
+                name, separator, value = line.partition(":")
+                if not separator or name not in ("data", "event"):
+                    raise Denied("invalid provider event")
+                value = value.removeprefix(" ")
+                if name == "data":
+                    data.append(value)
+                elif event is None:
+                    event = value
+                else:
+                    raise Denied("duplicate provider event")
+            if not data:
+                if event is not None:
+                    raise Denied("missing provider event data")
+                continue
+            payload = "\n".join(data)
+            if payload == "[DONE]" and completed and event is None:
+                continue
+            if completed:
+                raise Denied("event after completion")
+            value = _decode(payload.encode())
+            kind = value.get("type")
+            if (not isinstance(kind, str) or not kind.startswith("response.")
+                    or event is not None and event != kind):
+                raise Denied("invalid provider event type")
+            if kind == "response.completed":
+                response = value.get("response", {})
+                if (not isinstance(response, dict) or response.get("status") != "completed"
+                        or not isinstance(response.get("output"), list)):
+                    raise Denied("invalid provider completion")
+                completed = True
+        if not completed:
+            raise Denied("missing provider completion")

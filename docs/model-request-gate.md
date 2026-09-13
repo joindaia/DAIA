@@ -498,3 +498,73 @@ duplicate Content-Type, another media type, a non-UTF-8 charset or repeated
 parameters remain rejected. The combined transport/gate suite passes 117 tests.
 This is protocol compatibility tested with synthetic credentials, not evidence
 that a real subscription request succeeded.
+
+
+## First real subscription attempt: model rejected
+
+On 13 September 2026, the participant completed the original pinned Codex client's
+device authorization in a separate host-side profile. Native login reported
+success. Its credential file was mode 0600; no auth profile, access token or refresh
+token was included in the VM seed. Only a short-lived access-token/account binding
+was handed to the restricted external gateway in a private file, consumed and
+unlinked. The participant's refresh state remained in the trusted native profile.
+
+Two fresh-overlay KVM runs used the original client and the fixed HTTPS adapter.
+Each ran the 23 hostile channel probes before attempting the controlled public
+version-comparison task. All probes were denied. Each made exactly one provider
+request and received HTTP 400; neither completed a model turn or produced a patch.
+The second run retained the error privately to identify the cause. Exact comparison
+confirmed the provider's error: the requested `gpt-5.3-codex` model is not supported
+when using Codex with a ChatGPT account. No raw credential, account identifier or
+private provider error record is published.
+
+Worker runtimes were 39.400 and 44.423 seconds. QEMU completed successfully but the
+**native model client exited 1**, so these are failed model trials, not successful
+development jobs. Both overlays were removed and services stopped. The same
+approved seed was used for both attempts; runtime overlays were separate.
+The gateway was configured with a deny-all IP policy plus the single resolved
+public provider IPv4 address. This trial did not independently prove enforcement
+of that kernel policy against private-network canaries.
+
+This establishes a real login and an actual provider response through the KVM-to-
+HTTPS path. It does not establish model entitlement, inference success, account
+confinement across all provider features, refresh/revocation, a tested fix or a
+DAIA receipt. The next prerequisite is a supported model selection from the native
+client, followed by another bounded trial. No API billing fallback was used.
+
+
+## First successful Spark subscription contribution
+
+The participant suggested `gpt-5.3-codex-spark` after the first model was rejected.
+Two attempts reached HTTP 200 but were deliberately blocked because this provider
+response omitted Content-Type. Private header inspection confirmed the omission
+and a distinct active limit labelled GPT-5.3-Codex-Spark. No personal usage values,
+cookies, account IDs or opaque turn state are published.
+
+For the fixed certificate-verified Codex endpoint only, absence of Content-Type
+now requires a fully buffered, UTF-8, structured Responses SSE stream with matching
+event/data types and a completed response before anything is released. Present but
+invalid or duplicate media types remain rejected. Truncated, malformed, duplicate-
+key, mismatched and non-Responses data fail closed. Size, credential and deadline
+checks are unchanged. The transport/gate suite passes 123 tests.
+
+The subsequent one-request trial completed a real native Codex turn inside KVM
+using the participant's subscription. The client proposed a fix for a controlled
+public numeric-version fixture. All 23 channel negatives remained denied. Runtime
+was 49.552 seconds; native exit was zero and the overlay was removed.
+
+The model returned apply-patch-style text rather than the requested unified diff.
+A fresh evaluator VM extracted the single-file proposal under a strict fixture
+envelope check and checked the function's syntax before executing it. The proposal
+code was unchanged. Ten independently supplied regression cases passed; the
+original function failed. The evaluator had no network device or provider credential
+input, used no model and removed its overlay. Runtime was 38.368 seconds.
+[Structured evidence, actual proposal and limitations](research/first-spark-subscription-trial-2026-09-13.json).
+
+This is real subscription-backed code generation with separate functional
+evaluation. It is not the full goal: research, model-driven tool execution, real
+refresh/revocation, independently tested private-network enforcement and DAIA
+receipt submission still need to be combined and verified. A distinct Spark limit
+is observed for this account, not a promise about every participant's entitlement,
+available quota or provider terms. No fallback to API billing or another model was
+used. A worker must not silently switch model or quota when this route is exhausted.

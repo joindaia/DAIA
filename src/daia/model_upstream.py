@@ -33,6 +33,20 @@ class LocalModelUpstream:
         return {"Authorization": "Bearer " + self._secret,
                 "Content-Type": "application/json", "Connection": "close"}
 
+    def _check_media_type(self, response):
+        content_types = response.headers.get_all("Content-Type", [])
+        if len(content_types) != 1:
+            raise Denied("upstream response rejected")
+        media = [part.strip().lower() for part in content_types[0].split(";")]
+        if (media[0] != "text/event-stream" or len(media) > 2
+                or len(media) == 2 and media[1] not in
+                ('charset=utf-8', 'charset="utf-8"')):
+            raise Denied("upstream content type rejected")
+
+    def _check_output(self, output):
+        if self._secret.encode() in output:
+            raise Denied("upstream body rejected")
+
     def __init__(self, path: str, secret: str, *, seconds: float, requests: int):
         _check_secret(secret)
         if not 0 < seconds <= 300 or type(requests) is not int or not 0 < requests <= 100:
@@ -94,14 +108,9 @@ class LocalModelUpstream:
             # to shut down a blocked request as well as a blocked response.
             conn.request("POST", self._target, body=body, headers=self._headers())
             response = conn.getresponse()
-            content_types = response.headers.get_all("Content-Type", [])
-            if response.status != 200 or len(content_types) != 1:
+            if response.status != 200:
                 raise Denied("upstream response rejected")
-            media = [part.strip().lower() for part in content_types[0].split(";")]
-            if (media[0] != "text/event-stream" or len(media) > 2
-                    or len(media) == 2 and media[1] not in
-                    ('charset=utf-8', 'charset="utf-8"')):
-                raise Denied("upstream content type rejected")
+            self._check_media_type(response)
             if response.getheader("Content-Encoding"):
                 raise Denied("upstream encoding rejected")
             lengths = response.headers.get_all("Content-Length", [])
@@ -123,8 +132,7 @@ class LocalModelUpstream:
                 output = response.read(size)
                 if len(output) != size:
                     raise Denied("upstream body rejected")
-            if self._secret.encode() in output:
-                raise Denied("upstream body rejected")
+            self._check_output(output)
             with self._lock:
                 if self._revoked or time.monotonic() >= self._deadline:
                     raise Denied("upstream binding unavailable")

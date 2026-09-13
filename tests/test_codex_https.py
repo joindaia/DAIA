@@ -169,3 +169,21 @@ def test_utf8_sse_content_type(provider, value):
 def test_ambiguous_or_unsupported_content_type(provider, values):
     provider[1]['content_types'] = values
     with pytest.raises(Denied): binding(provider)(b'{}')
+
+
+def test_missing_media_type_requires_complete_responses_stream(provider):
+    wire = b'data: {"type":"response.completed","response":{"status":"completed","output":[]}}\n\n'
+    provider[1].update(content_types=[], framing=[('Content-Length', str(len(wire)))], wire=wire)
+    assert binding(provider)(b'{}') == wire
+
+
+@pytest.mark.parametrize('wire', [
+    b'<html>not a stream</html>',
+    b'data: {"type":"response.created"}\n\n',
+    b'data: {"type":"response.completed","response":{"status":"failed","output":[]}}\n\n',
+    b'event: response.created\ndata: {"type":"response.completed","response":{"status":"completed","output":[]}}\n\n',
+    b'data: {"type":"response.completed","type":"response.completed","response":{"status":"completed","output":[]}}\n\n',
+])
+def test_missing_media_type_rejects_nonresponses_or_incomplete_stream(provider, wire):
+    provider[1].update(content_types=[], framing=[('Content-Length', str(len(wire)))], wire=wire)
+    with pytest.raises(Denied): binding(provider)(b'{}')
