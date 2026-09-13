@@ -403,3 +403,22 @@ The first positive run failed with QEMU `qemu_thread_create: Resource temporaril
 unavailable` and cleaned up. A new run of the same bundle succeeded without
 raising process, memory or time limits. The resource failure's cause remains
 unproven; it is retained in the evidence and is not counted as a passing test.
+
+
+### Guest evaluator tampering probes
+
+The synthetic data fixture `tests/fixtures/evaluator-tamper-attempts.json` was
+prepared and run through the existing seed/bundle/networkless evaluator commands.
+Before returning a correct result for each of ten cases, it successfully writes,
+reads and deletes a temporary guest file, then requires permission denials for
+checker/script writes, serial output, parent stdout through `/proc`, a checker
+symlink, SIGSTOP against the privileged parent and a serial write in a child
+process. The real KVM evaluation passed all ten guarded cases and the original
+failed. Cleanup completed; no provider requests occurred.
+
+[Evidence](research/evaluator-tamper-attempts-2026-09-13.json) relies on this fixed,
+trusted attack fixture executing as specified, not a hostile contributor's claim
+that their tests passed. It strengthens the finite permission-boundary evidence;
+it does not establish kernel security, exhaustive report-channel enumeration or
+the complete research-enabled worker boundary. Seven preparation/bundle tests
+also passed; pytest could not write its cache in the read-only test invocation.
