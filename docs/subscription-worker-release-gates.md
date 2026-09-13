@@ -124,3 +124,19 @@ See [wire DNS evidence](research/wire-dns-mixed-cname-2026-09-13.json). The CNAM
 target records were included in the same DNS answer. This does not prove recursive
 or multihop CNAME behavior, redirects, a browser's full path, or KVM integration.
 There were no model/provider calls or external routes.
+
+
+## Service identity preflight
+
+Both subscription lab entrypoints now reject missing, root or duplicate service
+identities and reject a worker socket group shared with another lab identity.
+The check includes supplementary group membership and runs before state cleanup,
+bundle creation or credential access. Previously the startup path only established
+that the account names existed; separate names alone do not imply separate UIDs.
+
+The existing lab configuration passed the read-only check. Sixteen targeted
+identity, outcome, crash-rendezvous and retained-run tests passed. No accounts
+were changed and no provider call occurred. See [evidence](research/subscription-service-identity-preflight-2026-09-13.json).
+This is one installation prerequisite, not a clean installer or proof of effective
+service confinement. A trusted administrator can still change account state after
+the preflight; immutable installation and effective runtime checks remain needed.

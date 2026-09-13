@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-13",
+  "scope": "Pre-start service account configuration validation",
+  "checks": [
+    "four distinct nonroot UIDs",
+    "worker socket group excludes peer service primary and supplementary memberships",
+    "both lab entrypoints check before state mutation or credential use"
+  ],
+  "live_existing_lab_configuration": "passed",
+  "regression_tests": 16,
+  "provider_calls": 0,
+  "accounts_modified": false,
+  "limitations": [
+    "No complete service sandbox or installed bundle proof",
+    "No fresh participant installation",
+    "Trusted administrator may still change accounts after preflight"
+  ]
+}

@@ -9,6 +9,7 @@ Inputs are trusted operator files, never worker-selected paths or configuration.
 import atexit,signal,select,asyncio,json,os,pathlib,pwd,subprocess,sys,tempfile,shutil,socket,selectors,time,threading,uuid
 import re
 from subscription_lab_outcome import outcome, write_outcome, new_run_directory
+from subscription_lab_identity import check_identities
 parent_unit=os.environ.get('DAIA_CONTROLLER_UNIT','')
 if not re.fullmatch(r'daia-controller-job-[a-f0-9]{32}\.service',parent_unit):
  raise SystemExit('Run inside a dedicated DAIA controller systemd unit.')
@@ -33,6 +34,7 @@ options=parser.parse_args()
 if options.crash_before_first_response and not options.native_delivery:parser.error('Crash probe requires native delivery')
 # Trusted inputs only. This controller creates no service identities or login.
 assert os.geteuid()==0
+check_identities()
 for value in (v for v in vars(options).values() if isinstance(v,pathlib.Path)):
  assert value.is_absolute() and value.exists() and not value.is_symlink()
  assert re.fullmatch(r'/[A-Za-z0-9_./-]+',str(value)) and '..' not in value.parts

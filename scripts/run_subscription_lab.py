@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import subprocess
 import uuid
+from subscription_lab_identity import check_identities
 
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ("guest", "request-template", "auth-home", "codex-binary", "python-runtime"):
@@ -19,6 +20,7 @@ parser.add_argument("--crash-before-first-response", action="store_true")
 args = parser.parse_args()
 if os.geteuid() != 0:
     parser.error("Requires the preconfigured lab administrator.")
+check_identities()  # Before lock/state cleanup, service startup or credential access.
 repo = Path(__file__).resolve().parents[1]
 # Shared lab templates require one live controller; stale lock files are harmless.
 with open("/run/daia-subscription-lab.lock", "a") as lock:
