@@ -17,7 +17,8 @@ class CodexHTTPSUpstream(LocalModelUpstream):
     _host = "chatgpt.com"
     _target = "/backend-api/codex/responses"
 
-    def __init__(self, address: str, secret: str, account: str, *, seconds: float, requests: int):
+    def __init__(self, address: str, secret: str, account: str, *, seconds: float, requests: int,
+                 request_authority: tuple[str, str] | None = None):
         # Pin a controller-resolved literal for the whole assignment. TLS still
         # authenticates chatgpt.com, never the literal or a guest-selected name.
         ip = ipaddress.ip_address(address)
@@ -34,7 +35,8 @@ class CodexHTTPSUpstream(LocalModelUpstream):
         self._tls.load_default_certs()
         self._tls.minimum_version = ssl.TLSVersion.TLSv1_2
         self._tls.set_alpn_protocols(["http/1.1"])
-        super().__init__("", secret, seconds=seconds, requests=requests)
+        super().__init__("", secret, seconds=seconds, requests=requests,
+                         request_authority=request_authority)
 
     def _new_socket(self):
         return socket.socket(self._family)

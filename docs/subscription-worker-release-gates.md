@@ -455,3 +455,40 @@ filtering is defence in depth, not a proof against encoded, fragmented or otherw
 transformed secret disclosure by a hostile provider. Provider-side revocation of
 old tokens, controller/host reboot recovery and the full release gates remain
 separate requirements. No consent, provider quota or worker access was expanded.
+
+
+### Persistent request accounting before gateway recovery
+
+The fixed HTTPS adapter now accepts an optional trusted `request_authority`
+(path, binding digest). When provided, `request_ledger.reserve` durably decrements
+the original allowance before socket creation. This Linux ledger uses a private
+regular file, nonblocking process lock, fsync before forwarding, a boot identifier
+and CLOCK_BOOTTIME deadline (including suspend). Existing files cannot be recreated
+by `create`; missing, corrupt, shared, linked, expired, wrong-binding or different-boot
+records deny rather than establish a fresh allowance. Failed provider requests
+consume their reserved attempt. No provider credential is stored in the ledger.
+
+123 targeted tests passed. A real child process reserves an attempt and exits
+abruptly; a fresh process consumes only the remaining attempt. Eight concurrent
+processes cannot collectively exceed three attempts. A local TLS test creates
+three successive HTTPS adapters: one succeeds, one receives a provider error, and
+the third is denied without a connection despite its new in-memory allowance.
+[Evidence](research/persistent-request-accounting-2026-09-13.json).
+
+**Integration status:** the live supervisor does not yet supply this authority.
+It is an available transport boundary, not working full-controller recovery.
+Legacy lab calls retain their existing in-memory limits; no new resume command is
+introduced. Before enabling recovery, the trusted controller must create the record
+once, bind its digest to the original assignment/account/template/consent, preserve
+its location and permissions across replacement, supply access to the real boot ID,
+and never silently fall back to no ledger. The worker must have no access to its
+path, creation or replacement. Explicit revocation must remain durable too; current
+ledger tests establish accounting and expiry, not persisted manual revocation.
+
+Recovery must also retain credential-reflection protection for previously used
+credentials outside the worker, validate original consent, and reconstruct helper
+state without creating a new assignment. A host reboot is deliberately denied by
+this ledger rather than translating deadlines or authorizing fresh work. File
+fsync and process-crash tests do not prove storage behaviour under power loss or
+protect against an administrator rolling back the state. These remain explicit
+limits; the full release gate stays open.

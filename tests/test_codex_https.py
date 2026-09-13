@@ -70,9 +70,9 @@ def provider(tmp_path, monkeypatch):
         finally: server.shutdown(); thread.join(5)
 
 
-def binding(provider, *, trust=True, seconds=3, requests=1):
+def binding(provider, *, trust=True, seconds=3, requests=1, request_authority=None):
     certfile, _ = provider
-    result = CodexHTTPSUpstream('1.1.1.1', 'synthetic-token', 'synthetic-account', seconds=seconds, requests=requests)
+    result = CodexHTTPSUpstream('1.1.1.1', 'synthetic-token', 'synthetic-account', seconds=seconds, requests=requests, request_authority=request_authority)
     if trust: result._tls.load_verify_locations(cafile=str(certfile))
     return result
 
@@ -259,3 +259,23 @@ def test_rotation_does_not_allow_current_or_retired_token_in_response(provider, 
     with pytest.raises(Denied):
         adapter(b'{}')
     assert len(state['seen']) == 3
+
+
+def test_recreated_https_adapter_cannot_refill_persisted_authority(provider, tmp_path):
+    import sys
+    if sys.platform != 'linux':
+        pytest.skip('Linux boot-bound request accounting')
+    from daia.request_ledger import create
+    path = tmp_path / 'authority.json'
+    identifier = 'd' * 64
+    create(path, identifier, seconds=30, requests=2)
+    authority = (str(path), identifier)
+    assert binding(provider, requests=6, request_authority=authority)(b'{}') == b'data: {}\n\n'
+    # A failed provider attempt is also spent before another adapter is created.
+    provider[1]['status'] = 503
+    with pytest.raises(Denied):
+        binding(provider, requests=6, request_authority=authority)(b'{}')
+    provider[1]['status'] = 200
+    with pytest.raises(Denied, match='Persisted request authority unavailable'):
+        binding(provider, requests=6, request_authority=authority)(b'{}')
+    assert len(provider[1]['connections']) == len(provider[1]['seen']) == 2

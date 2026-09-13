@@ -47,10 +47,12 @@ class LocalModelUpstream:
         if any(secret in output for secret in self._issued_secrets):
             raise Denied("upstream body rejected")
 
-    def __init__(self, path: str, secret: str, *, seconds: float, requests: int):
+    def __init__(self, path: str, secret: str, *, seconds: float, requests: int,
+                 request_authority: tuple[str, str] | None = None):
         _check_secret(secret)
         if not 0 < seconds <= 300 or type(requests) is not int or not 0 < requests <= 100:
             raise ValueError("invalid lab budget")
+        self._request_authority = request_authority
         self._path = path
         self._secret = secret
         # Rotation does not establish provider-side revocation of earlier tokens.
@@ -93,6 +95,11 @@ class LocalModelUpstream:
             left = self._deadline - time.monotonic()
             if self._revoked or left <= 0 or self._remaining == 0 or self._active is not None:
                 raise Denied("upstream binding unavailable")
+            if self._request_authority is not None:
+                # Optional only for legacy lab calls. Recovery-capable launchers
+                # must provide the original, independently retained authority.
+                from .request_ledger import reserve
+                reserve(*self._request_authority)
             self._remaining -= 1  # Failed attempts consume budget too.
             sock = self._new_socket()
             self._active = sock
