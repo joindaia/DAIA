@@ -643,3 +643,24 @@ This establishes real subscription-driven file editing and test execution for a
 controlled fixture. Public research, dependency downloads, the DAIA receipt,
 refresh/revocation, and complete account/network confinement are still not proven
 as one combined workflow. The public cohort gate remains closed.
+
+
+### Shared provider stream parsing
+
+`model_response.completed_output` now performs the bounded complete-stream parse
+used by both the HTTPS adapter's missing-content-type check and the lab controller's
+reasoning registration. It gathers `response.output_item.done` items as well as
+final completion output. It returns nothing until the whole stream is valid;
+truncation, malformed events and events after completion fail before registration.
+The controller must still authenticate the response through its fixed upstream
+binding and use a fresh request gate per assignment. This helper alone does not
+prove provider authenticity or authorize worker-supplied streams.
+
+Regression coverage includes the observed empty-content reasoning shape, an exact
+multi-turn round trip, foreign-assignment rejection and no state admission from a
+partial response. The live lab launcher was updated to use the shared parser;
+that launcher change has been syntax-checked, not rerun against the subscription
+in this change. The preceding live Spark evidence remains the evidence for model
+execution. No new provider request was made for this refactor.
+
+Validation for this refactor: 531 passed, 10 skipped, one existing warning.
