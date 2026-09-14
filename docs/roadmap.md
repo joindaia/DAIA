@@ -17,6 +17,17 @@ Authorized bug bounties and customer job requests are possible paid routes along
 the research goal, after the platform can deliver and verify bounded work. Start with
 a sample contract and shadow cost record; see [paid-work scope](paid-work.md).
 
+## Core rights and licensing milestone
+
+The [current retained-copyright proposal](licensing-model-v2.md) permits an identified
+company or optional foundation as licensor while preserving the complete AGPL Core.
+RIGHTS-01 through RIGHTS-07 track scope, legal instruments, actual counterparty,
+private assent, contribution clearance, legacy audit and commercial release clearance.
+The offline manifest preview is implemented; legal execution, live assent/merge
+controls and production commercial authorization remain open. Neither publishing
+research nor passing the preview grants rights. This work does not replace or weaken
+the active worker-security release gates below.
+
 ## Active security milestone
 
 The authorized [compromised-coordinator milestone](compromised-coordinator-milestone.md)

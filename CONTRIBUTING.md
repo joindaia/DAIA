@@ -1,12 +1,28 @@
 # Contributing
 
-DAIA is licensed under [AGPL-3.0-or-later](LICENSE-STATUS.md). By intentionally
-submitting a contribution for inclusion, you offer it under the same license and
-retain your copyright, where applicable. You must have authority to submit the
-material; identify third-party code and preserve its license and notices. Do not
-submit material with incompatible terms. There is no copyright assignment or
-blanket permission for maintainers to sell proprietary exceptions. A public
-pseudonym is welcome; keep private identity and account details out of commits.
+DAIA remains [AGPL-3.0-or-later](LICENSE-STATUS.md). Intentional submissions for
+inclusion are offered under that licence to the extent you have authority; submission
+alone neither assigns copyright nor grants proprietary relicensing rights. Disclose
+third-party material and preserve its licence and notices.
+
+The [current proposed model](docs/licensing-model-v2.md) retains contributor copyright
+and adds a separate, explicit commercial/patent grant for qualifying accepted Core
+contributions. Its recipient may be an identified company, including a founder-owned
+company, or an optional foundation. No CLA acceptance or commercial programme is
+active. No agreement is executed by a PR checkbox, worker key or this page.
+
+Before external Core work is commercially cleared, an actual rights holder must
+have accepted an applicable reviewed instrument, with employer/organizational authority
+where needed. Future worker work needs prior scoped authorization and an exact
+acceptance record; unrelated jobs and rejected output are not captured. Tests and
+documentation can contain copyright-relevant material too. Research/proposals may
+be reviewed under existing permissions. An expressly approved AGPL-only exception
+must remain labelled and cannot silently enter a proprietary-cleared release.
+
+See the [grant architecture](docs/contributor-commercial-grant.md) and
+[rights workflow](docs/licensing-rights-register.md). Public pseudonyms are welcome;
+legal identities and agreement evidence belong in restricted records, never commits.
+Existing signed grants are not changed by this proposed policy.
 
 Start with a bounded issue stating the objective, acceptance criteria, baseline, scope and evidence
 plan. Use the development-task template for a proposed improvement and the bug template for a

@@ -5,6 +5,17 @@ The delegated maintainer made this decision after an internal three-model adviso
 boardroom. This was not a signed vote of independent registered contributors,
 a legal transfer of ownership, or a claim that agents are legal persons.
 
+## Commercial design selected on 14 September 2026
+
+Following the owner's explicit choice, the [retained-copyright model](licensing-model-v2.md) supersedes the mandatory
+foundation/assignment direction. It permits an identified company or optional
+foundation as official licensor, requires explicit supplemental rights and preserves
+the complete official AGPL Core. No agreement, legal entity, licence programme or
+payment is activated by publishing the proposal. A company/profit destination must
+be disclosed at assent; old foundation-only instruments cannot silently be redirected.
+See [commercial licensing](commercial-licensing.md) and the
+[historical ownership decision](core-rights-decision-2026-09-13.md).
+
 ## Mission and tradeoff
 
 A company charging for a DAIA service can help the mission by making useful work
@@ -26,7 +37,7 @@ open participation, commercial usefulness and reciprocal access to modifications
 Licensing cannot guarantee revenue, prevent every form of extraction, or establish
 who can enter contracts on behalf of the project.
 
-## Advisory boardroom
+## Original advisory boardroom (historical)
 
 | Perspective | Model / effort | Recommendation |
 | --- | --- | --- |

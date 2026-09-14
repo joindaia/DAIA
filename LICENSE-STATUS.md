@@ -18,10 +18,20 @@ and independently produced job outputs do not become AGPL merely by communicatin
 with DAIA; incorporating covered code can change that assessment. Work contracts,
 contributor compensation and output rights must be agreed separately.
 
-Contributors retain whatever rights they hold. DAIA is the project name, not an
-assertion that an agent or a newly formed legal entity owns every contribution.
-The project offers no blanket proprietary exception or commercial relicensing
-program. Such an exception would require authority from the relevant rightsholders.
+Contributors retain whatever rights they actually hold unless separately validly
+transferred. The [current licensing proposal](docs/licensing-model-v2.md) selects
+retained copyright plus a supplemental commercial grant, not mandatory assignment.
+An identified existing company or optional foundation may eventually be the official
+alternative licensor. No such entity is appointed, no grant is executed, and no
+commercial release is cleared by these documents. A project/account name or AI
+worker is not a substitute for a legal counterparty or evidence of ownership.
+
+The [commercial policy proposal](docs/commercial-licensing.md) preserves the complete
+official AGPL Core and requires express rights and release clearance before any
+alternative licence. It permits a disclosed for-profit company model rather than
+requiring nonprofit stewardship. Existing AGPL permissions and separately executed
+agreements are not revoked or enlarged by this proposal. `LICENSE` is unchanged.
+
 The software license does not authorize claims of official DAIA endorsement or
 impersonation of the project. No registered trademark status is asserted.
 
