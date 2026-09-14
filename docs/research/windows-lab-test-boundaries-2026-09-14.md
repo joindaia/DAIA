@@ -66,3 +66,20 @@ Validation of these changes before publication:
 Full GitHub CI on the follow-up commit remains required. Runtime code and security
 policy are unchanged. No live provider request or participant job was run for
 these test corrections.
+
+## Full CI confirmation
+
+GitHub Actions completed successfully for
+`ed22b82794392251c199516ea9c183d7337f0309`:
+
+| Job | Observed result |
+| --- | --- |
+| [Ubuntu reference](https://github.com/joindaia/DAIA/actions/runs/34806669806/job/103859775743) | 705 passed, 12 skipped, 1 warning |
+| [Windows reference](https://github.com/joindaia/DAIA/actions/runs/34806669806/job/103859775938) | 541 passed, 135 skipped, 1 warning |
+| [Website build](https://github.com/joindaia/DAIA/actions/runs/34806669806/job/103859775868) | Success |
+
+This resolves the CI failures described above for that exact source revision.
+Skipped Linux service and Unix transport checks remain explicit coverage limits;
+Windows CI success does not establish a native Windows isolated worker. These
+jobs do not replace the outstanding second-host subscription task and isolation
+trials. No release, merge, deployment or public admission follows from this result.
