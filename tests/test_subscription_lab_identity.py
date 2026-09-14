@@ -1,8 +1,12 @@
 """Service identity separation must fail before any live credentials are used."""
 from pathlib import Path
 import runpy
+import sys
 from types import SimpleNamespace
 import pytest
+
+if sys.platform != 'linux':
+    pytest.skip('Linux lab service identities', allow_module_level=True)
 
 scope = runpy.run_path(str(Path(__file__).parents[1] / 'scripts/subscription_lab_identity.py'))
 check = scope['check_identities']

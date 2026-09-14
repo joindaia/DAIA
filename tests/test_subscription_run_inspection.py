@@ -2,8 +2,11 @@
 import json
 from pathlib import Path
 import runpy
+import sys
 import sqlite3
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform != "linux", reason='Linux private lab run permissions')
 
 
 def fixture(tmp_path):

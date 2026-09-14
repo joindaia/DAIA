@@ -2,7 +2,10 @@ import json
 import os
 from pathlib import Path
 import runpy
+import sys
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform != "linux", reason='Linux private authentication profile')
 
 read = runpy.run_path(str(Path(__file__).parents[1] / 'scripts/subscription_lab_auth.py'))['read_auth']
 
