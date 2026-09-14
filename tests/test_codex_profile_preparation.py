@@ -18,6 +18,7 @@ def client(tmp_path,monkeypatch):
     return p
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux private profile ownership')
 def test_private_empty_profile_and_existing_profile_refusal(client,tmp_path):
     home=tmp_path/'profile'
     assert prepare(client,home)['login_started'] is False
@@ -30,6 +31,7 @@ def test_private_empty_profile_and_existing_profile_refusal(client,tmp_path):
 
 
 @pytest.mark.parametrize('bad',['shared_parent','symlink_parent','symlink_client'])
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux private profile ownership')
 def test_unsafe_input_refused(client,tmp_path,bad):
     parent=tmp_path/'parent';parent.mkdir(mode=0o700)
     if bad=='shared_parent': parent.chmod(0o755)

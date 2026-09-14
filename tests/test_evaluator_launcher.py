@@ -2,12 +2,14 @@
 import json
 from pathlib import Path
 import runpy
+import sys
 import types
 import pytest
 
 ROOT = Path(__file__).parents[1]
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='launcher requires Linux-only os.getuid and network namespace')
 def test_networkless_launcher_has_no_guest_forwarders(tmp_path, monkeypatch):
     scope = runpy.run_path(str(ROOT / 'scripts/run_kvm_lab_guest.py'))
     main = scope['main']; g = main.__globals__
@@ -33,6 +35,7 @@ def test_networkless_launcher_has_no_guest_forwarders(tmp_path, monkeypatch):
     assert json.loads((tmp_path / 'report.json').read_text())['network_none'] is True
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='service launcher imports Linux-only pwd')
 def test_service_storage_is_external_and_bounded():
     scope = runpy.run_path(str(ROOT / 'scripts/run_evaluator_lab.py'))
     p = scope['properties'](Path('/approved/work'), types.SimpleNamespace(pw_uid=123,pw_gid=456))

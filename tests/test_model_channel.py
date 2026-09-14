@@ -10,8 +10,16 @@ BODY = {"model": "fixture", "store": False, "stream": True, "tools": [],
         "input": [{"role": "user", "content": [{"type": "input_text", "text": "hello"}]}]}
 
 
+def lab_socketpair():
+    # The deployed lab transport is AF_UNIX. Windows socketpair silently uses
+    # TCP, whose close with unread input may reset a queued denial response.
+    if not hasattr(socket, 'AF_UNIX'):
+        pytest.skip('Unix model lab transport; Windows socketpair is TCP')
+    return socket.socketpair(socket.AF_UNIX)
+
+
 def exchange(raw):
-    client, server = socket.socketpair()
+    client, server = lab_socketpair()
     seen = []
     secret = b"synthetic-upstream-secret"
     def forward(body):
@@ -141,7 +149,7 @@ def test_jsonrpc_discovery_on_model_route_is_not_dispatched(method):
 
 
 def bound_exchange(channel, raw):
-    client, server = socket.socketpair()
+    client, server = lab_socketpair()
     worker = threading.Thread(target=channel.serve, args=(server,))
     worker.start()
     with client:
@@ -221,13 +229,13 @@ def test_bound_channel_rejects_concurrent_calls_and_releases_lock_after_failure(
         assert release.wait(3)
         raise ValueError("synthetic upstream failure")
     channel = AssignmentModelChannel(json.dumps(BODY).encode(), forward)
-    first, first_server = socket.socketpair()
+    first, first_server = lab_socketpair()
     thread = threading.Thread(target=channel.serve, args=(first_server,))
     thread.start()
     try:
         first.settimeout(3); first.sendall(wire())
         assert entered.wait(2)
-        second, second_server = socket.socketpair()
+        second, second_server = lab_socketpair()
         with second:
             second.settimeout(1)
             assert channel.serve(second_server) is False

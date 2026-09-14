@@ -26,3 +26,43 @@ Validation before publication:
 Full GitHub Windows CI must run again on the resulting commit. These test guards
 neither implement a Windows subscription lab nor establish VM, provider-account,
 credential or network confinement. No live provider or participant job was used.
+
+## Follow-up after full Windows CI reached execution
+
+The Windows job for `cf3b79c94a7944babfc0bc53e5f3635e6565901d` passed collection
+and exposed additional test-harness and platform assumptions. Ubuntu reference
+checks and the website build succeeded. The
+[Windows job](https://github.com/joindaia/DAIA/actions/runs/34803033512/job/103849360887)
+failed; this is not a successful full Windows run.
+
+The follow-up changes are limited to tests:
+
+- Oversized-input cases retain their original payloads but use short parameter
+  IDs. This avoids exceeding Windows environment-variable limits when pytest
+  writes the current test name.
+- Private profile ownership, Linux evaluator service properties, and the Linux
+  diagnostic wrapper have explicit Linux guards. Portable bundle assembly and
+  wrong-binary rejection checks remain selected on Windows.
+- Model-channel round trips now explicitly use Unix-domain sockets, matching
+  the deployed lab listener and bridge. On the tested Windows Python build,
+  `socketpair()` instead uses TCP, where closing with unread input can reset a
+  queued denial response. The tests skip when Unix-domain sockets are absent;
+  they retain all denial and forwarding assertions on the supported transport.
+  The in-memory partial-response writer check remains portable. These changes
+  do not establish a supported or tested Windows TCP model transport.
+
+Validation of these changes before publication:
+
+- Linux: all 56 tests in the five affected modules passed.
+- Native Windows Python: 8 passed, 47 skipped, and 1 failed. The remaining local
+  failure is the bundle test attempting to create a symbolic link without the
+  required Windows privilege (`WinError 1314`). The test remains enabled; the
+  previous GitHub Windows run did not report this prerequisite failure.
+- The focused Windows run used a fresh temporary directory, disabled unrelated
+  conftest/plugin loading, and reused installed pure Python pytest libraries.
+  An earlier invocation failed on the shared temporary-directory permissions;
+  it is not counted as a pass. This is partial local validation, not full CI.
+
+Full GitHub CI on the follow-up commit remains required. Runtime code and security
+policy are unchanged. No live provider request or participant job was run for
+these test corrections.

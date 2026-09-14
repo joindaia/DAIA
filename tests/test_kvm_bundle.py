@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import runpy
+import sys
 import pytest
 
 prepare = runpy.run_path(str(Path(__file__).parents[1] / 'scripts/prepare_kvm_bundle.py'))['prepare']
@@ -39,9 +40,9 @@ def test_reproducible_bundle_and_rejected_inputs(tmp_path):
     assert not bad.exists()
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='diagnostic wrapper uses Linux-only /tmp service layout')
 def test_failed_launch_exports_only_bounded_private_diagnostics(tmp_path):
     import subprocess
-    import sys
     bundle = tmp_path / 'bundle'; bundle.mkdir()
     (bundle / 'launcher.py').write_text("from pathlib import Path\nassert not any(Path.cwd().iterdir()), 'Working directory must remain empty'\nPath('serial.txt').write_bytes(b'DAIA_NATIVE_FAILURE synthetic error\\n'+b'x'*20000)\nraise ValueError('Guest correlation result missing')\n")
     work = tmp_path / 'work'; work.mkdir()

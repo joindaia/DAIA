@@ -38,7 +38,8 @@ def test_exact_candidate_is_data_only(tmp_path, monkeypatch, task):
         prepare(candidate, output, '/approved/iso-builder', task=task)
 
 
-@pytest.mark.parametrize('raw', [b'x' * 65537, b'{}', json.dumps('x' * 8192).encode()])
+@pytest.mark.parametrize('raw', [b'x' * 65537, b'{}', json.dumps('x' * 8192).encode()],
+                         ids=['oversized-bytes', 'invalid-object', 'oversized-json'])
 def test_reject_before_output_or_process(tmp_path, monkeypatch, raw):
     candidate = tmp_path / 'candidate.json'; candidate.write_bytes(raw)
     def forbidden(*a, **kw):
