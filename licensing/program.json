@@ -1,0 +1,13 @@
+{
+  "schema": "daia-licensing-design-v2",
+  "status": "draft-not-operative",
+  "repository_id": 1367256015,
+  "core_scope_version": "daia-core-v2",
+  "public_license": "AGPL-3.0-or-later",
+  "recommended_model": "retained-copyright-supplemental-grant",
+  "permitted_recipient_forms": ["incorporated-company", "foundation"],
+  "legal_licensor_ref": null,
+  "cla_acceptance_enabled": false,
+  "commercial_licensing_enabled": false,
+  "checker_authority": "offline-consistency-preview-only"
+}

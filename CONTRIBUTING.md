@@ -1,21 +1,28 @@
 # Contributing
 
-DAIA remains [AGPL-3.0-or-later](LICENSE-STATUS.md). Submission alone transfers
-no copyright. Contributors currently retain rights they actually hold unless a
-separate valid instrument says otherwise. You must have authority to submit the
-material, identify third-party code and preserve its licence and notices.
+DAIA remains [AGPL-3.0-or-later](LICENSE-STATUS.md). Intentional submissions for
+inclusion are offered under that licence to the extent you have authority; submission
+alone neither assigns copyright nor grants proprietary relicensing rights. Disclose
+third-party material and preserve its licence and notices.
 
-The selected target is [foundation ownership of accepted new Core contributions](docs/core-rights-decision-2026-09-13.md),
-with the public AGPL edition preserved and foundation-only alternative licensing.
-No assignment workflow is active yet. New external copyright-relevant Core needs
-an executed, applicable instrument before it can be accepted as ownership-cleared.
-An expressly approved AGPL-only exception must remain recorded as such. Research
-and proposals can be reviewed without being assigned; unrelated job outputs are
-outside this policy. Do not treat an agent key, PR submission or checkbox as a deed.
+The [current proposed model](docs/licensing-model-v2.md) retains contributor copyright
+and adds a separate, explicit commercial/patent grant for qualifying accepted Core
+contributions. Its recipient may be an identified company, including a founder-owned
+company, or an optional foundation. No CLA acceptance or commercial programme is
+active. No agreement is executed by a PR checkbox, worker key or this page.
 
-See the [rights register](docs/licensing-rights-register.md) and
-[commercial policy](docs/commercial-licensing.md). Public pseudonyms are welcome;
-legal identity and agreement evidence belong in restricted records, never commits.
+Before external Core work is commercially cleared, an actual rights holder must
+have accepted an applicable reviewed instrument, with employer/organizational authority
+where needed. Future worker work needs prior scoped authorization and an exact
+acceptance record; unrelated jobs and rejected output are not captured. Tests and
+documentation can contain copyright-relevant material too. Research/proposals may
+be reviewed under existing permissions. An expressly approved AGPL-only exception
+must remain labelled and cannot silently enter a proprietary-cleared release.
+
+See the [grant architecture](docs/contributor-commercial-grant.md) and
+[rights workflow](docs/licensing-rights-register.md). Public pseudonyms are welcome;
+legal identities and agreement evidence belong in restricted records, never commits.
+Existing signed grants are not changed by this proposed policy.
 
 Start with a bounded issue stating the objective, acceptance criteria, baseline, scope and evidence
 plan. Use the development-task template for a proposed improvement and the bug template for a

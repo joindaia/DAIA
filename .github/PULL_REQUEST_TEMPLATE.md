@@ -14,11 +14,16 @@ Explain changes to assignment eligibility, owner conflicts, leases, signatures, 
 
 ## Contribution rights
 
-Identify imported material and its license, or state that none is included.
-AGPL submission does not grant commercial relicensing rights. If a supplemental
-grant has already been executed, provide only its nonidentifying reference and
-covered scope; otherwise record commercial clearance as unverified or AGPL-only.
-Do not attach private agreements or signatures.
+State whether this is DAIA Core or external-job material; external output cannot
+be reclassified merely by moving it here. Identify imported/generated material and
+its provenance/licence, or state that none is included. AGPL submission is not a
+supplemental commercial grant. The v2 agreement remains a draft, not a checkbox CLA.
+
+For an already executed applicable grant, provide only opaque references and exact
+covered scope/content; include worker authorization where relevant. Otherwise record
+commercial status as unverified or AGPL-only. A changed patch needs renewed review
+of its evidence, not necessarily a new agreement. Do not publish legal identities,
+employer records, provider details, signatures or private contracts. No self-clearance.
 
 ## Maintainer decision
 

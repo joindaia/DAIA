@@ -1,73 +1,52 @@
-# Interim custody of supplemental licensing rights — proposal
+# Before incorporation: prefer a direct grant to an existing entity
 
-> **Superseded as the default implementation route.** See the
-> [Core ownership decision](core-rights-decision-2026-09-13.md). This historical
-> proposal is not an operative assignment or an agreement ready for acceptance.
+**Design for counsel; no interim agreement is executed.** This supersedes the earlier
+foundation-only custody proposal, not any agreement someone may already have signed.
+The permanent recipient may be a company under the [current model](licensing-model-v2.md).
 
-**Proposal for legal review, 13 September 2026. Not an executed contributor
-agreement and not a change to the foundation-only licensing policy.** The owner
-raised an interim custodian as a way to accept contributions before incorporation.
+## Recommendation
 
-A contributor would retain copyright and provide the usual AGPL-3.0-or-later grant.
-A separate, explicitly accepted agreement could appoint an identified interim
-individual steward to hold a narrowly defined supplemental entitlement pending
-transfer to a qualified independent foundation. The intended structure is:
+Establish and identify the intended legal recipient **before** activating external
+Core commercial-clearance admission. Use direct retained-copyright grants to that
+entity. A founder-owned company can be that recipient; do not introduce a fictitious
+future foundation merely as a transfer destination. A sole proprietorship is not a
+separate legal person. This route avoids making the founder's later personal transfer
+of each contributor's contractual position the default dependency.
 
-- The interim steward may administer records and complete the specified transfer,
-  but may not exercise commercial sublicensing authority before the foundation.
-- No sale, pledge, personal sublicensing or transfer to a company or other person
-  is permitted under this entitlement. The contributor retains their own rights.
-- The original agreement expressly authorizes the specified transfer and obliges
-  the steward to complete it once the agreed qualification conditions are met.
-- The foundation accepts the agreement's obligations and receives the supplemental
-  authority through documented legal instruments. Incorporation alone is not a
-  completed transfer. The interim steward retains no parallel commercial power.
-- AGPL availability, project-purpose revenue and independent compensation decisions
-  remain conditions. No founder salary, fee or personal share is created.
+No entity is created or appointed here. Until the agreement and actual counterparty
+are ready, AGPL development can continue under existing authority. Do not merge new
+external copyright-relevant Core as commercially cleared. A separately approved
+AGPL-only exception remains visibly uncleared for alternative licensing.
 
-## Qualified recipient and transfer trigger
+## Optional interim route, not enabled by this PR
 
-Before anyone signs, the agreement must define an independent nonprofit legal
-entity with a DAIA development and public-availability mission, conflict controls,
-continued AGPL availability and project-purpose use of commercial receipts.
-It must constrain onward transfer of the supplemental entitlement, including on
-dissolution, while allowing the intended customer sublicenses. A commercial company
-cannot qualify simply by adopting a foundation-like name.
+Only use an identified natural-person steward after counsel supplies a separate
+instrument. Contributors retain copyright. The instrument must describe exact future
+Core scope, prospective recipients, the initial administrative entitlement, advance
+cooperation/consent where effective, accession/transfer acts, objective qualifications,
+notice, deadlines, remedies and existing-customer treatment. The steward may maintain
+records and perform the specified transition, but receives no personal proprietary
+sublicensing power, unrestricted sale/pledge power or parallel post-transfer authority.
+The company/profit destination must be disclosed before assent; old foundation-only
+grants cannot simply be redirected to a company.
 
-Objective evidence must determine qualification: formation documents, legal identity,
-governance, authorized acceptance and acceptance of the contributor obligations.
-Set a deadline for transfer after qualification and an enforceable mechanism for
-contributors to require performance. Do not leave qualification solely to an
-unreviewable decision by the interim steward. No revenue threshold, incorporation
-date, board composition or transfer deadline has been approved yet.
+Compare a contractual licence plus whole-position transfer with a direct conditional
+grant/third-party-beneficiary structure. These are not interchangeable with copyright
+assignment. Formation alone does not deliver rights; a promise or power of attorney
+alone does not establish survival or priority. Do not label either option legally
+operative until the required parties, instruments and evidence exist.
 
-## Matters requiring a completed legal design
+## Failure cases counsel must resolve
 
-An obligation to transfer does not itself deliver the rights. Counsel must settle
-whether the appropriate instrument transfers a contractual license position,
-grants a conditional license directly to the recipient, or uses another mechanism;
-these are not interchangeable with copyright assignment. Confirm consent and
-formalities, applicable law, employer authority, scope and contribution identifiers,
-duration, breach remedies and existing sublicense treatment.
+| Event | Required protection and unresolved limit |
+| --- | --- |
+| Death or incapacity | Independent access to evidence; a legally effective continuation/transfer mechanism and competent representative, not merely an agent key or ordinary mandate |
+| Insolvency | Review estate treatment, transfer restrictions and licence survival; a separate ledger or the word custodian does not create bankruptcy remoteness |
+| Refusal or legal inability | Enforceable performance/beneficiary rights and a validated alternative mechanism; no dependence solely on voluntary cooperation |
+| Lost project credentials | Recoverable private records and independently administered access; GitHub access is neither title nor the contract |
+| No recipient ever formed | A defined longstop and termination of the unexercised interim entitlement; no personal licensing fallback; AGPL rights retain their own effect |
+| Recipient not qualified | No transfer/activation until qualification is independently evidenced; contributors do not silently accept a different bargain |
 
-Also settle what happens if incorporation never occurs or the steward dies,
-becomes incapacitated or insolvent. Calling rights 'custodial' or keeping a separate
-ledger does not establish a separate legal estate or prove protection from creditors
-or heirs. The owner is not temporarily a foundation and does not acquire its
-separate legal personality or liability protection.
-
-Until a reviewed agreement is actually executed, incoming work remains AGPL-only
-for commercial-clearance purposes. No PR checkbox, agent signature or this proposal
-silently grants supplemental rights. AGPL contributions may still be accepted;
-an alternative-licensed release must exclude uncleared material or obtain rights.
-
-The alternative in the supplied discussion allowing the interim steward to sell
-commercial licenses is **not adopted**: it conflicts with the owner's existing
-foundation-only instruction and would require an explicit new decision.
-
-## Source
-
-[KVK: registering a foundation](https://www.kvk.nl/inschrijven/inschrijven-stichting/)
-describes its separate legal personality and notarial formation. It does not validate
-this proposed license-transfer mechanism. This document records design intent for
-review, not a completed or enforceable contract.
+No claim is made that these failure cases are solved by this draft. The recommended
+entity-first route removes the personal-custody stage rather than pretending these
+risks can all be eliminated through wording.

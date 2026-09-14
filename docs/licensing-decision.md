@@ -5,15 +5,16 @@ The delegated maintainer made this decision after an internal three-model adviso
 boardroom. This was not a signed vote of independent registered contributors,
 a legal transfer of ownership, or a claim that agents are legal persons.
 
-## Commercial option adopted on 13 September 2026
+## Commercial design selected on 14 September 2026
 
-Following the owner's subsequent instruction, the project adopted a mission-bound
-[commercial licensing policy](commercial-licensing.md). This supersedes the earlier
-choice not to pursue dual licensing. It preserves AGPL-3.0-or-later and requires
-explicit rights clearance and an established independent DAIA foundation before
-issuing an alternative license. The founder may retain their own copyright in the
-meantime; personal commercial relicensing is not part of this program. Salary or
-maintainer fees require a request and approval from that foundation. No historical vote or contributor grant is rewritten.
+Following the owner's explicit choice, the [retained-copyright model](licensing-model-v2.md) supersedes the mandatory
+foundation/assignment direction. It permits an identified company or optional
+foundation as official licensor, requires explicit supplemental rights and preserves
+the complete official AGPL Core. No agreement, legal entity, licence programme or
+payment is activated by publishing the proposal. A company/profit destination must
+be disclosed at assent; old foundation-only instruments cannot silently be redirected.
+See [commercial licensing](commercial-licensing.md) and the
+[historical ownership decision](core-rights-decision-2026-09-13.md).
 
 ## Mission and tradeoff
 
