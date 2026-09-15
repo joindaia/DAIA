@@ -60,6 +60,7 @@ def test_valid_request_reaches_trusted_adapter_without_guest_headers():
     b'Content-Length: 2\r\n', b'Upgrade: websocket\r\n',
     b'Host: evil.example\r\n', b'X-Forwarded-Host: evil.example\r\n',
     b'Content-Encoding: gzip\r\n', b' Content-Length: 2\r\n',
+    b'X-OpenAI-Internal-Codex-Responses-Lite-Other: guest\r\n',
 ])
 def test_ambiguous_or_authority_headers_never_reach_upstream(extra):
     reply, seen = exchange(wire(extra=extra))
@@ -121,9 +122,11 @@ def test_partial_success_write_never_appends_error_response():
 def test_native_metadata_is_accepted_but_not_forwarded():
     extra = b''.join(name + b': guest-value\r\n' for name in (
         b'originator', b'session-id', b'thread-id', b'x-client-request-id',
-        b'x-codex-beta-features', b'x-codex-turn-metadata', b'x-codex-window-id'))
+        b'x-codex-beta-features', b'x-codex-turn-metadata', b'x-codex-window-id',
+        b'x-openai-internal-codex-responses-lite'))
     reply, seen = exchange(wire(extra=extra))
     assert reply.startswith(b'HTTP/1.1 200') and seen[0][0] == BODY
+    assert len(seen) == 1
     assert b'guest-value' not in reply
 
 

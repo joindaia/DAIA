@@ -44,9 +44,11 @@ def serve_once(connection: socket.socket, gate: RequestGate,
                 if name in headers:
                     raise Denied("duplicate header")
                 headers[name] = value.strip(" ")
+            # Native client metadata is accepted only by exact name and discarded.
             if set(headers) - {"host", "content-length", "content-type", "accept", "connection", "user-agent",
                                "originator", "session-id", "thread-id", "x-client-request-id",
-                               "x-codex-beta-features", "x-codex-turn-metadata", "x-codex-window-id"}:
+                               "x-codex-beta-features", "x-codex-turn-metadata", "x-codex-window-id",
+                               "x-openai-internal-codex-responses-lite"}:
                 raise Denied("header denied")
             if headers.get("host") != authority or headers.get("content-type") != "application/json":
                 raise Denied("destination or encoding denied")
