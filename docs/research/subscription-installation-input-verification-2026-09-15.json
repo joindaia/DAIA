@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "asset": "codex-x86_64-unknown-linux-musl.tar.gz",
+      "download_bytes": 98582872,
+      "member": "codex-x86_64-unknown-linux-musl",
+      "sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+      "pin_matches": true
+    },
+    {
+      "asset": "codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz",
+      "download_bytes": 25733165,
+      "member": "codex-code-mode-host-x86_64-unknown-linux-musl",
+      "sha256": "3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45",
+      "pin_matches": true
+    }
+  ],
+  "temporary_downloads_removed": true,
+  "date": "2026-09-15",
+  "scope": "Read-only installation input and exact candidate export verification; no new model or VM run",
+  "runtime_revision": "b222134",
+  "export": {
+    "candidate_sha256": "608dd7508ec7067790274e4ef5baf652501864c54311072d5c72e726c4b5443a",
+    "matched_previously_independently_evaluated_source": true,
+    "retained_database_and_state_unchanged": true,
+    "private_output_mode": "0600",
+    "temporary_output_removed": true,
+    "unit_tests_passed": 5
+  },
+  "python_bundle_recipe": {
+    "documented_manifest_and_archive_block_executed": true,
+    "actual_builder_stage_python_passed": true,
+    "inputs": "Retained verified wheel payloads; dependency download and VM installation were not repeated",
+    "temporary_files_removed": true
+  },
+  "request_template": {
+    "sha256": "91004a2bec1580a4e76f2f57542b9c8107dfc320184fe69c25177196e0049c16",
+    "canonical_policy_and_catalog_equal_to_successful_trial": true,
+    "conversation_history_cache_and_client_metadata_removed": true,
+    "native_catalog_license": "Apache-2.0, accompanying license and notice"
+  },
+  "limitations": [
+    "This verification does not rerun subscription inference, refresh, reboot or isolated evaluation.",
+    "Exporter validates recorded bindings in trusted retained coordinator state; it does not independently attest a hostile coordinator.",
+    "Installation recipe still requires a trusted administrator and the exact pinned inputs."
+  ]
+}
