@@ -1,0 +1,35 @@
+{
+  "native_version": "0.153.4",
+  "runs": [
+    {
+      "forced_refresh_requested": true,
+      "chatgpt_account_returned": true,
+      "exit_code": 0,
+      "access_token_changed": true,
+      "refresh_token_changed": true,
+      "account_unchanged": true,
+      "auth_file_private": true
+    },
+    {
+      "forced_refresh_requested": false,
+      "chatgpt_account_returned": true,
+      "exit_code": 0,
+      "access_token_changed": false,
+      "refresh_token_changed": false,
+      "account_unchanged": true,
+      "auth_file_private": true
+    }
+  ],
+  "model_requests_requested": 0,
+  "raw_credentials_published": false,
+  "worker_started": false,
+  "date": "2026-09-13",
+  "binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "scope": "Trusted-host native account/read followed by a fresh app-server process. No worker or inference started.",
+  "limitations": [
+    "No assertion of provider-side revocation",
+    "No combined guest request across refresh in this trial",
+    "Account metadata alone is not an inference authorization test"
+  ],
+  "documentation": "https://learn.chatgpt.com/docs/app-server"
+}

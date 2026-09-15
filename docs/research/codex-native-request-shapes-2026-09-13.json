@@ -1,0 +1,141 @@
+{
+  "source": "Native Codex 0.153.4 in isolated KVM; synthetic Responses provider",
+  "native_binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "requests": 5,
+  "request_keys": [
+    "client_metadata",
+    "include",
+    "input",
+    "instructions",
+    "model",
+    "parallel_tool_calls",
+    "prompt_cache_key",
+    "reasoning",
+    "store",
+    "stream",
+    "tool_choice",
+    "tools"
+  ],
+  "input_types": [
+    "function_call",
+    "function_call_output",
+    "message"
+  ],
+  "tool_shapes": [
+    {
+      "type": "function",
+      "keys": [
+        "description",
+        "name",
+        "parameters",
+        "strict",
+        "type"
+      ]
+    },
+    {
+      "type": "namespace",
+      "keys": [
+        "description",
+        "name",
+        "tools",
+        "type"
+      ],
+      "children": [
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        },
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        },
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        },
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        },
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "namespace",
+      "keys": [
+        "description",
+        "name",
+        "tools",
+        "type"
+      ],
+      "children": [
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        },
+        {
+          "type": "function",
+          "keys": [
+            "description",
+            "name",
+            "parameters",
+            "strict",
+            "type"
+          ]
+        }
+      ]
+    }
+  ],
+  "store_false": true,
+  "stream_true": true,
+  "exact_retry": true,
+  "coordinator_results": 1,
+  "host_canary_positive_control": true,
+  "no_worker_canary_connection": true,
+  "overlay_removed": true,
+  "limitations": [
+    "No provider account or real inference",
+    "Tool bodies and private runtime identifiers omitted",
+    "Request observation is not an enforced filter",
+    "HTTP synthetic route; subscription routing, WebSockets and compaction not tested"
+  ]
+}

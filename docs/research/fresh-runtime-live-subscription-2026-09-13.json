@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-13",
+  "tested_commit": "8630596",
+  "scope": "Real subscription lab using newly constructed locked Python runtime",
+  "runtime_from_previous_development_environment": false,
+  "python": "3.12.3",
+  "lock_sha256": "f0520969c2ad850cc9103874ed0dd7b443082af0a9308124a2d4f879f9cc7c3d",
+  "controller_exit": 0,
+  "provider_requests": 5,
+  "denied_requests": 23,
+  "native_refresh_completed": true,
+  "native_restart_completed": true,
+  "account_unchanged": true,
+  "deadline_preserved": true,
+  "results": 1,
+  "pending_cleared": true,
+  "worker_overlay_removed": true,
+  "supervised_cleanup_complete": true,
+  "independent_evaluation": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "network_none": true,
+    "stored_source_sha256": "e7b01d633ca16d8bb402b4ffe1a37c9935651e92a291564c97da6cf72c18bea6",
+    "matched_result_count": 1,
+    "source_unchanged": true,
+    "temporary_storage_removed": true
+  },
+  "limitations": [
+    "Existing host service identities and KVM base/client fixtures reused",
+    "Existing trusted participant login reused",
+    "Repository source and test helpers remain controller dependencies",
+    "Not a complete clean participant installation",
+    "No expanded browser/account/network coverage"
+  ]
+}

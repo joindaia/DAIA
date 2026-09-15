@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-13",
+  "scope": "Separate-process read-only inspection of real retained subscription run after controller exit",
+  "delivery": "acknowledged",
+  "worker_completion": "not_established_by_this_inspection",
+  "automatic_resume_authorized": false,
+  "model_budget_reconstructed": false,
+  "saved_state_and_database_byte_unchanged": true,
+  "provider_requests": 0,
+  "focused_tests": 7,
+  "host_reboot_tested": false
+}

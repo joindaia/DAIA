@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-13",
+  "offline_tests": {
+    "passed": 5
+  },
+  "bundle_files_sha256": {
+    "base.qcow2": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "bridge.py": "68c12e98839dce91010ed328f9aecbb3c71388d2016cb10068b88f635c400afa",
+    "launcher.py": "4124a2991b148ec0e48882ad21a0f5ce57f01a929c3e97edb83c1fada016ad76",
+    "model-bridge.py": "d14fc3ed7ef94ea0e41d67ae8fd3df10d2f5e023a21b8b8df5ef32bfbc49e129",
+    "network-config.json": "1f363268600f2d392ed72691473b996726825b5e8a9618f0c621d7dcac22a6be",
+    "network-seed.iso": "8a18d8f8db95da404b5a3372850389c3951789ec2546f654bab187f383445b49",
+    "research-bridge.py": "ec1472c1d6e36299766ba1f7a4d08be95fd9f840315cca34bf23f9b0472b2d09"
+  },
+  "live_trial": {
+    "status": "failed",
+    "stage": "QEMU execution after bundle verification",
+    "error": "QEMU failed; inspect private diagnostics",
+    "service_result": "exit-code",
+    "service_exit_status": 1,
+    "credentials_used": false,
+    "model_requests": 0
+  },
+  "limitations": [
+    "No successful boot claimed for the freshly assembled bundle.",
+    "QEMU stderr was inside the destroyed private work mount; exact cause is not yet established.",
+    "Service log reports exit-code, not an established out-of-memory diagnosis."
+  ]
+}

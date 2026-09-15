@@ -1,0 +1,38 @@
+{
+  "build": {
+    "bundle_files_sha256": {
+      "base.qcow2": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+      "bridge.py": "68c12e98839dce91010ed328f9aecbb3c71388d2016cb10068b88f635c400afa",
+      "launcher.py": "4124a2991b148ec0e48882ad21a0f5ce57f01a929c3e97edb83c1fada016ad76",
+      "model-bridge.py": "d14fc3ed7ef94ea0e41d67ae8fd3df10d2f5e023a21b8b8df5ef32bfbc49e129",
+      "network-config.json": "1e0d1890628e56c7cdd54ea84a95342a8236d215252428666a8017f6942faf54",
+      "network-seed.iso": "e4dfc5c88edbec126c9c337af1f6e2b83802945d2026a59c2eab7173189d3a3c",
+      "research-bridge.py": "ec1472c1d6e36299766ba1f7a4d08be95fd9f840315cca34bf23f9b0472b2d09"
+    }
+  },
+  "kvm": {
+    "real_kvm_boot": true,
+    "auxiliary_mount_limits": {
+      "/tmp": 16777216,
+      "/var/tmp": 16777216,
+      "/dev/shm": 16777216
+    },
+    "filesystem_limit_bytes": 536870912,
+    "filesystem_inode_limit": 4096,
+    "overlay_removed": true,
+    "private_report_read_before_teardown": true,
+    "files_remaining_inside": 3,
+    "host_directory_unchanged": true
+  },
+  "boot_trial_seconds": 44.899,
+  "credentials_used": false,
+  "model_requests": 0,
+  "date": "2026-09-13",
+  "scope": "Offline assembled bundle and credential-free boot under four bounded mounts",
+  "prior_failure": "Original bundle succeeded on repeat; initial QEMU failure remains unexplained. Live serial inspection showed a long networkd wait with empty network configuration.",
+  "limitations": [
+    "No inference, research or assignment submission in this boot fixture.",
+    "One successful explicit-network trial does not prove all intermittent failures resolved.",
+    "ISO tool timestamps may change seed hash on regeneration; pin each approved ISO separately."
+  ]
+}

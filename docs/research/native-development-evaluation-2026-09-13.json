@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-13",
+  "kind": "native-client-synthetic-development-and-fresh-evaluator",
+  "worker": {
+    "native_exit": 0,
+    "runtime_seconds": 52.241,
+    "cases_passed": 6,
+    "original_failed": true,
+    "overlay_removed": true,
+    "attacks_denied": 23,
+    "budget_denied": true,
+    "dependency_mode": "offline installation from hash-checked public wheels in seed"
+  },
+  "evaluator": {
+    "runtime_seconds": 43.389,
+    "cases_passed": 6,
+    "different_test_cases": true,
+    "original_failed": true,
+    "overlay_removed": true,
+    "dependency_mode": "fresh public PyPI downloads through restricted egress"
+  },
+  "base_sha256": "68466728ef67303942b04ec24d203c2586b65e1cb3cedfffd74df3a41d304be4",
+  "patch_sha256": "bbdbd62044b9025581aea6208db047e10c6f9ae101aede5dce684089a67a8033",
+  "patch": "--- a/version_check.py\n+++ b/version_check.py\n@@ -1,2 +1,4 @@\n+from packaging.version import Version\n+\n def newer(a, b):\n-    return a > b\n+    return Version(a) > Version(b)\n",
+  "package_hashes": {
+    "pip": "6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717",
+    "packaging": "29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"
+  },
+  "limits": [
+    "scripted model response and supplied reference correction",
+    "not a model-discovered fix or product-value benchmark",
+    "not real subscription inference",
+    "assignment submission not combined in this trial",
+    "worker research and model routes not combined"
+  ]
+}

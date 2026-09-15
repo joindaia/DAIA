@@ -1,0 +1,24 @@
+{
+  "date": "2026-09-13",
+  "scope": "Linux ledger revocation and local TLS adapter",
+  "external_provider_calls": 0,
+  "credentials": "synthetic only",
+  "validation": {
+    "command": "python -m pytest -q tests/test_request_ledger.py tests/test_codex_https.py tests/test_model_upstream.py tests/test_model_channel.py",
+    "passed": 128,
+    "failed": 0
+  },
+  "observations": [
+    "Persisted revocation is idempotent and prevents a fresh process reserving a request.",
+    "Expiry or a changed boot does not prevent revocation or renew the original deadline.",
+    "Wrong binding cannot revoke the valid record.",
+    "Local TLS streaming stops even when fsync fails; failure is reported and durability is not claimed.",
+    "After successful persistence or explicit retry, a replacement adapter is denied before a new connection."
+  ],
+  "limits": [
+    "Live supervisor wiring and full recovery are not established.",
+    "Other processes already forwarding require independent supervisor shutdown.",
+    "No provider-side OAuth revocation is tested.",
+    "No storage power-loss or administrator rollback protection is established."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-13",
+  "scope": "Repository-built evaluator seed, live with pre-existing networkless lab launcher",
+  "manifest": {
+    "source_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "seed_sha256": "803b77c88db8c77bb57335db6bd31bcf94626be6b70e96e92323445ce95e504b",
+    "required_network": "none",
+    "provider_credentials": false
+  },
+  "evaluator": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "proposal_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "format_normalized": false,
+    "model_source_changed": false,
+    "provider_credentials_present": false
+  },
+  "overlay_removed": true,
+  "regression_tests": 7,
+  "first_attempt": {
+    "outcome": "Stopped while waiting for systemd-networkd-wait-online",
+    "cause": "Empty network config retained an unwanted boot wait",
+    "correction": "Explicit optional unmatched network configuration; QEMU still has no NIC",
+    "overlay_cleanup": "Stopped legacy launcher left overlay; operator removed exact stopped-trial overlay"
+  },
+  "limitations": [
+    "Evaluator launcher and service setup still depend on private lab harness",
+    "Interrupted legacy evaluator cleanup requires replacement with supervised storage",
+    "Not a clean participant installation; no new model call in this trial"
+  ]
+}

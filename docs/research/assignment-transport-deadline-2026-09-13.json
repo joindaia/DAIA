@@ -1,0 +1,11 @@
+{
+  "echo_after_seconds": 31.003,
+  "fixed_deadline_seconds": 34,
+  "closed_after_seconds": 34.003,
+  "deadline_not_reset_by_traffic": true,
+  "provider_requests": 0,
+  "scope": "real socket and subprocess relay; no VM or native agent",
+  "date": "2026-09-13",
+  "focused_tests_passed": 18,
+  "full_native_subscription_mcp_delivery_tested": false
+}

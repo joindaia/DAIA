@@ -1,0 +1,56 @@
+{
+  "date": "2026-09-13",
+  "scope": "original assignment ledger in the supervised native Codex lab",
+  "preparation_tests": {
+    "passed": 38,
+    "failed": 0
+  },
+  "service_crash_probe": {
+    "repository_script": "scripts/probe_authority_service_cleanup.py",
+    "child_reserved_before_kill": true,
+    "signal": "SIGKILL",
+    "remaining_after_stop": 0,
+    "stop_handler_persisted_revocation": true,
+    "endpoint_removed": true,
+    "private_network": true,
+    "provider_requests": 0,
+    "real_credentials_used": false
+  },
+  "live_subscription": {
+    "client": "original Codex 0.153.4",
+    "model": "gpt-5.3-codex-spark",
+    "provider_requests": 5,
+    "channel_denials": 23,
+    "native_refresh_completed": true,
+    "native_restart_completed": true,
+    "account_unchanged": true,
+    "deadline_preserved": true,
+    "results_stored": 1,
+    "supervised_cleanup_complete": true,
+    "pending_cleared": true
+  },
+  "post_run_authority_inspection": {
+    "binding_matches_run": true,
+    "remaining": 0,
+    "stop_handler_revocation_recorded": true,
+    "ledger_private": true,
+    "ledger_owned_by_model_service": true
+  },
+  "independent_evaluation": {
+    "stored_source_sha256": "5ef4ed11594272559631333856d2b55e7dca9e7cdeb9d4b5eeda31e9dac2c242",
+    "cases_passed": 10,
+    "original_failed": true,
+    "model_source_changed": false,
+    "network_none": true,
+    "provider_credentials_present": false,
+    "candidate_separate_uid": true,
+    "parent_compares_results": true,
+    "overlay_removed": true
+  },
+  "limits": [
+    "The supervisor does not yet automatically check the retained authority as part of its final success condition; post-run verification was separate.",
+    "No complete controller or host recovery is established.",
+    "Stopping a gateway revokes its authority rather than silently authorizing replacement.",
+    "No broader guest, network or account-confinement guarantee follows from this single fixture."
+  ]
+}

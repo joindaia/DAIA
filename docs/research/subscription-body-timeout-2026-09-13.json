@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-13",
+  "base_commit": "7da7eb7",
+  "tested_model_upstream_sha256": "3a565420285c8a19dc3eabd303599d0637e5e9ba8eb91e4b9e8d642b60c7052f",
+  "diagnostic_trial": {
+    "attempts": 1,
+    "http_status": 200,
+    "phase": "body",
+    "kind": "timeout",
+    "completed_responses": 0,
+    "cleanup_complete": true
+  },
+  "change": {
+    "connection_timeout_seconds": 5,
+    "body_idle_timeout_seconds": 30,
+    "body_timeout_capped_by_remaining_deadline": true,
+    "absolute_assignment_deadline_changed": false,
+    "request_budget_changed": false
+  },
+  "local_tests": 66,
+  "delayed_provider_test_seconds": 5.5,
+  "live_corrected_trial": {
+    "runtime_has_pytest": false,
+    "real_mcp_claim": true,
+    "requests": 6,
+    "denied": 23,
+    "controller_exit": 0,
+    "native_refresh": true,
+    "native_restart": true,
+    "same_account": true,
+    "deadline_preserved": true,
+    "results": 1,
+    "pending_cleared": true,
+    "cleanup_complete": true
+  },
+  "independent_evaluation": {
+    "network_none": true,
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "462978e63521346b753b55dd8191f5cd48698a6c9075044afeb7d5062f504a1a",
+    "matches_stored_source": true,
+    "source_modified": false,
+    "temporary_storage_removed": true
+  },
+  "limitations": [
+    "A slower future provider can still exceed idle or assignment deadline",
+    "Existing base image and participant login reused",
+    "Not a complete clean installer or comprehensive account/network proof"
+  ]
+}

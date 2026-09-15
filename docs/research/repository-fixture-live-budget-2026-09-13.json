@@ -1,0 +1,54 @@
+{
+  "date": "2026-09-13",
+  "source_commit": "789a0a4",
+  "scope": "Live native subscription run of repository-built public fixture, followed by repository evaluator",
+  "status": "artifact delivered and evaluated; native turn incomplete at budget cap",
+  "model_counts": {
+    "forwarded": 6,
+    "denied": 24,
+    "attempts": 7
+  },
+  "model_binding_refusal": "upstream binding unavailable",
+  "credential_rotated": true,
+  "delivery": {
+    "source_sha256": "3de8e53736bedf57adda63bff1c3030a8c629fdb4265fc7b4977220248fcd7a8",
+    "source_bytes": 446,
+    "coordinator_results_matched": 1,
+    "pending_cleared": true,
+    "delivery_audit": [
+      {
+        "operation": "heartbeat",
+        "status": null
+      },
+      {
+        "operation": "submit_result",
+        "status": "in_review",
+        "receipt_hidden": true
+      },
+      {
+        "operation": "submit_result",
+        "status": "already_recorded"
+      }
+    ],
+    "native_final_turn_completed": false
+  },
+  "independent_evaluation": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "3de8e53736bedf57adda63bff1c3030a8c629fdb4265fc7b4977220248fcd7a8",
+    "proposal_sha256": "3de8e53736bedf57adda63bff1c3030a8c629fdb4265fc7b4977220248fcd7a8",
+    "format_normalized": false,
+    "model_source_changed": false,
+    "provider_credentials_present": false
+  },
+  "evaluator_network_none": true,
+  "normal_evaluator_exit": 0,
+  "supervised_cleanup_complete": true,
+  "new_provider_calls_for_evaluation": 0,
+  "remaining": [
+    "Reliably complete native final turn within existing finite budget",
+    "Durable incomplete-run outcome export rather than ad hoc receipt lookup",
+    "Clean runtime/service setup and initial authentication",
+    "Full account and private-network boundary acceptance"
+  ]
+}

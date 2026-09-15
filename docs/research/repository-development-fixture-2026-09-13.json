@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-13",
+  "scope": "Offline public development fixture preparation from repository sources",
+  "full_suite_before_extraction": {
+    "commit": "7ad84f5",
+    "passed": 567,
+    "skipped": 10,
+    "warnings": 1,
+    "seconds": 63.28
+  },
+  "focused_after_extraction": {
+    "passed": 5
+  },
+  "actual_iso_builds": {
+    "base": "07931fee060b4f8d03a2b5dbb282d73f1aaa47eec425c1510c57e87125257980",
+    "native_mcp": "8003264e6cb4309c9581f7652bc3981571c8ba227530641f52267248aa6503d3"
+  },
+  "checked": [
+    "Exact original native client and bubblewrap hashes",
+    "Generated nonce bound once in native guest",
+    "Seed digest matches manifest",
+    "Native MCP configuration present",
+    "Guest source compiles without execution"
+  ],
+  "provider_calls": 0,
+  "guest_execution": false,
+  "remaining": [
+    "Boot and live subscription run of newly built fixtures",
+    "Provision service identities and initial runtime files without private lab state",
+    "Package trusted-side initial login",
+    "Keep independent account/network release gates"
+  ]
+}

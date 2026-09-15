@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-13",
+  "tested_commit": "52fbe20",
+  "scope": "Two newly created locked Python environments",
+  "python": "3.12.3",
+  "uv": "0.12.11",
+  "lock_sha256": "f0520969c2ad850cc9103874ed0dd7b443082af0a9308124a2d4f879f9cc7c3d",
+  "project_metadata_changed": false,
+  "initial_offline_attempt": "failed due to missing cached mcp-types wheel",
+  "first_build": "completed after locked downloads",
+  "second_build": "completed fully offline from populated cache",
+  "distribution_count": 39,
+  "installed_versions_identical": true,
+  "noneditable_import_outside_checkout": true,
+  "installed_cli_help": true,
+  "tests": {
+    "passed": 596,
+    "skipped": 10,
+    "warnings": 1,
+    "seconds": 64.1
+  },
+  "limitations": [
+    "Repository tests select source checkout",
+    "No full live VM run on new runtime yet",
+    "Dev/test helpers still required by lab controller",
+    "Native Codex, namespaces, Windows and Nginx tests skipped in this suite",
+    "No new vulnerability audit in this step",
+    "Base image, client installation and first login remain separate"
+  ]
+}

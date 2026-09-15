@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-13",
+  "real_failed_native_delivery_recovery": {
+    "real_prior_native_failure": true,
+    "same_coordinator_database_reopened": true,
+    "same_endpoint_reused": true,
+    "fresh_helper_process": true,
+    "recovery_source_verified": true,
+    "recovery_service_nonroot": true,
+    "recovery_service_private_root": true,
+    "recovery_cli_exit": 0,
+    "receipt_status": "already_recorded",
+    "same_receipt_hash": true,
+    "results": 1,
+    "identity_and_consent_unchanged": true,
+    "consent_already_expired": true,
+    "new_work_and_registration_refused": true,
+    "repeated_recovery_refused": true,
+    "model_requests": 0,
+    "new_worker_started": false
+  },
+  "repository_entrypoint_integration": {
+    "repository_entrypoint_success": true,
+    "synthetic_submission": true,
+    "repeat_refused": true,
+    "state_unchanged_on_repeat": true,
+    "results": 1,
+    "identity_and_consent_unchanged": true,
+    "model_requests": 0
+  },
+  "initial_failure": "Unconfined startup loaded an older installed contributor module; no work was executed. Recovery now binds repository source into the private service and verifies its import path.",
+  "scope_limit": "Recovers a committed pending receipt after worker/controller exit. Does not prove resuming unfinished development inside a newly created guest."
+}

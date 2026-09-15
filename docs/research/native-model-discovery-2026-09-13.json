@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-13",
+  "native_binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "method": "Clean temporary client profile and local HTTP fixture returning 403; no provider credentials",
+  "models_observed": [
+    "gpt-5.6-luna",
+    "gpt-6-astra"
+  ],
+  "initial_result": "Both observations lacked top-level tools; existing Spark-oriented extraction failed closed with KeyError before any successful capability report.",
+  "luna_followup": {
+    "input_contains_additional_tools": true,
+    "top_level_tools_present": false,
+    "assignment_namespace_found": false,
+    "client_reported_missing_code_mode_host": true,
+    "native_turn_failed_after_local_403": true
+  },
+  "next_action": "Inspect the pinned original-client companion runtime and approved tool protocol before constructing an inference profile for these models. Do not authorize captured tools automatically.",
+  "provider_requests": 0,
+  "subscription_quota_used_by_fixture": false,
+  "limits": [
+    "Astra companion-runtime diagnostics were not separately captured.",
+    "No model inference, worker completion, or account confinement was established.",
+    "This observation does not establish that the models are unusable; the tested client installation is incomplete for the observed Luna execution mode."
+  ]
+}
