@@ -61,3 +61,22 @@ whether research started and which stage failed, and distinguish forwarding
 failure from later native completion failure. Keep the six-request/150-second
 model limits, source tests, research requirement and external verification intact.
 Never reset old authority or resubmit an already accepted result to obtain a pass.
+
+## Concrete documentation failure and correction
+
+A subsequent trial of `66bc00c074da2f83c62c5d6c5b02f7e1a2cefeea`
+completed five provider forwards/attempts with only the 23 intentional denials.
+The native client exited successfully and delivery was acknowledged, but the
+research helper recorded `documentation` / `AssertionError`. No documentation
+file had been written. Whole-worker acceptance therefore remained failed.
+
+Direct HTTP checks with the fixture's User-Agent on both the development host
+and second host established the cause: `/3/library/stdtypes.html` now returns
+301 to `https://docs.python.org/3/builtins/stdtypes.html`. The new URL returns
+200 directly and 773,941 bytes, within the unchanged 1,000,000-byte limit.
+These were credential-free HTTP checks, not a successful guest trial.
+
+PR #24 changes only the fixed path in the research fixture and standalone
+research probe. It adds no redirect following and does not widen the allowed
+hosts, limits or TLS behavior. Ten local fixture/bundle tests passed. A fresh
+full subscription-worker trial of this correction remains to be performed.
