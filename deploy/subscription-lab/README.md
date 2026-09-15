@@ -305,3 +305,56 @@ model-facing tool argument. The worker calls `submit_result` once. The simulated
 first response loss still occurs outside the worker; the helper, rather than a
 second model turn, obtains the receipt. A complete worker turn is still a separate
 requirement from successful delivery.
+
+
+## Continuing a bounded second-host trial
+
+Use the existing prepared host and reviewed entrypoints. Remote access is a
+separate prerequisite: a listed SSH public key does not prove the agent can sign,
+and a successful connection does not establish a safe worker. Do not weaken host
+key checking or start an unbounded fallback when access fails.
+
+Before another provider-backed attempt:
+
+1. Confirm KVM, the separate lab/provider identities, the protected native client
+   and the physical backing volume's agreed free-space reserve. On WSL, virtual
+   filesystem capacity alone does not establish free Windows disk space. Inspect
+   active lab services and retained runs before modifying shared templates.
+2. Pin a reviewed full source commit and verify that its `uv.lock` matches the
+   installed runtime. Verify the prepared seed/base hashes and the approved
+   request's model against the guest configuration. Rebuild with the existing
+   preparation commands when these differ; do not silently substitute a model.
+3. Inspect the previous private run with the existing read-only command:
+
+   ```sh
+   python3 scripts/inspect_subscription_run.py --run "$DAIA_PREVIOUS_RUN"
+   ```
+
+   Inspection establishes delivery status, not remaining model allowance or
+   permission to resume. A revoked ledger stays revoked. Preserve the old state,
+   identity, pending artifact and receipts; use the separately documented exact
+   receipt-recovery route only when applicable, without model use or new work.
+4. Establish that the participant has authorized this new bounded attempt. The
+   lab controller creates a new local fixture network and contributor; it does
+   not import an existing participant's remaining consent. Its five-minute helper
+   consent, six-request model ledger and at-most-150-second model deadline bound
+   that attempt, but do not themselves supply participant authorization. Repeated
+   launcher calls are new attempts, not recovery of a previous allowance.
+5. Once those conditions hold, use the supervised command in
+   [the launcher guide](../../docs/kvm-launcher.md#repository-native-subscription-lab-controller)
+   with `--native-delivery` and the matching approved fixture. Record the exact
+   source, runtime lock and task inputs privately. Do not call the child controller
+   directly or treat a successful preparation as a completed task.
+
+After service termination, use the retained run rather than relying only on
+`/run`, which disappears after reboot. Keep raw worker diagnostics private and
+untrusted. A zero remaining-request count after revocation is not a usage count;
+missing counters mean unavailable. The supervisor separately checks matching
+persistent revocation before reporting success. A receipt establishes delivery;
+require a completed native turn and a separate networkless evaluation of the
+stored source bytes before calling the development trial successful.
+
+The previous failed trial and diagnostic-retention change are described in
+[second-host evidence](../../docs/research/second-host-failure-retention-2026-09-13.md).
+These instructions add no login, consent renewal, scheduling, automatic recovery
+or release authority.

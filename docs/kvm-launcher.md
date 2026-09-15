@@ -1,9 +1,12 @@
 # Restricted KVM launch component
 
-Status: experimental component, not a participant installer. This extracts the
-fixed three-relay KVM boot path from private lab code. It does not install service
-identities, create an approved task, perform login, or start the external helper,
-research and model services. Those parts of the full launcher remain to package.
+Status: experimental component, not a participant installer. This component
+provides the fixed three-relay KVM boot path. The repository now also contains
+[lab preparation and service manifests](../deploy/subscription-lab/README.md),
+the supervised subscription controller and the independent evaluator described
+below. The low-level launcher alone does not install identities, authorize a task,
+perform login or start those external services. Complete participant installation
+and the remaining [release gates](subscription-worker-release-gates.md) are open.
 
 [`run_kvm_lab_guest.py`](../scripts/run_kvm_lab_guest.py) must run in an externally
 supervised, nonroot Linux service with a loopback-only private network namespace,
@@ -264,7 +267,9 @@ sudo python3 scripts/run_subscription_lab.py \
 ```
 
 The guest directory must contain the existing approved `seed.iso`, `config.json`
-and `probe.py`. The runtime needs the repository's development/MCP dependencies.
+and `probe.py`. Use the matching locked, non-editable Python runtime with the
+MCP extra; development dependencies are no longer required by this controller.
+See the [runtime build instructions](../deploy/subscription-lab/README.md#separate-locked-python-runtime).
 Four restricted lab users, KVM, the pinned base image and lab directories must
 already exist. The controller never creates accounts or logs a participant in.
 Inputs and this checkout are trusted administrator code, not worker-controlled.
@@ -278,8 +283,10 @@ limits remain six requests and 150 seconds. No broader consent is requested.
 This remains an experimental lab route, not a clean-machine installer or a
 production authority boundary around the administrator. Task-seed generation,
 initial authentication setup and the independent evaluator still require lab
-preparation. Submissions are harness-driven. The profile, request template,
-private reports and task seed are not published.
+preparation. The original variant submits through the harness; the
+[native-delivery variant](#live-native-mcp-delivery-with-the-subscription) below
+uses Codex's assignment MCP tools. The profile, request template, private reports
+and task seed are not published.
 
 
 ## Native assignment-tool discovery before live delivery
