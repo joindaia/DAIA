@@ -45,24 +45,21 @@ PR20 is closed without merge and retained as historical context.
 | Research and useful work | Public documentation and hash-checked packaging 25.0 wheel downloaded/imported; patch and supplied tests; exact source passed ten independent cases | Final patch uses stdlib; no claim of general installation-hook or representative workload coverage |
 | Refresh and restart | Native refresh/restart after first request; same account and original deadline | Local revocation is not provider-wide OAuth revocation |
 | Delivery | One result, one hidden receipt, helper's exact retry, pending state cleared | No new assignment or renewed consent; arbitrary partial-work checkpointing is out of scope |
-| Host boundary | Current-image guest path/symlink/auth/socket/mount checks; external canary unchanged | Complete guest process/environment/handle inspection is not yet evidenced by these path checks |
+| Host boundary | Current-image guest path/symlink/auth/socket/mount checks; external canary unchanged | Synthetic host process/environment/regular-handle canary also passed; finite snapshot, no kernel exploit guarantee |
 | Provider operations | 23 rejected request/protocol probes during the real run; fixed HTTPS destination and constrained request schema | Inspect individual cases; refusal counts are not an exhaustive provider account capability proof |
-| Private network | Six research-channel rejections; direct TCP denied with independently observed live listeners and positive controls | Earlier DNS/CNAME tests are supporting evidence; complete current-installation DNS/redirect and gateway-failure coverage still needs reconciliation |
+| Private network | Six research-channel rejections; direct TCP denied with independently observed live listeners and positive controls | Gateway disappearance and direct fallback test passed on this image; identical gateway bytes link prior DNS/CNAME/redirect component tests without relabeling them as new installed runs |
 | Crash and revocation | READY-stage VM crash cleanup plus separate active synthetic authority SIGKILL/stop-handler revocation; normal real-run revocation | Distinguish pre-authority VM cleanup from active-authority service cleanup |
 | Host reboot | Physical restart, changed Linux boot, original unexpired nonempty ledger unchanged and denied, volatile marker removed | Managed recovery; SSH required an operator service start through remote management. No automatic job resume |
-| CI and review | Existing layered draft PRs; Linux and website CI passed at `4076f2ea2849fdee547b9f9312200b9081848a61` | Windows CI failed on Linux-only descriptor/host tests; a test-only correction passed 15 Linux checks, remote confirmation remains pending |
+| CI and review | Existing layered draft PRs; Linux, Windows and website CI passed at `66e02854b7c415af96f3a7b0542de0cb104b0d24` | Latest additional test/evidence commit still requires its own CI confirmation |
 
 ## Remaining bounded acceptance
 
-1. Close the concrete guest process/environment/handle credential-inspection gap
-   using synthetic canaries and external observations; never put real credentials
-   into the guest to test their exposure.
-2. Map the installed network and provider channels to the actual negative probes,
-   including DNS/redirect handling and loss of the gateway. Reuse unchanged
-   component evidence where justified, but do not call it live installed coverage.
-3. Confirm final CI, update the reviewable evidence and installation instructions,
-   and assess the fixed pilot criteria. Do not repeat the successful development
-   task unless a subsequent change affects its runtime behavior.
+The two concrete follow-ups are now recorded in
+[prepared process and gateway boundaries](research/prepared-process-gateway-boundaries-2026-09-15.json).
+Finish the final requirement-by-requirement audit, review the bounded instructions
+and confirm CI on the latest test/evidence commit. Do not repeat the successful
+development task for test-only changes or reinterpret component evidence as a
+new whole-worker run.
 
 No main merge, production deployment, public admission, new spending, outside
 contact, account pooling, increased consent or weakened boundary is authorized.

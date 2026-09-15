@@ -506,3 +506,31 @@ alone does not establish subscription operation or release readiness: the
 integrated task, independent evaluator, boundary and recovery gates remain
 required on the candidate. This is a Linux/KVM pilot procedure, not a Windows
 installer or authorization for public participation.
+
+
+### Current prepared-image evidence and stopping point
+
+The [15 September prepared-image pilot](../../docs/research/codex-clean-installation-pilot-2026-09-15.md)
+completed one actual subscription development assignment and independently tested
+its exact submitted source. The associated process-canary and gateway-loss probes
+used that same image without START or provider calls. These results supersede
+historical statements above that only prerequisite installation had been tested.
+
+For this bounded pilot, use the reviewed Linux/KVM source and pinned inputs, build
+and verify the prepared image as above, and complete official native login only
+in the dedicated trusted provider profile. Keep that profile outside the image,
+seed and worker account. READY must precede the existing finite assignment grant;
+a slow boot is never permission to renew a deadline or replenish requests.
+
+Stop after the assigned task and independently evaluate its exact stored artifact.
+Use the recorded receipt recovery for the same submission only. Crash or host
+reboot ends the old boot-bound model authority; reconnection is not permission to
+resume it. Diagnose through trusted management and require a separately authorized
+assignment before any new work. The tested host needed an operator to start SSH
+after reboot, although unattended networking and remote management returned.
+
+The tests cover the pinned, administrator-prepared pilot, not a one-click installer,
+arbitrary workloads, general Windows support or proof against every VM escape.
+Do not add personal profiles, host mounts, other MCP gateways or private network
+routes to make an untested task work. General admission, production deployment
+and merging the review stack remain separate decisions.
