@@ -79,7 +79,13 @@ Separate real-VM probes used the same staged runtime and installation image:
 | Direct private-network probe | Live listeners established before QEMU; two positive controls; zero unexpected guest connections | Direct TCP test, not comprehensive DNS/redirect coverage |
 | READY-stage controller crash | Real QEMU and private marker existed before SIGKILL; dependent VM stopped, cgroup empty, recorded processes gone, private files removed | Pre-authority crash; not equivalent to every active-job crash |
 
-All four probes completed successfully without sending START or using provider
+An additional service-crash probe used the actual subscription stop handler. The
+isolated service reserved one synthetic request before SIGKILL. Its stop handler
+persisted revocation, reduced remaining authority to zero, removed the model
+endpoint, and passed the independent supervisor cleanup check. This exercised
+active synthetic authority without provider credentials or requests.
+
+All four preboot probes completed successfully without sending START or using provider
 credentials. The development run additionally recorded six denied research
 requests. Full provider/account and network coverage must be assessed against
 the individual probes, not inferred from these aggregate counts.
@@ -98,19 +104,23 @@ also accepts the existing native-derived fixture without duplicating MCP setup.
 
 ## Open release gates
 
-A controlled physical-host restart was requested only after unattended network
-access and automatic management services were verified. A synthetic, nonempty
-ledger was prepared beforehand. At the latest observation the host had not
-returned over its management connections. Therefore host-reboot recovery has
-**not** passed; no explanation for the missing connection is asserted.
+A controlled physical-host restart was performed after unattended network access
+and automatic management services were verified. After reconnection, the probe
+confirmed a changed Linux host boot, refusal of the old authority, an unchanged
+unexpired ledger with one request remaining, and removal of its volatile marker.
+No provider credentials or requests were used, and no job resumed automatically.
+
+The test host took time to return. Unattended networking remained enabled and the
+remote management service became reachable; the SSH service required an operator
+start through that management connection. This is verified managed recovery, not
+evidence that every management service restarts automatically on this host.
 
 Before completing this pilot:
 
-1. Reconnect and verify the original pre-reboot ledger, without recreating it.
-2. Finish the requirement-by-requirement audit of real-token isolation, unwanted
+1. Finish the requirement-by-requirement audit of real-token isolation, unwanted
    provider operations, network paths, revocation and active-authority crash
    recovery on the current candidate. Do not substitute the READY crash test.
-3. Confirm current CI and complete the reviewable installation/evidence stack.
+2. Confirm current CI and complete the reviewable installation/evidence stack.
 
 No main merge, production deployment or public admission is authorized by this
 report. Private diagnostic transcripts, host identifiers, accounts and credentials
