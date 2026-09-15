@@ -41,7 +41,7 @@ def write_outcome(path, data):
 
 
 def retain_model_counts(run, audit):
-    """Keep counters only; absent/invalid audit is unknown, never zero usage."""
+    """Keep counters and fixed failure categories; never credentials or payload text."""
     result = {'available': False}
     try:
         with Path(audit).open('rb') as stream:
@@ -53,6 +53,22 @@ def retain_model_counts(run, audit):
         if any(type(value) is not int or value < 0 for value in counts.values()):
             raise ValueError('Invalid counters')
         result = dict(available=True, **counts)
+        status = data.get('last_provider_status')
+        if type(status) is int and 100 <= status <= 599:
+            result['last_provider_status'] = status
+        failure = data.get('upstream_failure')
+        if type(failure) is str and failure in {
+                'upstream binding unavailable', 'upstream response rejected',
+                'upstream content type rejected', 'upstream body rejected',
+                'upstream encoding rejected', 'upstream framing rejected',
+                'upstream response too large', 'upstream length rejected',
+                'upstream transport failed'}:
+            result['upstream_failure'] = failure
+        transport = data.get('transport_failure')
+        if (type(transport) is dict and set(transport) == {'phase', 'kind'}
+                and transport['phase'] in ('connect', 'send', 'headers', 'body')
+                and transport['kind'] in ('timeout', 'http_framing', 'socket')):
+            result['transport_failure'] = transport
     except (OSError, ValueError, KeyError, TypeError):
         pass
     write_outcome(Path(run) / 'model-counts.json', result)

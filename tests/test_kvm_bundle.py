@@ -78,3 +78,66 @@ def test_native_report_starts_a_new_serial_line():
     markers = [json.loads(line[17:]) for line in output.getvalue().splitlines()
                if line.startswith('DAIA_BOOT_RESULT ')]
     assert len(markers) == 1 and markers[0]['nonce'] == 'a' * 32
+
+
+def test_missing_research_result_remains_failure_with_private_stage(tmp_path):
+    import ast
+    import io
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    fixture = Path(__file__).parent / 'fixtures/subscription-development'
+    tree = ast.parse((fixture / 'probe.py').read_text())
+    guard = next(n for n in tree.body if isinstance(n, ast.Try)
+                 and "model_result['research']" in ast.unparse(n))
+    start = next(i for i, n in enumerate(tree.body) if isinstance(n, ast.Assign)
+                 and ast.unparse(n).startswith("root = pathlib.Path('/work/research')"))
+    end = next(i for i, n in enumerate(tree.body) if isinstance(n, ast.If)
+               and "result['native_exit']" in ast.unparse(n.test))
+    # Only trusted diagnostic statements with synthetic inputs; no guest startup,
+    # candidate source, network requests or downloaded package code is executed.
+    code = compile(ast.Module(body=tree.body[start:end] + [guard], type_ignores=[]),
+                   'trusted-research-check', 'exec')
+    output = io.StringIO()
+    root = tmp_path / 'research'; root.mkdir()
+    (root / 'failure.json').write_text('{"stage":"documentation","error_type":"OSError"}')
+    scope = {'json': json, 'model_result': {}, 'r': SimpleNamespace(returncode=0),
+             'pathlib': SimpleNamespace(Path=lambda p: tmp_path / p.removeprefix('/work/')),
+             'open': lambda *a: nullcontext(output)}
+    with pytest.raises(FileNotFoundError):
+        exec(code, scope)
+    record = json.loads(output.getvalue().strip().removeprefix('DAIA_NATIVE_FAILURE '))
+    assert record['stage'] == 'research_result'
+    assert record['research_failure']['stage'] == 'documentation'
+    assert record['files']['result.json'] is False
+    assert 'research' not in scope['model_result']
+    (root / 'result.json').write_text('{"dependency_import_and_checks":true}')
+    output.seek(0); output.truncate()
+    exec(code, scope)
+    assert scope['model_result']['research']['dependency_import_and_checks'] is True
+    assert not output.getvalue()
+    output.seek(0); output.truncate()
+    scope.update(result={'native_exit': 1, 'turn_completed': False}, events=[])
+    scope['r'] = SimpleNamespace(returncode=1, stderr='')
+    native_failure = compile(ast.Module(body=tree.body[start:end+1], type_ignores=[]),
+                             'trusted-native-failure-check', 'exec')
+    with pytest.raises(RuntimeError, match='native development failed'):
+        exec(native_failure, scope)
+    first = output.getvalue().strip().splitlines()[0]
+    assert json.loads(first.removeprefix('DAIA_NATIVE_FAILURE '))['stage'] == 'research_result'
+
+
+def test_research_exception_record_excludes_exception_message(tmp_path):
+    import ast
+    from types import SimpleNamespace
+    fixture = Path(__file__).parent / 'fixtures/subscription-development/research.py'
+    function = next(n for n in ast.parse(fixture.read_text()).body
+                    if isinstance(n, ast.FunctionDef) and n.name == 'report_failure')
+    calls = []
+    scope = {'root': tmp_path, 'stage': 'package_download', 'json': json,
+             'sys': SimpleNamespace(__excepthook__=lambda *args: calls.append(args))}
+    exec(compile(ast.Module(body=[function], type_ignores=[]), 'trusted-error-recorder', 'exec'), scope)
+    error = RuntimeError('synthetic sensitive exception text')
+    scope['report_failure'](RuntimeError, error, None)
+    assert json.loads((tmp_path / 'failure.json').read_text()) == {
+        'stage': 'package_download', 'error_type': 'RuntimeError'}
+    assert calls == [(RuntimeError, error, None)]

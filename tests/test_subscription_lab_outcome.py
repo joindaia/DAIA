@@ -118,3 +118,21 @@ def test_retained_model_counts_exclude_credentials_and_preserve_unknown(tmp_path
     for bad in ('{', 'x' * 65537, json.dumps({'forwarded': True, 'denied': 0, 'attempts': 0})):
         audit.write_text(bad); retain(tmp_path, audit)
         assert json.loads(path.read_text()) == {'available': False}
+
+
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux private filesystem helper')
+def test_failure_categories_survive_cleanup_without_arbitrary_text(tmp_path):
+    audit = tmp_path / 'audit.json'
+    counts = {'forwarded': 5, 'denied': 24, 'attempts': 6}
+    categories = {'last_provider_status': 200,
+                  'upstream_failure': 'upstream transport failed',
+                  'transport_failure': {'phase': 'body', 'kind': 'timeout'}}
+    audit.write_text(json.dumps({**counts, **categories, 'token': 'synthetic-secret'}))
+    scope['retain_model_counts'](tmp_path, audit)
+    saved = tmp_path / 'model-counts.json'
+    assert json.loads(saved.read_text()) == {'available': True, **counts, **categories}
+    audit.write_text(json.dumps({**counts, 'last_provider_status': True,
+        'upstream_failure': 'synthetic-secret',
+        'transport_failure': {'phase': 'body', 'kind': 'socket', 'message': 'secret'}}))
+    scope['retain_model_counts'](tmp_path, audit)
+    assert json.loads(saved.read_text()) == {'available': True, **counts}

@@ -44,12 +44,24 @@ events=[json.loads(line) for line in r.stdout.splitlines() if line.startswith('{
 items=[e['item'] for e in events if e.get('type')=='item.completed']
 src=pathlib.Path('/work/version_check.py').read_text();assert len(src.encode())<=8192
 result={'attacks_denied':attack_count,'nonce':'83344227ed564314a89e1589699e29d9','companion_present':companion_present,'companion_sha256':companion_sha256,'native_exit':r.returncode,'turn_completed':any(e.get('type')=='turn.completed' for e in events),'synthetic_model':False,'source':src,'item_types':[i.get('type') for i in items],'commands':[{'command':i.get('command'),'exit_code':i.get('exit_code')} for i in items if i.get('type')=='command_execution'],'test_unchanged':pathlib.Path('/work/test_version.py').read_text()=='from version_check import newer\nfor a,b,want in [("1.10","1.9",True),("1","1.0",False),("1.0.1","1",True),("1.2","1.10",False)]:\n    assert newer(a,b)==want, (a,b,want)\nprint("4 tests passed")\n'}
+root=pathlib.Path('/work/research')
+research_diagnostic={'stage':'research_result','native_exit':r.returncode,'files':{name:(root/name).is_file() for name in ('stdtypes.html','packaging-25.0-py3-none-any.whl','result.json','failure.json')}}
+failure=root/'failure.json'
+if failure.is_file() and failure.stat().st_size<=512:
+ try:research_diagnostic['research_failure']=json.loads(failure.read_text())
+ except (OSError,ValueError):pass
 if result['native_exit']!=0 or not result['turn_completed']:
+ with open('/dev/ttyS0','w') as out:out.write('\nDAIA_NATIVE_FAILURE '+json.dumps(research_diagnostic)+'\n')
  diagnostic={'native_exit':r.returncode,'turn_completed':result['turn_completed'],'event_types':[e.get('type') for e in events],'errors':[e.get('message',e.get('error',{})) for e in events if e.get('type') in ('error','turn.failed')],'stderr_tail':r.stderr[-3000:]}
  with open('/dev/ttyS0','w') as out:out.write('DAIA_NATIVE_FAILURE '+json.dumps(diagnostic)+'\n')
  raise RuntimeError('native development failed; guest diagnostic recorded')
 model_result=dict(result,research_negative_requests_denied=research_denied)
-model_result['research']=json.loads(pathlib.Path('/work/research/result.json').read_text())
+try:
+ model_result['research']=json.loads(pathlib.Path('/work/research/result.json').read_text())
+except (OSError,ValueError):
+ with open('/dev/ttyS0','w') as out:out.write('\nDAIA_NATIVE_FAILURE '+json.dumps(research_diagnostic)+'\n')
+ raise
+
 s=socket.create_connection(('10.0.2.100',3128),timeout=8)
 stream=s.makefile('rwb',buffering=0)
 def send(value):stream.write(json.dumps(value).encode()+b'\n')
