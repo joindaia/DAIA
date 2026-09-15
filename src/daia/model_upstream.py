@@ -139,6 +139,13 @@ class LocalModelUpstream:
             phase = "send"
             conn.request("POST", self._target, body=body, headers=self._headers())
             phase = "headers"
+            # Headers and body are one response phase: both permit the bounded
+            # model-response inactivity window while the original watchdog keeps
+            # the assignment's absolute deadline unchanged.
+            remaining = self._deadline - time.monotonic()
+            if remaining <= 0:
+                raise Denied("upstream binding unavailable")
+            sock.settimeout(min(30, remaining))
             response = conn.getresponse()
             if response.status != 200:
                 raise Denied("upstream response rejected")
