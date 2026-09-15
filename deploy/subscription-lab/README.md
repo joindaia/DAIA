@@ -447,3 +447,62 @@ Eight regressions passed. The existing native APT plan validated 115 records
 (52,290,180 download bytes); APT estimated 215 MB of additional installed space
 for these tools. No packages have been downloaded or installed by this step.
 Recheck physical capacity before acquisition and installation.
+
+## Rebuilding the direct-worker image (pilot candidate)
+
+The trusted administrator can build a prepared image from local, reviewed inputs
+with `scripts/prepare_fresh_host_image.py`. This step boots a networkless
+installation VM, installs the supplied packages there, and exports its disk only
+after the installation checks pass. It does not install those packages on the
+participant's host, authenticate a provider or create assignment authority.
+
+Image creation reuses the fresh-host acceptance fixture and checks nested KVM
+inside that installation VM. The resulting direct worker runs as one VM; nested
+VM execution is not part of a participant assignment. The reference build host
+needs more than 5 GiB available RAM and the existing physical-disk reserve.
+
+Supply the clean `source/` checkout and `prepared.json` produced by the existing
+preparation flow. The recorded revision and lock hash must match that checkout;
+executed scripts are snapshotted against their Git blobs. Supply Ubuntu's signed
+checksum files, the exact base image, the package planner's `packages.json` and
+matching downloaded archives, the approved Python wheel bundle and its SHA-256,
+and the pinned Codex binaries. The builder performs no download. Protect all
+inputs and their parent directories from worker writes.
+
+Example with explicit administrator-selected paths:
+
+```sh
+sudo python3 scripts/prepare_fresh_host_image.py \
+  --reviewed /srv/daia/reviewed \
+  --base-image /srv/daia/inputs/base.qcow2 \
+  --checksums /srv/daia/inputs/SHA256SUMS \
+  --signature /srv/daia/inputs/SHA256SUMS.gpg \
+  --package-manifest /srv/daia/inputs/packages.json \
+  --package-archives /srv/daia/inputs/archives \
+  --python-bundle /srv/daia/inputs/python.tgz \
+  --python-bundle-sha256 "$APPROVED_PYTHON_BUNDLE_SHA256" \
+  --native /srv/daia/inputs/native \
+  --iso-builder /usr/bin/genisoimage \
+  --staging-root /var/lib/daia-lab \
+  --output /srv/daia/prepared-image
+```
+
+The output directory must not already exist. The staging root must be traversable
+by the dedicated runtime account and not writable by untrusted accounts; do not
+change permissions on a personal home directory to satisfy this requirement.
+After successful preparation, the output contains a read-only `host.qcow2` and
+its recorded hash and `installation-report.json`. The report must confirm all
+required package, Python/MCP, native-client and KVM checks before export. Temporary
+installation storage is removed. The built image
+contains no provider credentials. A second invocation creates a new output;
+it does not overwrite or repair an existing image. Failed builds remove their
+partial output and retain a private diagnostic file beside the requested output
+directory for the administrator to inspect.
+
+Use that exact image and SHA-256 with the direct worker's
+`--prepared-host-image` and `--prepared-host-sha256` options. Worker READY must
+still precede the finite assignment allowance. Successful image construction
+alone does not establish subscription operation or release readiness: the
+integrated task, independent evaluator, boundary and recovery gates remain
+required on the candidate. This is a Linux/KVM pilot procedure, not a Windows
+installer or authorization for public participation.
