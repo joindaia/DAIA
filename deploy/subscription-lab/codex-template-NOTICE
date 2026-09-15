@@ -1,0 +1,6 @@
+The native tool declarations in codex-request-template.json originate from
+OpenAI Codex 0.153.4: https://github.com/openai/codex/tree/rust-v0.153.4
+Upstream license: Apache License 2.0, retained in codex-template-LICENSE.
+DAIA removed session metadata and conversation history; the frozen request
+policy and native tool catalog are unchanged from the approved pilot template.
+This file contains no provider credential or participant account information.

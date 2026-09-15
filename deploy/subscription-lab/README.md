@@ -16,6 +16,27 @@ fresh temporary directory, verifies accounts and directory metadata, repeats the
 installation, compares account files, verifies host account files are unchanged,
 and removes that temporary root. No actual host installation occurs.
 
+For a **new dedicated Ubuntu 24.04 amd64 host**, these are the administrator
+commands. First inspect any existing DAIA users/directories; these commands are
+not a migration or repair procedure. Run from the reviewed, protected checkout:
+
+```sh
+set -eu
+sudo apt-get update
+sudo apt-get install --no-install-recommends qemu-system-x86 qemu-utils \
+  genisoimage python3-venv python3-pip ubuntu-cloudimage-keyring gpgv bubblewrap
+sudo install -m 0644 deploy/subscription-lab/daia-lab.sysusers.conf \
+  /usr/lib/sysusers.d/daia-lab.conf
+sudo install -m 0644 deploy/subscription-lab/daia-lab.tmpfiles.conf \
+  /usr/lib/tmpfiles.d/daia-lab.conf
+sudo systemd-sysusers /usr/lib/sysusers.d/daia-lab.conf
+sudo systemd-tmpfiles --create /usr/lib/tmpfiles.d/daia-lab.conf
+test -c /dev/kvm
+```
+
+The selected Ubuntu package repositories must already be trusted by the host.
+The setup above grants no user sudo/login access and starts no DAIA jobs.
+
 For an eventual reviewed host installation, the sysusers manifest belongs under
 `/usr/lib/sysusers.d/` and the tmpfiles manifest under `/usr/lib/tmpfiles.d/`.
 Use a trusted administrator/package manager. Do not install from a worker-modifiable
@@ -64,6 +85,39 @@ available, systemd active, no running lab units, and physical free space at roug
 that reserve. No additional VM was started. This is capacity/prerequisite evidence,
 not a clean-host installation result.
 
+## Path choices for the commands below
+
+Use a dedicated trusted installer shell, a protected reviewed checkout and new
+absolute output directories. For example, with write access to `/srv/daia`:
+
+```sh
+set -eu
+DAIA_NATIVE_DIRECTORY=/srv/daia/inputs/native
+DAIA_CODEX_BINARY="$DAIA_NATIVE_DIRECTORY/codex"
+DAIA_BASE_IMAGE=/srv/daia/inputs/noble-server-cloudimg-amd64.img
+DAIA_IMAGE_SUMS=/srv/daia/inputs/SHA256SUMS
+DAIA_IMAGE_SIGNATURE=/srv/daia/inputs/SHA256SUMS.gpg
+DAIA_RUNTIME_DEST=/srv/daia/reviewed/runtime
+DAIA_SOURCE_FIXTURE=/srv/daia/source-fixture
+DAIA_NATIVE_FIXTURE=/srv/daia/native-fixture
+DAIA_PREBOOT_FIXTURE=/srv/daia/preboot-fixture
+DAIA_ISO_BUILDER=/usr/bin/genisoimage
+DAIA_PACKAGE_PLAN=/srv/daia/package-plan
+DAIA_PACKAGE_CACHE=/srv/daia/package-cache
+DAIA_PYTHON_WORK=/srv/daia/python-build
+DAIA_PREPARED_IMAGE=/srv/daia/prepared-image/host.qcow2
+DAIA_NEW_PREPARATION=/srv/daia/reviewed
+DAIA_BUILD_CACHE=/srv/daia/build-cache
+```
+
+Choose `DAIA_AUTH_HOME` separately under the participating account's private
+parent directory. It must not be a worker/helper/gateway profile. The prepared
+image hash and Python bundle hash come from their checked build outputs. Supply
+`DAIA_APPROVED_REQUEST_TEMPLATE` from the checked-in template described below;
+these are explicit inputs, not values taken from a worker. The clean-checkout
+helper creates its own `reviewed/runtime`; do not pre-create that same runtime
+with the standalone example if you choose the clean-checkout route.
+
 ## Separate locked Python runtime
 
 Use Python 3.12 and a trusted `uv` installation from the approved installation
@@ -71,7 +125,7 @@ side. Choose a new, absolute runtime destination outside any worker-writable tre
 From the trusted DAIA checkout:
 
 ```sh
-UV_PROJECT_ENVIRONMENT="$DAIA_RUNTIME_DEST" uv sync --locked --no-editable \
+UV_PROJECT_ENVIRONMENT="$DAIA_RUNTIME_DEST" uv sync --locked --no-editable --no-dev \
   --extra mcp --python /usr/bin/python3.12
 ```
 
@@ -165,7 +219,19 @@ inputs, requires the single approved image entry, and streams the image hash.
 It requires SHA-256
 `612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354`
 and exactly 625256960 bytes. It neither mounts nor boots nor installs the image.
-A trusted installer must copy the verified bytes into protected template storage;
+After the verifier succeeds, provision the base on a new host as follows:
+
+```sh
+test ! -e /var/lib/daia-lab/templates/base.qcow2
+sudo install -m 0444 "$DAIA_BASE_IMAGE" /var/lib/daia-lab/templates/base.qcow2
+printf '%s  %s\n' \
+  612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354 \
+  /var/lib/daia-lab/templates/base.qcow2 | sha256sum --check
+```
+
+Run these blocks in a shell with `set -eu`; a failed check must stop execution.
+An existing base is inspected and verified, never silently overwritten.
+A trusted installer must keep these bytes in protected template storage;
 `prepare_kvm_bundle.py` separately rechecks copied bytes before launch.
 
 The live verification used freshly downloaded dated signature/checksum metadata
@@ -180,7 +246,18 @@ reviewed new pins and a new acceptance run, never automatic fallback.
 
 The public development fixture can be rebuilt from this checkout before the
 native MCP delivery variant is produced. Use new output directories and the
-existing, separately reviewed request template; do not harvest personal prompts
+reviewed request template. The checked-in `codex-request-template.json` is the
+Luna pilot's frozen policy and native tool catalog, with conversation history,
+cache keys and client metadata removed. Its parsed gate authority was checked
+identical to the template used in the successful trial. Review it as trusted
+installation configuration; never approve an arbitrary first worker request.
+For this exact client/model profile, set:
+
+```sh
+DAIA_APPROVED_REQUEST_TEMPLATE="$(realpath deploy/subscription-lab/codex-request-template.json)"
+```
+
+Do not harvest personal prompts
 or credentials to create a template. The original Codex and bwrap binaries must
 be in the trusted native directory. The first builder checks their pinned hashes.
 The ISO builder is a trusted installation dependency, not supplied by task data.
@@ -255,6 +332,16 @@ The build uses a new HOME and a small explicit environment. It does not import
 personal Git configuration or credentials. Public repository access is required;
 no authentication prompt is enabled. A local trusted Git repository also works.
 Only the exact commit is checked out; uncommitted personal files are not copied.
+For the prepared-image route, use this clean preparation instead of the separate
+runtime/fixture examples and select its outputs:
+
+```sh
+DAIA_RUNTIME_DEST="$DAIA_NEW_PREPARATION/runtime"
+DAIA_SOURCE_FIXTURE="$DAIA_NEW_PREPARATION/source-fixture"
+DAIA_NATIVE_FIXTURE="$DAIA_NEW_PREPARATION/guest"
+cd "$DAIA_NEW_PREPARATION/source"
+```
+
 A failed build leaves its private partial destination for inspection; use another
 new destination after resolving the failure. Nothing is automatically deleted.
 
@@ -433,7 +520,7 @@ of QEMU/client/runtime inside the fresh host or a nested subscription worker run
 From a trusted Ubuntu installation with authenticated, current APT metadata:
 
 ```sh
-python3 scripts/plan_fresh_host_packages.py --output "$DAIA_NEW_PACKAGE_PLAN"
+python3 scripts/plan_fresh_host_packages.py --output "$DAIA_PACKAGE_PLAN"
 ```
 
 The planner uses an empty package-status file and `--print-uris`, so installed
@@ -473,13 +560,13 @@ Example with explicit administrator-selected paths:
 
 ```sh
 sudo python3 scripts/prepare_fresh_host_image.py \
-  --reviewed /srv/daia/reviewed \
-  --base-image /srv/daia/inputs/base.qcow2 \
+  --reviewed "$DAIA_NEW_PREPARATION" \
+  --base-image "$DAIA_BASE_IMAGE" \
   --checksums /srv/daia/inputs/SHA256SUMS \
   --signature /srv/daia/inputs/SHA256SUMS.gpg \
-  --package-manifest /srv/daia/inputs/packages.json \
-  --package-archives /srv/daia/inputs/archives \
-  --python-bundle /srv/daia/inputs/python.tgz \
+  --package-manifest "$DAIA_PACKAGE_PLAN/packages.json" \
+  --package-archives "$DAIA_PACKAGE_CACHE/archives" \
+  --python-bundle "$DAIA_PYTHON_WORK/python.tgz" \
   --python-bundle-sha256 "$APPROVED_PYTHON_BUNDLE_SHA256" \
   --native /srv/daia/inputs/native \
   --iso-builder /usr/bin/genisoimage \
@@ -534,3 +621,224 @@ arbitrary workloads, general Windows support or proof against every VM escape.
 Do not add personal profiles, host mounts, other MCP gateways or private network
 routes to make an untested task work. General admission, production deployment
 and merging the review stack remain separate decisions.
+
+
+### Exact prepared-image launch
+
+First derive the preboot variant of the approved native fixture, with a new
+output directory. This creates the READY barrier used by the tested image path:
+
+```sh
+"$DAIA_RUNTIME_DEST/bin/python" scripts/prepare_preboot_fixture.py \
+  --source "$DAIA_NATIVE_FIXTURE" --native "$DAIA_NATIVE_DIRECTORY" \
+  --output "$DAIA_PREBOOT_FIXTURE" --iso-builder /usr/bin/genisoimage \
+  --isoinfo /usr/bin/isoinfo
+```
+
+After successful image construction, read its recorded image hash:
+
+```sh
+DAIA_PREPARED_IMAGE_SHA256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["prepared_sha256"])' /srv/daia/prepared-image/prepared-host-image.json)"
+```
+
+With the participant's existing,
+separate native-login profile and the independently reviewed request template:
+
+```sh
+sudo "$DAIA_RUNTIME_DEST/bin/python" scripts/run_subscription_lab.py \
+  --guest "$DAIA_PREBOOT_FIXTURE" \
+  --request-template "$DAIA_APPROVED_REQUEST_TEMPLATE" \
+  --auth-home "$DAIA_AUTH_HOME" \
+  --codex-binary "$DAIA_NATIVE_DIRECTORY/codex" \
+  --python-runtime "$DAIA_RUNTIME_DEST" \
+  --native-delivery \
+  --prepared-host-image "$DAIA_PREPARED_IMAGE" \
+  --prepared-host-sha256 "$DAIA_PREPARED_IMAGE_SHA256"
+```
+
+This command consumes one explicitly authorized bounded assignment; do not run it
+as an installation smoke test. It uses the current six-request/150-second model
+limit, with a separate supervisor bound for preparation and cleanup. An error is
+not permission to repeat the command or replenish the old assignment. Inspect
+the private run metadata and existing receipt before deciding what to do next.
+After successful supervisor completion, record the retained run path before a
+reboot removes the transient pointer:
+
+```sh
+DAIA_COMPLETED_RUN="$(sudo python3 -c 'import json; print(json.load(open("/run/daia-subscription-run.json"))["state_directory"])')"
+```
+
+Keep that path in private operator notes. It is not a provider credential and
+does not authorize resuming the run. After reboot, use the retained path rather
+than assuming the transient pointer still exists.
+
+### Acquiring the pinned native inputs
+
+Use a new staging directory on the trusted Ubuntu amd64 installation host. The
+[official Codex 0.153.4 release](https://github.com/openai/codex/releases/tag/rust-v0.153.4)
+provides both native archives. Extract to stdout, not into the host filesystem;
+the pinned digest must pass before a downloaded binary becomes executable:
+
+```sh
+set -eu
+mkdir "$DAIA_NATIVE_DIRECTORY"
+for name in codex codex-code-mode-host; do
+  curl --fail --location --proto '=https' --proto-redir '=https' \
+    "https://github.com/openai/codex/releases/download/rust-v0.153.4/${name}-x86_64-unknown-linux-musl.tar.gz" \
+    --output "$DAIA_NATIVE_DIRECTORY/$name.tar.gz"
+  tar -xOf "$DAIA_NATIVE_DIRECTORY/$name.tar.gz" > "$DAIA_NATIVE_DIRECTORY/$name"
+done
+printf '%s  %s\n' \
+  56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da "$DAIA_NATIVE_DIRECTORY/codex" \
+  3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45 "$DAIA_NATIVE_DIRECTORY/codex-code-mode-host" \
+  | sha256sum --check
+```
+
+The fixture's separate `bwrap` pin is the Ubuntu amd64
+`bubblewrap=0.9.0-1ubuntu0.1` binary, not an automatically interchangeable Codex
+release asset. Acquire it through authenticated Ubuntu APT metadata:
+
+```sh
+sudo apt-get install --no-install-recommends bubblewrap=0.9.0-1ubuntu0.1
+cp /usr/bin/bwrap "$DAIA_NATIVE_DIRECTORY/bwrap"
+printf '%s  %s\n' \
+  52231e1caf55bcbc667b269f49c63599a6f7db4767ae6a039580d0ff853db712 "$DAIA_NATIVE_DIRECTORY/bwrap" \
+  | sha256sum --check
+chmod 0755 "$DAIA_NATIVE_DIRECTORY/codex" \
+  "$DAIA_NATIVE_DIRECTORY/codex-code-mode-host" "$DAIA_NATIVE_DIRECTORY/bwrap"
+```
+
+If the exact version is unavailable or any digest differs, stop. Do not weaken
+the pins, use `latest`, or execute an unverified replacement. The three builders
+recheck the binary pins independently. Keep the native directory and ancestors
+outside worker write access.
+
+### Downloading the package plan
+
+Generate `packages.json` with the planner above after authenticating the host's
+Ubuntu APT metadata. Download that same dependency set into a new cache using an
+empty dpkg status, so installed host packages cannot disappear from the plan:
+
+```sh
+set -eu
+mkdir "$DAIA_PACKAGE_CACHE"
+: > "$DAIA_PACKAGE_CACHE/status"
+mkdir -p "$DAIA_PACKAGE_CACHE/archives/partial"
+apt-get -o Acquire::ForceHash=sha256 \
+  -o "Dir::State::status=$DAIA_PACKAGE_CACHE/status" \
+  -o "Dir::Cache::archives=$DAIA_PACKAGE_CACHE/archives" \
+  -o Debug::NoLocking=1 --yes --download-only --no-install-recommends install \
+  qemu-system-x86 qemu-utils genisoimage python3-venv python3-pip
+python3 - "$DAIA_PACKAGE_PLAN/packages.json" "$DAIA_PACKAGE_CACHE/archives" <<'PY'
+import runpy, sys
+helper = runpy.run_path('scripts/prepare_fresh_host_image.py')
+helper['package_inputs'](sys.argv[1], sys.argv[2])
+print('Exact package set, sizes and hashes verified; nothing installed')
+PY
+```
+
+The check rejects extra/missing archives and metadata drift. Preserve the plan
+with the downloaded archives. A changed plan is a new reviewed build input,
+not permission to claim the previous image's acceptance results.
+
+### Building the offline Python bundle
+
+Run on the trusted Ubuntu amd64 host with Python 3.12, the reviewed checkout and
+its unchanged `uv.lock`. Use a new absolute working directory and trusted `uv`.
+These commands acquire/build installation artifacts; they run no task or model:
+
+```sh
+set -eu
+mkdir "$DAIA_PYTHON_WORK"
+mkdir -p "$DAIA_PYTHON_WORK/python/wheels"
+uv export --locked --no-dev --extra mcp --no-emit-project --no-editable \
+  --format requirements-txt --output-file "$DAIA_PYTHON_WORK/python/requirements.txt"
+python3.12 -m pip download --require-hashes --only-binary=:all: \
+  --dest "$DAIA_PYTHON_WORK/python/wheels" \
+  --requirement "$DAIA_PYTHON_WORK/python/requirements.txt"
+uv build --wheel --out-dir "$DAIA_PYTHON_WORK/dist"
+cp "$DAIA_PYTHON_WORK/dist/daia_coordinator-0.1.0-py3-none-any.whl" "$DAIA_PYTHON_WORK/python/"
+python3 - "$DAIA_PYTHON_WORK" <<'PY'
+import hashlib, json, pathlib, sys, tarfile
+root = pathlib.Path(sys.argv[1])
+files = [root/'python/requirements.txt',
+         root/'python/daia_coordinator-0.1.0-py3-none-any.whl',
+         *sorted((root/'python/wheels').glob('*.whl'))]
+manifest = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+record = root/'python/manifest.json'
+record.write_text(json.dumps(manifest, indent=2)+'\n')
+archive = root/'python.tgz'
+with archive.open('xb') as output, tarfile.open(fileobj=output, mode='w:gz') as tar:
+    for p in [*files, record]:
+        tar.add(p, arcname=str(p.relative_to(root)), recursive=False)
+print(hashlib.sha256(archive.read_bytes()).hexdigest())
+PY
+```
+
+Review and retain that printed bundle digest with the source revision and lock
+hash. Supply this archive and digest to `prepare_fresh_host_image.py`; its
+`stage_python` check validates manifest coverage and every payload again before
+installation. Never substitute a personal Python environment or credential home.
+
+### Exporting and independently evaluating the recorded result
+
+After the controller has stopped and cleanup is confirmed, select its exact
+private run directory from its output. Export through the read-only helper; do
+not query a different job, reconstruct a patch from terminal output, or resume
+the model. The helper requires acknowledged delivery and verifies the recorded
+assignment, envelope, artifact and receipt bindings before creating a new file.
+It does not execute the exported source.
+
+The following is for the version-comparison task used above. Run as the trusted
+lab administrator, using new absolute output directories. The private export
+stays separate from the readable evaluator bundle. The latter contains only the
+candidate and fixed evaluator inputs, never provider credentials or run state.
+
+```sh
+DAIA_EVALUATION=/var/lib/daia-lab/evaluation-01
+sudo mkdir -m 0755 "$DAIA_EVALUATION"
+sudo mkdir -m 0700 "$DAIA_EVALUATION/private"
+sudo "$DAIA_RUNTIME_DEST/bin/python" scripts/export_subscription_candidate.py \
+  --run "$DAIA_COMPLETED_RUN" --output "$DAIA_EVALUATION/private/candidate.json"
+sudo "$DAIA_RUNTIME_DEST/bin/python" scripts/prepare_version_evaluator.py \
+  --candidate "$DAIA_EVALUATION/private/candidate.json" \
+  --output "$DAIA_EVALUATION/seed" --iso-builder /usr/bin/genisoimage
+sudo "$DAIA_RUNTIME_DEST/bin/python" - "$DAIA_EVALUATION" <<'PY'
+import json, pathlib, subprocess, sys
+root = pathlib.Path(sys.argv[1])
+manifest = json.loads((root/'seed/evaluator.json').read_text())
+subprocess.run([sys.executable, 'scripts/prepare_kvm_bundle.py',
+    '--base', '/var/lib/daia-lab/templates/base.qcow2',
+    '--base-sha256', '612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354',
+    '--seed', str(root/'seed/seed.iso'), '--seed-sha256', manifest['seed_sha256'],
+    '--nonce', manifest['nonce'], '--output', str(root/'bundle')], check=True)
+PY
+sudo "$DAIA_RUNTIME_DEST/bin/python" scripts/run_evaluator_lab.py \
+  --bundle "$DAIA_EVALUATION/bundle" --output "$DAIA_EVALUATION/private/report.json"
+sudo "$DAIA_RUNTIME_DEST/bin/python" - "$DAIA_EVALUATION" <<'PY'
+import hashlib, json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+source = json.loads((root/'private/candidate.json').read_text())
+manifest = json.loads((root/'seed/evaluator.json').read_text())
+report = json.loads((root/'private/report.json').read_text())
+result = report['report']; guest = result['guest']
+if not (report['ok'] is True and result['network_none'] is True
+        and guest['nonce'] == manifest['nonce']
+        and guest['source_sha256'] == manifest['source_sha256']
+        == hashlib.sha256(source.encode()).hexdigest()
+        and guest['cases_passed'] == 10 and guest['original_failed'] is True
+        and guest['candidate_separate_uid'] is True
+        and guest['parent_compares_results'] is True
+        and guest['provider_credentials_present'] is False
+        and guest['model_source_changed'] is False
+        and result['overlay_removed'] is True):
+    raise SystemExit('Independent evaluation not established; retain private evidence')
+print('Exact recorded candidate passed all ten independent cases; overlay removed')
+PY
+```
+
+Keep the private receipt and evaluation report as evidence. The evaluator removes
+its transient writable VM storage; the explicitly created input bundle and
+read-only base copy remain for inspection. Remove those build inputs when their
+retention is no longer needed, without deleting the original run or credentials.
+Ten passing fixture cases establish this task's result, not general code safety.
