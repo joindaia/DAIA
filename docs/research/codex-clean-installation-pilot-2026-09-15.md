@@ -32,8 +32,12 @@ offline native-client checks and repeat installation. This run reused that image
 ## Successful development and delivery
 
 The task required public documentation research, correction of numerical version
-comparison, unchanged supplied tests and native MCP submission. The final source
-uses the standard library; this task did not require a third-party dependency.
+comparison, unchanged supplied tests and native MCP submission. Research fetched
+773,941 bytes of public documentation and downloaded, hash-checked and imported
+the packaging 25.0 wheel. Its SHA-256 was
+`29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484`.
+The final patch uses the standard library; the separate research step exercised
+dependency use. No general package-installation-hook claim follows from this.
 
 The controller completed in 70.19 seconds with five forwarded provider requests,
 five attempts and 23 denied probes. The last provider response was HTTP 200.
@@ -115,12 +119,19 @@ remote management service became reachable; the SSH service required an operator
 start through that management connection. This is verified managed recovery, not
 evidence that every management service restarts automatically on this host.
 
-Before completing this pilot:
+The follow-up [process and gateway-loss record](prepared-process-gateway-boundaries-2026-09-15.json)
+closes the specific process/environment/handle and missing-gateway checks. A
+synthetic host canary remained externally observable while the guest found zero
+matches. After the real research handler accepted one connection, its listener
+was removed; reconnect closed without a timeout, and live direct-host listeners
+received no guest traffic. Neither probe sent START or used provider credentials.
 
-1. Finish the requirement-by-requirement audit of real-token isolation, unwanted
-   provider operations, network paths, revocation and active-authority crash
-   recovery on the current candidate. Do not substitute the READY crash test.
-2. Confirm current CI and complete the reviewable installation/evidence stack.
+Before completing this pilot, finish the final current-state evidence audit and
+confirm the latest CI/installation review stack. The installed research gateway
+is byte-identical to the reviewed source; earlier DNS/CNAME and TLS-redirect tests
+remain component evidence, rather than newly repeated integrated runs. Provider
+confinement rests on the fixed external route, request restrictions and tested
+absence of alternate channels, not on a provider-issued inference-only token.
 
 No main merge, production deployment or public admission is authorized by this
 report. Private diagnostic transcripts, host identifiers, accounts and credentials
