@@ -15,7 +15,7 @@ def report_failure(kind,error,trace):
  (root/'failure.json').write_text(json.dumps({'stage':stage,'error_type':kind.__name__}))
  sys.__excepthook__(kind,error,trace)
 sys.excepthook=report_failure
-doc=fetch('docs.python.org','/3/library/stdtypes.html',1000000)
+doc=fetch('docs.python.org','/3/builtins/stdtypes.html',1000000)
 (root/'stdtypes.html').write_bytes(doc)
 stage='package_metadata'
 meta=json.loads(fetch('pypi.org','/pypi/packaging/25.0/json',100000))

@@ -15,7 +15,7 @@ def fetch(host,path,limit):
   return data
  finally:c.close()
 root=pathlib.Path('/work/research');root.mkdir(exist_ok=True)
-doc=fetch('docs.python.org','/3/library/stdtypes.html',1000000)
+doc=fetch('docs.python.org','/3/builtins/stdtypes.html',1000000)
 (root/'stdtypes.html').write_bytes(doc)
 meta=json.loads(fetch('pypi.org','/pypi/packaging/25.0/json',100000))
 wheel=next(x for x in meta['urls'] if x['filename']=='packaging-25.0-py3-none-any.whl')
