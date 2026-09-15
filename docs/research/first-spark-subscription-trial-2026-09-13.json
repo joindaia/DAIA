@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-13",
+  "provider": "ChatGPT subscription",
+  "model": "gpt-5.3-codex-spark",
+  "native_client_version": "0.153.4",
+  "native_client_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "native_login_success": true,
+  "real_model_response": true,
+  "successful_trial_provider_requests": 1,
+  "preceding_rejected_trials": {
+    "unsupported_model_requests": 2,
+    "missing_media_type_requests": 2
+  },
+  "separate_limit_label_observed": "GPT-5.3-Codex-Spark",
+  "worker": {
+    "native_exit": 0,
+    "turn_completed": true,
+    "negative_channel_cases_denied": 23,
+    "overlay_removed": true,
+    "runtime_seconds": 49.552,
+    "provider_credentials_in_seed": false,
+    "model_tool_execution": false
+  },
+  "evaluation": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "556942d07d8d838aeb3b04cd7c12aadc7fe172560460427df06a00b8f7456867",
+    "proposal_sha256": "fd886b81f3efdbc62bcfad2197fee7be687141a06192bc284f14d66af13898f3",
+    "format_normalized": true,
+    "model_source_changed": false,
+    "provider_credentials_present": false
+  },
+  "evaluator_overlay_removed": true,
+  "evaluator_runtime_seconds": 38.368,
+  "evaluator_network_device": false,
+  "proposal": "*** Begin Patch\n*** Update File: version_check.py\n@@\n-def newer(a, b): return a > b\n+def newer(a, b):\n+    a_parts = [int(part) for part in a.split(\".\")]\n+    b_parts = [int(part) for part in b.split(\".\")]\n+\n+    while a_parts and a_parts[-1] == 0:\n+        a_parts.pop()\n+    while b_parts and b_parts[-1] == 0:\n+        b_parts.pop()\n+\n+    max_len = max(len(a_parts), len(b_parts))\n+    for i in range(max_len):\n+        a_value = a_parts[i] if i < len(a_parts) else 0\n+        b_value = b_parts[i] if i < len(b_parts) else 0\n+        if a_value > b_value:\n+            return True\n+        if a_value < b_value:\n+            return False\n+    return False",
+  "limitations": [
+    "A controlled public coding fixture, not an autonomous repository improvement or productivity benchmark.",
+    "Patch envelope normalized in evaluator; raw proposal was not a valid unified diff.",
+    "No real-model research/tool execution or DAIA receipt in this combined run.",
+    "Real refresh/logout and complete provider-account confinement remain unverified.",
+    "Kernel IP policy configured, not independently proven against live private-network canaries in this run."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-13",
+  "scope": "Trusted lab controller initial and refresh authentication file reads",
+  "regression_tests": 20,
+  "synthetic_credentials_only": true,
+  "provider_requests": 0,
+  "denied": [
+    "directory and file symlinks",
+    "group-readable directory or file",
+    "multiple hard links",
+    "FIFO",
+    "oversize or malformed content",
+    "changed profile owner",
+    "profile owned by a task/helper/gateway identity"
+  ],
+  "positive": "private profile and atomic file replacement under unchanged owner",
+  "limitations": [
+    "Trusted ancestor directories required",
+    "No live native refresh in this change",
+    "No protection against malicious trusted profile owner or root administrator"
+  ]
+}

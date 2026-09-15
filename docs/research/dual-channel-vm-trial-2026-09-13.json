@@ -1,0 +1,33 @@
+{
+  "model_channel_counts": {
+    "forwarded": 1,
+    "denied": 23
+  },
+  "provider_credentials_used": false,
+  "saved_identity_and_consent_unchanged": true,
+  "results": 1,
+  "pending_cleared_after_exact_receipt": true,
+  "synthetic_fixture": true,
+  "helper_nonroot": true,
+  "helper_private_root": true,
+  "other_service_state_read_denied": true,
+  "overlay_removed": true,
+  "uid_nonroot": true,
+  "templates_write_denied": true,
+  "date": "2026-09-13",
+  "runtime_seconds": 43.086,
+  "workload": "source-evidence-v1",
+  "model_response": "synthetic",
+  "model_agent_executed": false,
+  "assignment_endpoint": "10.0.2.100:3128",
+  "model_endpoint": "10.0.2.101:3128",
+  "wrong_retry_denied": true,
+  "exact_retry_recovered": true,
+  "model_tool_on_assignment_denied": true,
+  "limitations": [
+    "No real subscription client ran in this combined trial.",
+    "No public research, independent patch evaluation, provider refresh or provider revocation in this trial.",
+    "Finite synthetic local contributor grant, not an existing participant grant.",
+    "This proves the tested two-channel routing and receipt flow, not full host or provider-account isolation."
+  ]
+}

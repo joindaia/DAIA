@@ -1,0 +1,54 @@
+{
+  "date": "2026-09-13",
+  "scope": "Original pinned client executes a fixed synthetic code-mode catalog query; not a model-generated task",
+  "runs": [
+    {
+      "model": "gpt-5.6-luna",
+      "native_binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+      "companion_sha256": "3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45",
+      "loopback_requests": 2,
+      "provider_requests": 0,
+      "extra_requests_refused": false,
+      "deferred_output_present": true,
+      "assignment_names": [
+        "mcp__daia_assignment__heartbeat",
+        "mcp__daia_assignment__submit_result"
+      ],
+      "native_exit": 1,
+      "unsupported_protocol": false,
+      "template_automatically_authorized": false,
+      "proof": "deferred_daia_catalog_observed"
+    },
+    {
+      "model": "gpt-6-astra",
+      "native_binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+      "companion_sha256": "3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45",
+      "loopback_requests": 2,
+      "provider_requests": 0,
+      "extra_requests_refused": false,
+      "deferred_output_present": true,
+      "assignment_names": [
+        "mcp__daia_assignment__heartbeat",
+        "mcp__daia_assignment__submit_result"
+      ],
+      "native_exit": 1,
+      "unsupported_protocol": false,
+      "template_automatically_authorized": false,
+      "proof": "deferred_daia_catalog_observed"
+    }
+  ],
+  "synthetic_call": {
+    "type": "custom_tool_call",
+    "namespace": "functions",
+    "name": "exec",
+    "input": "text(ALL_TOOLS.filter(x => /daia_assignment/.test(x.name)))"
+  },
+  "source": "https://github.com/openai/codex/blob/rust-v0.153.4/codex-rs/protocol/src/models.rs",
+  "tests_passed": 14,
+  "limits": [
+    "Second loopback request intentionally receives 403; native exit 1 is expected and is not a completed model turn.",
+    "The fixed catalog query invokes no DAIA assignment operation.",
+    "No live inference, account confinement, guest isolation or useful development task is established by this probe.",
+    "This does not automatically authorize a gateway template; the new protocol still requires frozen capability validation."
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-13",
+  "model": "gpt-5.3-codex-spark",
+  "original_client_version": "0.153.4",
+  "original_client_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "repository_assignment_channel_used": true,
+  "native_metadata_removed_by_request_gate": true,
+  "raw_provider_header_logging_removed": true,
+  "results": 1,
+  "rotation": {
+    "native_refresh_completed": true,
+    "account_unchanged": true,
+    "native_restart_completed": true,
+    "deadline_preserved": true,
+    "rotation_after_provider_requests": 1
+  },
+  "model_channel_counts": {
+    "forwarded": 4,
+    "denied": 23,
+    "attempts": 4
+  },
+  "normal_supervised_controller_exit": 0,
+  "supervised_cleanup_complete": true,
+  "overlay_removed": true,
+  "pending_cleared_after_exact_receipt": true,
+  "saved_identity_and_consent_unchanged": true,
+  "provider_credentials_used": true,
+  "real_model": true,
+  "guest": {
+    "attacks_denied": 23,
+    "native_exit": 0,
+    "turn_completed": true,
+    "wrong_retry_denied": true,
+    "exact_retry": true,
+    "research_negative_requests_denied": 6,
+    "test_unchanged": true,
+    "research": {
+      "documentation_bytes": 771979,
+      "documentation_sha256": "8404db538b6fb48de1d1d0af2fc057f556b84b2cf6bbd9ed44f54a63762c41c1",
+      "dependency": "packaging",
+      "version": "25.0",
+      "wheel_sha256": "29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484",
+      "dependency_import_and_checks": true
+    }
+  },
+  "independent_evaluation": {
+    "fresh_networkless_vm": true,
+    "provider_credentials": false,
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_changed": false,
+    "source_sha256": "b95ecf947d6f7e7976eea65b6d5f2002b00d1d582453bbb810bf816d07883502",
+    "overlay_removed": true
+  },
+  "coordinator_artifact": {
+    "stored_source_matches_worker": true,
+    "stored_source_sha256": "b95ecf947d6f7e7976eea65b6d5f2002b00d1d582453bbb810bf816d07883502",
+    "result_state": "in_review",
+    "results": 1
+  },
+  "limitations": [
+    "Public numeric-version fixture, not a general development benchmark",
+    "Result submission performed by guest harness through assignment helper, not autonomous model tool selection",
+    "Full lab launcher is not yet packaged for participant installation",
+    "No claim of exhaustive provider-account capability isolation or provider approval",
+    "The evaluator imports a dependency-free candidate; research wheel import is not general package installation-hook coverage"
+  ],
+  "evaluator_initial_attempt": "Stopped before regression execution because a legacy one-function AST restriction rejected a helper function; unchanged candidate passed after removing that test-only restriction inside the same isolated guest boundary"
+}

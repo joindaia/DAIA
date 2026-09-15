@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-13",
+  "scope": "Trusted native authentication probe under Python optimization",
+  "before": {
+    "synthetic_unapproved_binary_started": true,
+    "failing_regression_cases": 2,
+    "normal_mode_cases_passed": 2
+  },
+  "fix": "Replace all probe assert checks with explicit RuntimeError guards",
+  "after": {
+    "targeted_tests_passed": 20,
+    "optimized_bad_binary_rejected": true,
+    "optimized_symlink_binary_rejected": true,
+    "real_pinned_binary_with_nonprivate_synthetic_profile_rejected": true
+  },
+  "provider_requests": 0,
+  "real_credentials_used": false,
+  "limitations": [
+    "Other lab scripts not audited for optimization in this change",
+    "No new native refresh performed",
+    "Trusted owner and parent-path assumptions remain"
+  ]
+}
