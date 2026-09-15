@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-15",
+  "public_probe_base": "321a1e9e87232566ce171913d7cf72dba6dc57a6",
+  "runtime_source_commit": "7b9345f6857918ac914a965d2b96bc09a3ed485e",
+  "modified_trusted_fixture": true,
+  "fixture_sha256": "49ba6381970c7a43a18e8abc5f7af5fc2d0d1cee7e278bd2007419da5e7a970f",
+  "nested_runner_sha256": "315f1036ca262bf2ce28599cb332d5a2e7f15acfec03f2554bce372fda60dcab",
+  "fresh_host_installation": "QEMU, Python, DAIA and MCP installed offline as in fresh-host-python-native-2026-09-15.json",
+  "nested_worker": {
+    "actual_linux_boot": true,
+    "pid1_systemd_checked": true,
+    "native_codex_version": "0.153.4",
+    "native_version_executed_in_worker": true,
+    "unique_boot_marker_checked": true,
+    "service_user": "daia-runtime",
+    "nonroot_service_uid_checked": true,
+    "kvm_required": true,
+    "network_adapter": false,
+    "private_network_namespace": true,
+    "no_host_directory_sharing": true,
+    "public_seed_and_base_read_only": true,
+    "memory_mib": 1024,
+    "service_memory_mib": 1500,
+    "swap_bytes": 0,
+    "service_deadline_seconds": 100,
+    "service_stopped": true,
+    "overlay_removed": true
+  },
+  "outer_host_vm": {
+    "memory_mib": 2048,
+    "ram_overlay_mib": 1024,
+    "service_memory_gib": 4,
+    "service_deadline_seconds": 270,
+    "network_adapter": false,
+    "service_stopped": true,
+    "overlay_removed": true
+  },
+  "result": {
+    "entrypoint_exit": 0,
+    "provider_calls": 0,
+    "credentials_used": false
+  },
+  "corrected_fixture_failure": "First attempt rejected systemctl stop status 5 for an already-unloaded transient unit. Retry checks terminal state independently and still rejects active, activating or deactivating units before accepting overlay removal. The first failed overall probe is not counted as a successful boot.",
+  "limitations": [
+    "Native version execution proves client startup, not model inference or assignment delivery.",
+    "No subscription job executed in this fresh installation.",
+    "No full hostile-worker/account/network or host-reboot acceptance here.",
+    "Experiment still uses a modified trusted fixture; publishing a reusable installation route remains open."
+  ]
+}
