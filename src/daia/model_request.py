@@ -112,7 +112,7 @@ def _input_catalog(items):
 
 
 def _history(items, admitted_reasoning=frozenset(), approved_names=None,
-             approved_catalog=None) -> None:
+             approved_catalog=None, *, unqualified_exec=False) -> None:
     _require(type(items) is list)
     custom_calls = {}
     for item in items:
@@ -150,9 +150,11 @@ def _history(items, admitted_reasoning=frozenset(), approved_names=None,
         elif kind == "custom_tool_call":
             _require(set(item) <= {"type", "status", "call_id", "name", "namespace", "input"})
             _require(set(item) >= {"type", "call_id", "name", "input"})
-            _require(item["name"] == "exec" and item.get("namespace") == "functions")
+            _require(item["name"] == "exec")
+            _require(item.get("namespace") == "functions" or
+                     "namespace" not in item and unqualified_exec)
             _require(item.get("status") in (None, "completed", "in_progress"))
-            _require(all(type(item[k]) is str for k in ("call_id", "name", "namespace", "input")))
+            _require(all(type(item[k]) is str for k in ("call_id", "name", "input")))
             _require(approved_names is not None and ("functions", "exec") in approved_names)
             _require(item["call_id"] not in custom_calls)
             custom_calls[item["call_id"]] = item["name"]
@@ -208,8 +210,12 @@ class RequestGate:
         _require(body.get("include", []) in ([], ["reasoning.encrypted_content"]))
         input_items = body.pop("input", [])
         self._catalog, self._approved_names = _input_catalog(input_items)
+        # Native Codex also records bare exec. Resolve it only when the frozen
+        # top-level and deferred declarations cannot refer to another exec.
+        names = _tool_names(body.get("tools", [])) | (self._approved_names or frozenset())
+        self._unqualified_exec = {pair for pair in names if pair[1] == "exec"} == {("functions", "exec")}
         _history(input_items, approved_names=self._approved_names,
-                 approved_catalog=self._catalog)
+                 approved_catalog=self._catalog, unqualified_exec=self._unqualified_exec)
         self._template = json.dumps(body, sort_keys=True, allow_nan=False)
         self._reasoning = set()
 
@@ -249,7 +255,8 @@ class RequestGate:
         history = body.pop("input", None)
         catalog, _ = _input_catalog(history)
         _require(catalog == self._catalog)
-        _history(history, self._reasoning, self._approved_names, self._catalog)
+        _history(history, self._reasoning, self._approved_names, self._catalog,
+                 unqualified_exec=self._unqualified_exec)
         _require(json.dumps(body, sort_keys=True, allow_nan=False) == self._template)
         # Forward only validated inline history, with optional item IDs removed.
         body["input"] = history

@@ -39,7 +39,8 @@ def test_original_minimal_spark_profile_is_unchanged():
     assert json.loads(gate.validate("POST", "/v1/responses", encode(body))) == body
 
 
-def test_native_catalog_and_custom_exec_pair_are_preserved():
+@pytest.mark.parametrize("qualified", [True, False])
+def test_native_catalog_and_custom_exec_pair_are_preserved(qualified):
     body = code_mode_request()
     gate = RequestGate(encode(body))
     body["input"][0]["id"] = "at_new_turn_id"
@@ -49,10 +50,13 @@ def test_native_catalog_and_custom_exec_pair_are_preserved():
         {"type": "custom_tool_call_output", "id": "ctco_1", "call_id": "call_1",
          "output": [{"type": "input_text", "text": "done"}]},
     ])
+    if not qualified:
+        del body["input"][-2]["namespace"]
     forwarded = json.loads(gate.validate("POST", "/v1/responses", encode(body)))
     assert forwarded["input"][0]["tools"] == body["input"][0]["tools"]
     assert "id" not in forwarded["input"][0]
     assert forwarded["input"][-2]["name"] == "exec"
+    assert ("namespace" in forwarded["input"][-2]) is qualified
     assert forwarded["input"][-1]["output"][0]["text"] == "done"
 
 
@@ -124,3 +128,30 @@ def test_custom_output_without_catalog_is_denied():
                           "output": "done"})
     with pytest.raises(Denied):
         RequestGate(encode(body)).validate("POST", "/v1/responses", encode(body))
+
+
+@pytest.mark.parametrize("other_namespace", [None, "other"])
+def test_unqualified_exec_requires_unique_frozen_name(other_namespace):
+    body = code_mode_request()
+    other = copy.deepcopy(body["input"][0]["tools"][0]["tools"][0])
+    body["tools"] = ([other] if other_namespace is None else
+                     [{"type": "namespace", "name": other_namespace, "tools": [other]}])
+    gate = RequestGate(encode(body))
+    body["input"].append({"type": "custom_tool_call", "call_id": "call_1",
+                          "name": "exec", "input": "text('fixture')"})
+    with pytest.raises(Denied):
+        gate.validate("POST", "/v1/responses", encode(body))
+
+
+@pytest.mark.parametrize("fields", [
+    {"name": "exec", "namespace": None},
+    {"name": "functions.exec"},
+    {"name": "exec", "namespace": "other"},
+    {"name": "wait"},
+])
+def test_unqualified_alias_does_not_expand_custom_names(fields):
+    body = code_mode_request(); gate = RequestGate(encode(body))
+    body["input"].append({"type": "custom_tool_call", "call_id": "call_1",
+                          "input": "text('fixture')", **fields})
+    with pytest.raises(Denied):
+        gate.validate("POST", "/v1/responses", encode(body))
