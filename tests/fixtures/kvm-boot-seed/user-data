@@ -1,0 +1,2 @@
+#cloud-config
+{"users": [], "package_update": false, "package_upgrade": false, "write_files": [{"path": "/tmp/probe.py", "content": "import json\nwith open('/dev/ttyS0','w') as s:s.write('DAIA_BOOT_RESULT '+json.dumps({'nonce':'8848c8b4ecbe4bb59e43d636e8092001','booted':True})+'\\n')\n", "permissions": "0444"}], "runcmd": [["python3", "/tmp/probe.py"]], "power_state": {"mode": "poweroff", "delay": "now", "timeout": 30, "condition": true}}
