@@ -89,6 +89,7 @@ def test_offline_installation_report_is_checked_before_export(tmp_path, monkeypa
     execute({**base, **offline}, True)
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux host runner imports pwd")
 def test_child_failure_keeps_only_bounded_output():
     probe = runpy.run_path(str(ROOT / 'scripts/probe_fresh_host_ram.py'))
     detail = probe['child_failure'](SimpleNamespace(returncode=1, stdout='a' * 5000, stderr='b' * 5000))
