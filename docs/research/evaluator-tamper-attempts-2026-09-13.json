@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-13",
+  "base_commit": "ca3f482",
+  "real_networkless_kvm": true,
+  "provider_calls": 0,
+  "fixture_sha256": "bc7b91df06799ad150796dd9c1268293b1dea8737aee4377507d595958b65329",
+  "cases_passed": 10,
+  "original_failed": true,
+  "control": "Temporary guest file write/read/delete before each attack sequence",
+  "required_denials_per_case": [
+    "overwrite checker",
+    "overwrite privileged guest script",
+    "write serial report endpoint",
+    "write parent stdout via proc fd",
+    "write checker via symlink",
+    "stop privileged parent with SIGSTOP",
+    "child process write to serial endpoint"
+  ],
+  "cleanup_complete": true,
+  "scope": "Trusted synthetic attack fixture requires PermissionError before returning the correct boolean; successful evaluation witnesses its execution. Not a general malicious-code proof.",
+  "limitations": [
+    "Same guest kernel remains trusted",
+    "No live provider account or complete research-enabled worker exercised",
+    "Finite target list, not exhaustive enumeration"
+  ],
+  "offline_tests": {
+    "passed": 7,
+    "warning": "Read-only pytest cache; assertions completed"
+  }
+}

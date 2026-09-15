@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-13",
+  "scope": "Repository evaluator launcher: networkless normal completion and whole-service SIGKILL cleanup",
+  "normal": {
+    "completed": true,
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "network_none": true,
+    "private_storage_removed": true
+  },
+  "crash": {
+    "live_nonempty_overlay_observed_before_signal": true,
+    "signal": "SIGKILL to complete evaluator service group",
+    "supervisor_exit": 1,
+    "work_directory_removed": true,
+    "service_inactive": true,
+    "remaining_service_processes": false,
+    "successful_result_claimed": false
+  },
+  "regressions": 9,
+  "launcher_sha256": {
+    "run_evaluator_lab.py": "c4ae1e642cce3429a56545652b11a5cba20d232e782549cc91c68c1aee1130b9",
+    "run_kvm_lab_guest.py": "214519d7cbf0eab976ee9a0eca52a7833c165852f2d8c26f8b7a2f8df5a3629f",
+    "run_kvm_lab_report.py": "4866b63c8b4aa9671f3991d2fea94282ca345819ba69c95d64e6582162fdbeb0"
+  },
+  "limits": {
+    "work_tmpfs": "512M / 4096 inodes",
+    "temporary_mounts": "16M / 256 inodes each",
+    "service_seconds": 210,
+    "memory": "3G",
+    "swap": "0",
+    "tasks": 64
+  },
+  "limitations": [
+    "Existing lab identities, KVM, pinned base and ISO builder still required",
+    "Supervisor or host crash not tested in this run",
+    "No fresh model call or participant login in evaluator trials",
+    "Guest report correlation is not a general correctness proof for adversarial artifacts"
+  ]
+}
