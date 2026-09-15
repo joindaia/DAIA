@@ -1,50 +1,71 @@
 # Subscription worker release gates
 
 Status: **experimental; not ready for general participant installation**.
-Assessment on 2026-09-13 against commit `04523ca`. This is an evidence map,
-not a replacement objective or permission to reduce the remaining scope.
-A successful fixture run proves its recorded scope, not every deployment.
+Current evidence assessment: 15 September 2026. The latest complete second-host
+cycle used runtime `096fa57244a723fa4564b49e2b856f8bc187a59c`. The review split
+preserves that runtime tree exactly. Historical observations below retain their
+original scope and dates; their outstanding-item lists are not the current backlog.
 
-The original Codex client has completed a real Spark subscription development
-fixture inside KVM with outside-guest authentication, native refresh, public
-research, a recorded result and independent evaluation. The next work is to make
-that complete route reproducible and to close the remaining boundary tests.
-Claude, Gemini and local models are not prerequisites.
+The original Codex 0.153.4 client completed a real Luna subscription development
+cycle on the second host: public research, dependency use, a patch, source tests,
+native MCP submission, exact retry, native credential refresh and normal supervised
+shutdown. A fresh networkless evaluator passed ten cases on the exact submitted
+source. This establishes the bounded lab route, not a general participant release.
+See [the complete cycle](research/second-host-research-diagnostic-2026-09-15.md#completed-second-host-cycle-after-the-url-correction).
+Claude, Gemini and local models are not prerequisites for the remaining work.
+
+## Review order
+
+Each PR is based on the preceding layer; review its own diff. All are drafts.
+PR20 is closed without merge and retained as historical context.
+
+| Order | Pull request | Review focus |
+| --- | --- | --- |
+| 1 | [#22](https://github.com/joindaia/DAIA/pull/22) | Request binding, response filtering and durable request limits |
+| 2 | [#23](https://github.com/joindaia/DAIA/pull/23) | Provider transport, fixed upstream and bridge |
+| 3 | [#26](https://github.com/joindaia/DAIA/pull/26) | Assignment-bound exact receipt recovery |
+| 4 | [#27](https://github.com/joindaia/DAIA/pull/27) | Trusted installation prerequisites |
+| 5 | [#28](https://github.com/joindaia/DAIA/pull/28) | Diagnostic experiments; not new runtime authority |
+| 6 | [#29](https://github.com/joindaia/DAIA/pull/29) | VM preparation and independent networkless evaluation |
+| 7 | [#24](https://github.com/joindaia/DAIA/pull/24) | Controller authority, lifecycle and result processing |
+| 8 | [#25](https://github.com/joindaia/DAIA/pull/25) | Evidence, limitations and installation guidance |
 
 ## Evidence and outstanding acceptance
 
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |
-| Original client and own subscription | [Pinned client and live trial](research/packaged-channel-subscription-trial-2026-09-13.json); original 0.153.4 binary, actual Spark calls | Pin the installable bundle and validate the same route from a clean participant setup; do not substitute synthetic responses or paid API access |
-| Official login, refresh and restart | [Native refresh](research/native-subscription-refresh-2026-09-13.json), followed by refresh during the live assignment | Package the native trusted-side login lifecycle; distinguish local unbinding from provider-side revocation |
-| Credentials outside task execution | Separate model service and fixed HTTPS transport used by the lab; assignment helper state excluded from other service identities | Repeat malicious guest inspection against synthetic host credentials across filesystem, process state, inherited handles and tool subprocesses in the packaged deployment; no token exposure may be accepted as success |
-| Inference-only account capability | Fixed upstream route, discarded guest headers and native identifiers, frozen non-history fields, local tools only; negative channel tests | Verify the entire installable network/account path has no bypass, unexpected gateway or inherited connector; route refusal alone is not exhaustive account confinement or provider approval |
-| Host files and private networks | Separate KVM/service identities; [real loopback canaries](research/kvm-egress-canaries-2026-09-13.json) and [real UDP DNS change](research/kvm-dns-rebinding-2026-09-13.json) | Broader synthetic host/browser/SSH/socket canaries, live controlled LAN/VPN targets, mixed/CNAME/redirect paths and the complete guest tool environment |
-| Useful research, patching and tests | Real public documentation fetch, wheel import and model patch; independent networkless evaluator passed ten cases on identical submitted bytes | General dependency installation and installation hooks remain unproven; repeat a task beyond this small version-comparison fixture |
-| Deadline, revocation and cleanup | Request/deadline bounds in upstream; TLS revocation tests; [real controller crash](research/kvm-controller-crash-2026-09-13.json) and normal supervised cleanup | Exercise interruption/recovery of the complete installable route; retain external watchdogs and immutable task limits |
-| Idempotent DAIA delivery | Changed retry rejected, exact retry retained one stored result; source matched independent evaluator | Native Codex MCP delivery and exact retry now have a [live subscription result](research/native-subscription-mcp-delivery-2026-09-13.json), with independent evaluation of the stored artifact. A [real failed-run pending receipt](research/real-native-pending-recovery-2026-09-13.json) was recovered without new work or model calls. A [live worker replacement](research/native-worker-crash-recovery-2026-09-13.json) now completes from original input with the same gateway budget and consent, followed by independent evaluation. Partial-work checkpoints and controller/host reboot recovery remain open |
-| Reproducible installation | Core channel and tested server/guest fixtures are in the repository | Full launcher still depends on private lab scripts, runtime templates and service setup. A clean installation must work without those private paths or pre-existing lab state |
-| Durable evidence | Test fixtures, scoped reports and code are on the research branch | Keep new reports tied to the exact tested bundle and candidate; do not confuse publication of a fixture with installation readiness |
+| Original client and own subscription | Pinned native client; complete real second-host cycle linked above | Same route from a clean participant setup; no synthetic-response or paid-API substitution |
+| Official login, refresh and restart | [Trusted profile preparation](research/native-profile-preparation-2026-09-13.json), [native lifecycle](research/second-host-native-auth-lifecycle-2026-09-13.json), refresh during the complete cycle | Integrate participant-operated initial login into clean installation; distinguish local unbinding from provider-side revocation |
+| Credentials outside task execution | External credential service and assignment helper; complete cycle uses no guest provider credential | Malicious guest inspection of synthetic host credentials through files, processes, inherited handles and tool subprocesses in the packaged deployment |
+| Inference-only account capability | Fixed upstream, discarded guest headers, bounded request fields and negative channel tests | Entire installed route: no alternate network path, unexpected gateway or inherited connector. Endpoint refusal is not exhaustive account confinement or provider approval |
+| Host files and private networks | KVM/service separation; [loopback canaries](research/kvm-egress-canaries-2026-09-13.json), [DNS rebinding](research/kvm-dns-rebinding-2026-09-13.json), [mixed/CNAME checks](research/wire-dns-mixed-cname-2026-09-13.json) | Whole-worker synthetic browser/SSH/socket/file canaries and controlled live LAN/VPN targets, including redirects and DNS changes through every available tool path |
+| Useful research, patching and tests | Complete second-host version task; [second outcome-summary task](research/outcome-summary-subscription-task-2026-09-13.json) independently evaluated, though its native turn needed bounded receipt recovery | General dependency installation/hooks and unattended completion across representative tasks remain unproven |
+| Deadline, revocation and cleanup | Complete normal shutdown; [controller crash](research/kvm-controller-crash-2026-09-13.json); persistent revocation and overlay removal | Interruption and recovery of the complete clean installation, including host/controller restart, without resetting consent or budgets |
+| Idempotent DAIA delivery | Native MCP exact retry stores one result; [pending recovery](research/real-native-pending-recovery-2026-09-13.json); [worker replacement](research/native-worker-crash-recovery-2026-09-13.json) | Partial-work checkpoints and controller/host reboot recovery remain open |
+| Reproducible installation | [Repository controller](research/repository-subscription-controller-2026-09-13.json), public preparation scripts and [fresh dependency-cache preparation](research/clean-subscription-preparation-2026-09-13.json) | Fresh preparation reused trusted tools, image and request template; it did not provision a host or boot a guest. Demonstrate the entire route without pre-existing lab setup |
+| Durable evidence | Public code and dated scoped reports; exact source/hash for the successful cycle | Tie the final installable candidate to all acceptance evidence; green CI and publication do not prove release readiness |
 
-## Next implementation sequence
+## Next acceptance sequence
 
-1. Bring the complete Linux launcher into a reviewable repository package. Inventory
-   the live harness's actual dependencies first: pinned base/client images, seed
-   generation, separate service identities, credential-free approved task input,
-   fixed relays, external native-auth refresh and supervisor cleanup. Remove
-   implicit private paths and pre-existing state; retain the existing limits.
-2. Recreate that package from a clean lab directory and run the existing positive
-   fixture with the unchanged independent evaluator. Missing dependencies must
-   fail before task execution; never fall back to host execution or broader rights.
-3. Run hostile host/account/network probes against that same package, then crash
-   and recreate its worker while recovering the exact pending assignment/result.
-   Verify cleanup externally and preserve original consent and receipt semantics.
-4. Only after these gates pass, consider participant installation. Public admission,
-   unattended deployment and broader provider-account guarantees are not implied
-   by the present lab results.
+1. Reproduce host provisioning and preparation using the public installation
+   guidance and pinned inputs. Record which steps require the participant or an
+   administrator. Existing lab accounts, templates or private setup scripts must
+   not silently satisfy a clean-installation check.
+2. Run the original native client with participant-authorized subscription access
+   in that installation, then independently evaluate its exact submitted output.
+3. Execute the whole-worker hostile host/account/network probes and lifecycle
+   interruption tests against the same package. Observe refusals and cleanup from
+   outside the worker; retain fixed consent, deadlines and request accounting.
+4. Assess participant readiness only against those results. Do not repeat an
+   unchanged positive lab fixture as a substitute for missing acceptance evidence.
 
 These steps do not authorize new spending, outside contact, account sharing,
 provider token pooling, increased consent or weakened security boundaries.
+
+## Historical implementation and experiment log
+
+The following entries describe the state when each experiment was recorded.
+Use the current table above to identify what is still open.
 
 ## First launcher extraction
 
