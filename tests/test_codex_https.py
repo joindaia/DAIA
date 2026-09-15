@@ -37,6 +37,8 @@ def provider(tmp_path, monkeypatch):
             body = self.rfile.read(int(self.headers['Content-Length']))
             state['seen'].append((self.path, dict(self.headers), body))
             state['started'].set()
+            if state.get('header_delay'):
+                time.sleep(state['header_delay'])
             self.send_response(state['status'])
             for value in state.get('content_types', ['text/event-stream']):
                 self.send_header('Content-Type', value)
@@ -144,6 +146,41 @@ def test_chunked_size_limit(provider):
     provider[1].update(framing=[('Transfer-Encoding', 'chunked')],
                        wire=f'{len(data):x}\r\n'.encode() + data + b'\r\n0\r\n\r\n')
     with pytest.raises(Denied): binding(provider)(b'{}')
+
+
+def test_delayed_tls_headers_use_response_inactivity_limit(provider):
+    provider[1]['header_delay'] = 5.5
+    adapter = binding(provider, seconds=10)
+    deadline = adapter._deadline
+    assert adapter(b'{}') == b'data: {}\n\n'
+    assert adapter._deadline == deadline and adapter.transport_failure is None
+
+
+def test_deadline_interrupts_delayed_tls_headers(provider):
+    state = provider[1]
+    state['header_delay'] = 3
+    adapter = binding(provider, seconds=.3)
+    result = []
+
+    def request():
+        try:
+            adapter(b'{}')
+        except Denied:
+            result.append('denied')
+
+    thread = threading.Thread(target=request)
+    thread.start()
+    try:
+        assert state['started'].wait(2)
+        thread.join(1)
+        assert not thread.is_alive(), 'header read outlived assignment deadline'
+        assert result == ['denied']
+        assert adapter.transport_failure is not None
+        assert adapter.transport_failure['phase'] == 'headers'
+    finally:
+        adapter.revoke()
+        thread.join(4)
+
 
 
 def test_continuous_tls_chunks_stop_at_deadline(provider):

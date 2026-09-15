@@ -14,15 +14,22 @@ import pwd
 from pathlib import Path
 import subprocess
 import uuid
+from subscription_lab_outcome import write_outcome
 from subscription_lab_identity import check_identities
 from subscription_lab_shutdown import verify as verify_revocation
 
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ("guest", "request-template", "auth-home", "codex-binary", "python-runtime"):
     parser.add_argument("--" + name, type=Path, required=True)
+parser.add_argument("--prepared-host-image", type=Path)
+parser.add_argument("--prepared-host-sha256")
 parser.add_argument("--native-delivery", action="store_true")
 parser.add_argument("--crash-before-first-response", action="store_true")
 args = parser.parse_args()
+if bool(args.prepared_host_image) != bool(args.prepared_host_sha256):
+    parser.error("Prepared image and hash required together.")
+# Installation has a separate bounded allowance; the assignment stays at 150s.
+controller_seconds = 330 if args.prepared_host_image else 210
 if os.geteuid() != 0:
     parser.error("Requires the preconfigured lab administrator.")
 check_identities()  # Before lock/state cleanup, service startup or credential access.
@@ -46,19 +53,22 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
     command = [
         "systemd-run", "--quiet", "--wait", "--unit=" + unit,
         "--setenv=DAIA_CONTROLLER_UNIT=" + unit,
-        "-p", "Type=exec", "-p", "RuntimeMaxSec=210",
+        "-p", "Type=exec", "-p", "RuntimeMaxSec=" + str(controller_seconds),
+        "-p", "RuntimeDirectory=" + unit.removesuffix(".service"),
+        "-p", "RuntimeDirectoryMode=0755",
         "-p", "KillMode=control-group", "-p", "TimeoutStopSec=5",
         "-p", "ExecStopPost=/usr/bin/rm -f -- " + " ".join(paths),
         str(args.python_runtime / "bin/python"),
         str(repo / "scripts/run_subscription_lab_controller.py"),
     ]
     for name, value in vars(args).items():
+        if value is None: continue
         if name in ("native_delivery", "crash_before_first_response"):
             if value: command += ["--" + name.replace("_", "-")]
             continue
         command += ["--" + name.replace("_", "-"), str(value)]
     try:
-        run = subprocess.run(command, capture_output=True, timeout=230)
+        run = subprocess.run(command, capture_output=True, timeout=controller_seconds + 20)
         clean = not any(Path(p).exists() for p in paths)
         print(json.dumps({"controller_exit": run.returncode,
                           "supervised_endpoints_and_handoffs_removed": clean}), flush=True)
@@ -70,6 +80,7 @@ with open("/run/daia-subscription-lab.lock", "a") as lock:
         data = json.loads(result.read_text())
         data.update(normal_supervised_controller_exit=0, supervised_cleanup_complete=clean,
                     persistent_model_authority_revoked=revoked)
+        write_outcome(Path(recorded["state_directory"]) / "integrated-report-private.json", data)
         Path("/run/daia-assembled-subscription-result.json").write_text(json.dumps(data))
         print(json.dumps({k: data[k] for k in (
             "results", "overlay_removed", "rotation", "model_channel_counts",
