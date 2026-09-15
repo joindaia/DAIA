@@ -1,0 +1,22 @@
+{
+  "test": "real KVM service crash and fresh bounded storage",
+  "date": "2026-09-13",
+  "real_kvm_running_before_kill": true,
+  "state_in_all_four_mounts_before_kill": true,
+  "main_killed_with_sigkill": true,
+  "cgroup_empty": true,
+  "recorded_processes_gone": true,
+  "host_directory_unchanged": true,
+  "termination_seconds": 0.064,
+  "restart": {
+    "fresh_four_mounts_empty": true,
+    "fresh_writes_succeeded": true
+  },
+  "credentials_used": false,
+  "model_requests": 0,
+  "limitations": [
+    "Fresh service, not a second VM or restored DAIA assignment.",
+    "No provider authentication or receipt recovery in this trial.",
+    "Targets service main process death, not host reboot or all possible namespace leaks."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-13",
+  "scope": "automatic post-stop authority verification",
+  "tests": {
+    "passed": 52,
+    "failed": 0,
+    "command": "python -m pytest -q tests/test_subscription_lab_shutdown.py tests/test_subscription_lab_authority.py tests/test_subscription_crash_rendezvous.py tests/test_request_ledger.py tests/test_lab_optimization.py tests/test_subscription_lab_identity.py"
+  },
+  "service_probe": {
+    "script": "scripts/probe_authority_service_cleanup.py",
+    "child_reserved_before_kill": true,
+    "signal": "SIGKILL",
+    "remaining_after_stop": 0,
+    "stop_handler_persisted_revocation": true,
+    "model_endpoint_removed": true,
+    "supervisor_revocation_check": true,
+    "private_network": true,
+    "real_credentials_used": false,
+    "provider_requests": 0
+  },
+  "limits": [
+    "Full native subscription run not repeated for this final success-gate addition.",
+    "Old records lacking the exact controller identity are rejected, not migrated.",
+    "No full controller recovery, host-reboot recovery or new resume authority established."
+  ]
+}

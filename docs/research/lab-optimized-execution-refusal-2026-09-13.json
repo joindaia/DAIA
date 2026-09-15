@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-13",
+  "scope": "Early refusal of optimized execution for six trusted lab entrypoints",
+  "entrypoints": [
+    "run_subscription_lab.py",
+    "run_subscription_lab_controller.py",
+    "subscription_lab_helper.py",
+    "probe_subscription_channel_server.py",
+    "probe_pending_receipt_lab.py",
+    "probe_lab_installation.py"
+  ],
+  "modes_tested": [
+    "isolated Python with -O",
+    "PYTHONOPTIMIZE=2"
+  ],
+  "refusal_checks": 12,
+  "targeted_tests_passed": 36,
+  "provider_requests": 0,
+  "services_started": false,
+  "limitations": [
+    "This does not replace all assertions in the repository",
+    "Normal-mode full VM was not repeated",
+    "Worker code can change its own assertions; external enforcement remains necessary"
+  ]
+}

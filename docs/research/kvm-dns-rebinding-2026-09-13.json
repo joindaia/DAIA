@@ -1,0 +1,98 @@
+{
+  "real_kvm_guest_ready": true,
+  "guest_verified_three_endpoints": true,
+  "synthetic_credentials_only": true,
+  "model_requests": 0,
+  "controller_killed_with_sigkill": true,
+  "python_cleanup_not_run": true,
+  "all_five_cgroups_empty": true,
+  "all_three_endpoints_unreachable": true,
+  "overlay_removed": true,
+  "transient_handoffs_removed": true,
+  "termination_seconds": 0.104,
+  "canary": {
+    "handled": 5,
+    "control_connections": 20,
+    "unexpected_connections": 0,
+    "wire_dns": true,
+    "dns_queries": [
+      {
+        "name": "rebind4.daia.invalid",
+        "type": 1,
+        "private_phase": false,
+        "answers": [
+          "1.1.1.1"
+        ]
+      },
+      {
+        "name": "rebind4.daia.invalid",
+        "type": 28,
+        "private_phase": false,
+        "answers": []
+      },
+      {
+        "name": "rebind4.daia.invalid",
+        "type": 1,
+        "private_phase": true,
+        "answers": [
+          "127.0.0.1"
+        ]
+      },
+      {
+        "name": "rebind4.daia.invalid",
+        "type": 28,
+        "private_phase": true,
+        "answers": []
+      },
+      {
+        "name": "rebind6.daia.invalid",
+        "type": 1,
+        "private_phase": false,
+        "answers": []
+      },
+      {
+        "name": "rebind6.daia.invalid",
+        "type": 28,
+        "private_phase": false,
+        "answers": [
+          "2606:4700:4700::1111"
+        ]
+      },
+      {
+        "name": "rebind6.daia.invalid",
+        "type": 1,
+        "private_phase": true,
+        "answers": []
+      },
+      {
+        "name": "rebind6.daia.invalid",
+        "type": 28,
+        "private_phase": true,
+        "answers": [
+          "::1"
+        ]
+      }
+    ],
+    "public_connections": {
+      "4": 1,
+      "6": 1
+    }
+  },
+  "date": "2026-09-13",
+  "host_test_addresses_absent_after_cleanup": true,
+  "test_address_scope": "Public-classified IPv4/IPv6 addresses assigned only to loopback inside the private research-service network namespace; no Internet traffic",
+  "guest_observations": [
+    "IPv4 public DNS phase: CONNECT 200 and exact public-canary-4 payload",
+    "Same IPv4 name after DNS change to loopback: CONNECT 403",
+    "IPv6 public DNS phase: CONNECT 200 and exact public-canary-6 payload",
+    "Same IPv6 name after DNS change to loopback: CONNECT 403"
+  ],
+  "limitations": [
+    "Authoritative UDP fixture with zero-TTL responses; no recursive resolver, cache or DNSSEC coverage",
+    "Tests changes between consecutive requests, not every intra-request race or CNAME/mixed-answer scenario",
+    "Private targets are reachable service-namespace loopback canaries, not a live LAN/VPN",
+    "Public-address payload is plain TCP behind CONNECT; no TLS/redirect/account capability claim",
+    "No real subscription credential, model request or provider endpoint",
+    "Lab controller remains private and not production packaged; companion fixtures require that harness"
+  ]
+}

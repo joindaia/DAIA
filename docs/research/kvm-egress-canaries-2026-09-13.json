@@ -1,0 +1,44 @@
+{
+  "real_kvm_guest_ready": true,
+  "guest_verified_three_endpoints": true,
+  "synthetic_credentials_only": true,
+  "model_requests": 0,
+  "controller_killed_with_sigkill": true,
+  "python_cleanup_not_run": true,
+  "all_five_cgroups_empty": true,
+  "all_three_endpoints_unreachable": true,
+  "overlay_removed": true,
+  "transient_handoffs_removed": true,
+  "termination_seconds": 0.053,
+  "canary": {
+    "handled": 3,
+    "control_connections": 12,
+    "unexpected_connections": 0,
+    "os_resolver_hosts_file": true,
+    "wire_dns": false,
+    "resolved_addresses": {
+      "v4.daia.invalid": [
+        "127.0.0.1"
+      ],
+      "v6.daia.invalid": [
+        "::1"
+      ]
+    }
+  },
+  "date": "2026-09-13",
+  "guest_requests": [
+    "GET /forbidden to model gateway: 403",
+    "GET /forbidden to research gateway: 403",
+    "CONNECT v4.daia.invalid:443 through research gateway: 403",
+    "CONNECT v6.daia.invalid:443 through research gateway: 403",
+    "assignment helper initialize: success"
+  ],
+  "limitations": [
+    "Uses actual OS hosts-file resolution, not wire DNS or DNS rebinding",
+    "Canaries are in the research-service private network namespace, not a live LAN or VPN",
+    "No actual provider credential or model request",
+    "CAP_NET_BIND_SERVICE added only to test listener service; worker and production policy unchanged",
+    "Private lab controller not yet production packaged; companion server is not a standalone worker launcher",
+    "No general filesystem or provider-account confinement claim"
+  ]
+}

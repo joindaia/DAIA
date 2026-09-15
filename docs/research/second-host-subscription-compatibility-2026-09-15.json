@@ -1,0 +1,81 @@
+{
+  "date": "2026-09-15",
+  "native_client": "Codex 0.153.4",
+  "model": "gpt-5.6-luna",
+  "tested_revision": "0b65e151911292e905428ed4919b89aeb3d1fd40",
+  "environment": "Dedicated second host, Ubuntu WSL2, disposable KVM guest, separate service identities",
+  "native_binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "initial_failure": {
+    "revision": "e1ea39ffc193e197ddf01ced1801fd894f9e48ff",
+    "provider_attempts": 0,
+    "completed_forwards": 0,
+    "denied": 24,
+    "delivery": "unconfirmed"
+  },
+  "header_fix": {
+    "revision": "782a47ca01f851fc67364400d7149ea0aaf5ec4f",
+    "discarded_exact_header": "x-openai-internal-codex-responses-lite",
+    "focused_tests_passed": 142
+  },
+  "request_diagnostic": {
+    "trials": 2,
+    "provider_attempts_per_trial": 1,
+    "completed_forwards_per_trial": 1,
+    "delivery": "unconfirmed",
+    "diagnostic_probe_sha256": "8acf7a33747751421df27651d122920db9cd4be842384fd733a49ccf9d78834d",
+    "denial_stage": "request",
+    "denial_source": "model_request.py:153 at 782a47c",
+    "diagnostics": "Source line numbers only; no request or provider payload recorded by probe"
+  },
+  "synthetic_native_capture": {
+    "provider_calls": 0,
+    "qualified_exec_executed": true,
+    "bare_exec_executed": true,
+    "flat_dotted_name_executed": false,
+    "frozen_template_and_catalog_unchanged": true,
+    "corrected_gate_accepts_qualified_and_unambiguous_bare_exec": true,
+    "corrected_gate_denies_flat_name": true
+  },
+  "corrected_trial": {
+    "provider_attempts": 4,
+    "completed_forwards": 4,
+    "denied": 24,
+    "elapsed_seconds": 68.36,
+    "worker_exit": 1,
+    "worker_completed": false,
+    "delivery": "acknowledged",
+    "results": 1,
+    "heartbeat_seen": true,
+    "submission_calls": 2,
+    "first_receipt_hidden": true,
+    "exact_retry_already_recorded": true,
+    "previous_ledger_unchanged": true,
+    "persistent_model_revocation_verified": true,
+    "active_daia_services_after_evaluation": false
+  },
+  "independent_evaluation": {
+    "network_none": true,
+    "cases_passed": 10,
+    "original_failed": true,
+    "candidate_separate_uid": true,
+    "parent_compares_results": true,
+    "source_sha256": "64588245b26f53bf5d6db61d787aec0a08ea446f268e97d0f0584949987aa215",
+    "matches_stored_source": true,
+    "model_source_changed": false,
+    "overlay_removed": true,
+    "provider_calls": 0
+  },
+  "focused_tests_passed": 163,
+  "limits_unchanged": {
+    "maximum_provider_requests_per_trial": 6,
+    "model_access_seconds_per_trial": 150,
+    "old_authority_reset": false
+  },
+  "limitations": [
+    "Client receives 403 after acknowledged delivery; normal client/controller completion remains unproven in this second-host run.",
+    "The stored source passed a bounded development fixture, not arbitrary task correctness.",
+    "Existing login, approved fixture and prepared lab reused; not a clean participant installation.",
+    "Comprehensive account/network confinement and the separately planned adversarial trial remain open.",
+    "Earlier aborted runs are separate observations, not successful whole-worker trials."
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-13",
+  "tested_commit": "6cd9569",
+  "scope": "First full VM trial after real MCP claim and no-dev runtime change",
+  "controller_exit": 1,
+  "provider_attempts": 1,
+  "provider_http_status": 200,
+  "completed_provider_responses": 0,
+  "denied_requests": 24,
+  "native_refresh_completed": false,
+  "delivery": "unconfirmed",
+  "automatic_retry_authorized": false,
+  "supervised_cleanup_complete": true,
+  "failure": "upstream transport failed",
+  "precise_transport_cause": "not recorded; cannot determine retrospectively",
+  "followup": "Fixed operator-only phase/kind categories added; exception text and provider bytes excluded",
+  "followup_regression_tests": 65,
+  "limits_changed": false,
+  "additional_provider_trial": false,
+  "limitations": [
+    "Full no-dev runtime subscription run remains unproven",
+    "No artifact was available for independent evaluation",
+    "HTTP 200 is not a completed model response"
+  ]
+}
