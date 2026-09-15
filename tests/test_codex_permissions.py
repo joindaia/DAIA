@@ -60,6 +60,9 @@ print('native command boundary passed')
             env=env, stdin=subprocess.DEVNULL, close_fds=True,
             capture_output=True, text=True, timeout=20,
         )
+        listener.settimeout(.2)
+        with pytest.raises(socket.timeout):
+            listener.accept()
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "native command boundary passed"
     assert (workspace / "result.txt").read_text() == "workspace write succeeded"
