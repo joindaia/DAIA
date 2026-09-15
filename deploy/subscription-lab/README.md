@@ -387,3 +387,28 @@ The previous failed trial and diagnostic-retention change are described in
 [second-host evidence](../../docs/research/second-host-failure-retention-2026-09-13.md).
 These instructions add no login, consent renewal, scheduling, automatic recovery
 or release authority.
+
+## Fresh RAM-host provisioning experiment (15 September 2026)
+
+A fresh networkless KVM guest, using the pinned Ubuntu base and a 512 MiB
+RAM-backed writable overlay, installed the public sysusers/tmpfiles manifests.
+Its trusted probe first checked the four accounts were absent, then verified four
+distinct nonroot nologin accounts, five directory modes and repeat installation
+without passwd changes. Nested `/dev/kvm` returned API version 12. The outer
+service stopped and its RAM overlay was removed. No provider was used.
+
+The initial empty network configuration delayed cloud-init until roughly 137 s
+and exceeded the 150 s limit. Using the existing evaluator's optional, DHCP-free
+network configuration allowed normal guest poweroff around 45 s. The host report
+parser still rejected the result: cloud-init prefixed its valid report with a
+timestamp and process label. A diagnostic run captured the successful report at
+14.22 s. Offline replay accepted that exact prefixed report and a bare report, and
+rejected duplicates, a wrong nonce and an unexpected prefix (five checks). No VM
+was rerun after the parser correction; the whole harness must still complete
+normally before it is advertised as a working installation test.
+
+This is provisioning evidence from a trusted test payload, not hostile-guest
+attestation. It reuses the host QEMU and pinned base and does not install QEMU,
+Python dependencies or provider authentication in the fresh guest. Nor does KVM
+API availability alone prove a nested worker has booted. Those remain subsequent
+clean-installation steps. The experimental harness is not yet a public installer.
