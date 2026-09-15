@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-13",
+  "scope": "Dated Ubuntu metadata signature and exact existing base-image verification",
+  "source": "https://cloud-images.ubuntu.com/noble/20260911/",
+  "image": "noble-server-cloudimg-amd64.img",
+  "sha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+  "bytes": 625256960,
+  "signature_verified_with_system_cloudimage_keyring": true,
+  "fresh_dated_metadata_downloaded": true,
+  "tampered_manifest_rejected": true,
+  "wrong_image_rejected": true,
+  "regression_tests": 7,
+  "image_replaced": false,
+  "guest_booted": false,
+  "limitations": [
+    "Trusted keyring installation assumed",
+    "No image vulnerability audit",
+    "No full image redownload or clean-host installation in this step"
+  ]
+}

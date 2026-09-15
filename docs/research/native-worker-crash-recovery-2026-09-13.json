@@ -1,0 +1,84 @@
+{
+  "date": "2026-09-13",
+  "scope": "Live original Codex subscription: one injected worker crash before first response delivery, fresh worker on same assignment and live model gateway, independently evaluated stored artifact",
+  "worker_crash_recovery": {
+    "kill_succeeded": true,
+    "fresh_worker_directory": true,
+    "old_storage_removed": true,
+    "same_assignment": true,
+    "provider_calls_before_restart": 1,
+    "gateway_restarted": false,
+    "transport_deadline_reset": false
+  },
+  "model_channel_counts": {
+    "forwarded": 6,
+    "denied": 47,
+    "attempts": 6
+  },
+  "rotation": {
+    "native_refresh_completed": true,
+    "account_unchanged": true,
+    "native_restart_completed": true,
+    "deadline_preserved": true,
+    "rotation_after_provider_requests": 1
+  },
+  "results": 1,
+  "native_delivery_audit": [
+    {
+      "operation": "heartbeat",
+      "status": null
+    },
+    {
+      "operation": "submit_result",
+      "status": "in_review",
+      "receipt_hidden": true
+    },
+    {
+      "operation": "submit_result",
+      "status": "already_recorded"
+    }
+  ],
+  "native_exit": 0,
+  "turn_completed": true,
+  "test_unchanged": true,
+  "saved_identity_and_consent_unchanged": true,
+  "supervised_cleanup_complete": true,
+  "overlay_removed": true,
+  "artifact_comparison": {
+    "stored_source_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "workspace_source_sha256": "251cc1ea58d270dab098c62775756430f74385ef207b11949c87b0fba96f9b1e",
+    "byte_equal": false,
+    "equal_without_trailing_whitespace": true,
+    "stored_bytes": 563,
+    "workspace_bytes": 564
+  },
+  "evaluator": {
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "proposal_sha256": "b891ceefdac53bc606bdad524d4df3104b62dcab2b82f3cbd6fb0b0c53b8b04b",
+    "format_normalized": false,
+    "model_source_changed": false,
+    "provider_credentials_present": false
+  },
+  "evaluator_overlay_removed": true,
+  "evaluator_network": "QEMU -nic none; no provider credentials supplied",
+  "bundle_sha256": {
+    "base.qcow2": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "bridge.py": "1bb6938b40988bd4acb8a6ad3486cbfd809bc23c8822af61d3490aa82ee6ec1e",
+    "launcher.py": "4124a2991b148ec0e48882ad21a0f5ce57f01a929c3e97edb83c1fada016ad76",
+    "model-bridge.py": "d14fc3ed7ef94ea0e41d67ae8fd3df10d2f5e023a21b8b8df5ef32bfbc49e129",
+    "network-config.json": "ab12a175a731f4ecd1ea74838f88bed4af1f7d6df7e8747e07478c2f90d199d1",
+    "network-seed.iso": "d9ee105f1b760ac3f465db342323bcd7c25aa9f54f48ba92bb1deed8aa8b06c1",
+    "report-wrapper.py": "dbd258e70ba4043a41c03f7b9f0aad87eae8b585752fa66d7023cf7df9ef3fdb",
+    "research-bridge.py": "ec1472c1d6e36299766ba1f7a4d08be95fd9f840315cca34bf23f9b0472b2d09"
+  },
+  "regression_tests": 16,
+  "earlier_attempt": "Six successful requests but missing correlation report; serial writer had no leading newline. Corrected writer passed the strict unchanged parser in this trial.",
+  "limitations": [
+    "One small public development fixture, not general productivity evidence",
+    "First response discarded; no partial workspace checkpoint restored",
+    "Model gateway stayed alive; controller/host reboot budget recovery remains open",
+    "Clean participant installation and comprehensive account/network boundary validation remain open"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-13",
+  "scope": "Native systemd account/directory provisioning in a fresh temporary root",
+  "distinct_nonroot_accounts": 4,
+  "verified_directories": 5,
+  "repeat_keeps_account_files_identical": true,
+  "host_passwd_and_group_unchanged": true,
+  "temporary_root_removed": true,
+  "credentials_used": false,
+  "services_started": false,
+  "limitations": [
+    "Not a full participant installer",
+    "No existing-state migration tested",
+    "Runtime, base image, client and trusted login not provisioned",
+    "No complete VM test from freshly provisioned identities"
+  ]
+}

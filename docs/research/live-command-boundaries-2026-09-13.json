@@ -1,0 +1,35 @@
+{
+  "date": "2026-09-13",
+  "scope": "Explicit credential-free Linux namespace/MCP and pinned native Codex command-boundary tests",
+  "namespace_and_mcp": {
+    "passed": 9,
+    "seconds": 2.75,
+    "skipped": 0
+  },
+  "native_codex": {
+    "passed": 1,
+    "seconds": 0.26,
+    "binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+    "clean_configuration_home": true
+  },
+  "strengthened_checks": [
+    "Live host loopback listener accepts control connection before sandbox launch",
+    "Sandbox must fail connection attempt",
+    "External host listener must receive no subsequent connection"
+  ],
+  "covered": [
+    "Approved read-only input and scratch output",
+    "Synthetic host file and symlink exclusion",
+    "Cleared inherited environment and stdin",
+    "Wall-clock and combined output bounds",
+    "Only explicit assignment socket reachable",
+    "Real isolated MCP submission for assigned work"
+  ],
+  "provider_requests": 0,
+  "limitations": [
+    "Command and namespace boundaries, not entire participant installation",
+    "Not a new KVM guest trial",
+    "No exhaustive LAN/VPN/IPv6 or provider-account capability claim",
+    "No host reboot performed"
+  ]
+}

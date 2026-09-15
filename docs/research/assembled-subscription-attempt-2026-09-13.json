@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-13",
+  "status": "failed",
+  "stage": "missing guest correlation result",
+  "model_audit": {
+    "forwarded": 3,
+    "attempts": 4,
+    "denied": 24,
+    "credential_rotated": true,
+    "deadline_preserved": true
+  },
+  "supervised_cleanup_complete": true,
+  "independent_evaluation": "not performed: no completed guest result",
+  "limits": "Existing six-request/150-second provider bounds; four temporary mounts; no consent renewal",
+  "diagnostic_wrapper": "Added after this failed trial; process test passed, not yet live-integrated"
+}

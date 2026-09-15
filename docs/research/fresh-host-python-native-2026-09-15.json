@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-15",
+  "runtime_source_commit": "7b9345f6857918ac914a965d2b96bc09a3ed485e",
+  "public_probe_base": "321a1e9e87232566ce171913d7cf72dba6dc57a6",
+  "modified_trusted_fixture": true,
+  "fixture_sha256": "244d6cc9ed15436d2bde8fe14d2a60a485279beee8d8d5657905f16f43a1b26e",
+  "dependency_lock_sha256": "f0520969c2ad850cc9103874ed0dd7b443082af0a9308124a2d4f879f9cc7c3d",
+  "daia_wheel_sha256": "e99354c4eb19eca419b67ed494aa1f56289ea4507b86cce554b464b97039458f",
+  "python_archives": {
+    "third_party_wheels": 30,
+    "exported_from_frozen_lock": true,
+    "require_hashes_download": true,
+    "require_hashes_guest_install": true,
+    "no_index_guest_install": true,
+    "bundle_sha256": "305f724716b01738b29ee2332e8b5a25e9e2c574058870d86bfa5f47dc6de333"
+  },
+  "native_codex": {
+    "version": "0.153.4",
+    "sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+    "companion_sha256": "3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45",
+    "installed_into_guest": true,
+    "version_command_passed": true
+  },
+  "guest_checks": {
+    "daia_cli_help": true,
+    "daia_contributor_mcp_cryptography_import": true,
+    "qemu_initially_absent": true,
+    "offline_os_tools_install": true,
+    "python_venv_and_pip": true,
+    "four_fresh_service_accounts": true,
+    "repeated_provisioning_idempotent": true,
+    "directory_modes_checked": 5,
+    "nested_kvm_api": 12,
+    "nested_qemu_monitor_reports_kvm_enabled": true
+  },
+  "isolation": {
+    "guest_network_adapter": false,
+    "private_outer_network_namespace": true,
+    "provider_calls": 0,
+    "provider_credentials": false,
+    "package_media_read_only": true,
+    "guest_ram_mib": 2048,
+    "ram_overlay_mib": 1024,
+    "service_memory_gib": 4,
+    "swap_bytes": 0
+  },
+  "result": {
+    "exit": 0,
+    "service_stopped": true,
+    "ram_overlay_removed": true
+  },
+  "prior_failure": "Generated guest code had an unterminated string in the nested-QEMU monitor input. Corrected string construction and added pre-boot syntax compilation; failed VM was cleaned up.",
+  "limitations": [
+    "Nested QEMU initialized with KVM and remained paused; no nested worker OS boot or assignment executed.",
+    "Native Codex --version is an installation check, not model inference or subscription authentication.",
+    "No full hostile-worker/account/network acceptance or reboot recovery in this run.",
+    "Modified experiment based on public probe; not yet a general participant installer.",
+    "115 Ubuntu archives supplied; some dependencies already existed in the pinned base image."
+  ]
+}

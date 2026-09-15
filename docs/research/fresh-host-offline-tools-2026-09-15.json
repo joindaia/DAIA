@@ -1,0 +1,57 @@
+{
+  "date": "2026-09-15",
+  "public_probe_base": "321a1e9e87232566ce171913d7cf72dba6dc57a6",
+  "modified_trusted_fixture": true,
+  "fixture_sha256": "7f2c22c7077e36c2a1abad220b8c6f827bcb72f7ce1b4cb6bf105bffd2204973",
+  "credential_free": true,
+  "provider_calls": 0,
+  "acquisition": {
+    "archives": 115,
+    "bytes": 52290180,
+    "all_match_preplanned_sha256": true,
+    "installed_on_outer_host": false
+  },
+  "fresh_guest": {
+    "base_sha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "network_adapter": false,
+    "private_outer_network_namespace": true,
+    "public_package_iso_read_only": true,
+    "qemu_initially_absent": true,
+    "qemu_system_version_command_passed": true,
+    "qemu_img_version_command_passed": true,
+    "genisoimage_version_command_passed": true,
+    "python_venv_creation_passed": true,
+    "venv_pip_version_passed": true,
+    "service_identities": 4,
+    "repeat_identity_provisioning_idempotent": true,
+    "directory_mode_checks": 5,
+    "nested_kvm_api": 12
+  },
+  "limits": {
+    "guest_memory_mib": 2048,
+    "service_memory_gib": 4,
+    "swap_bytes": 0,
+    "ram_overlay_mib": 1024,
+    "guest_timeout_seconds": 240,
+    "service_timeout_seconds": 270
+  },
+  "result": {
+    "entrypoint_exit": 0,
+    "guest_exit": 0,
+    "service_stopped": true,
+    "ram_overlay_removed": true
+  },
+  "diagnosis": {
+    "first_attempt": "APT --no-download rejected local archive acquisition; guest failed and was cleaned up.",
+    "diagnostic_retry": "Same failure with bounded full APT diagnostics.",
+    "correction": "Removed --no-download; local file acquisition succeeded with the VM still physically networkless.",
+    "successful_guest_command": "apt-get --yes --no-install-recommends install /media/daia-packages/*.deb"
+  },
+  "limitations": [
+    "115 archives were supplied, not 115 newly installed packages: many dependencies already existed in the base image. The raw fixture field offline_packages_installed is misleading and must not be used as an installed-package count.",
+    "Modified experimental fixture based on public probe, not yet a shipped general installer.",
+    "Reuses pinned outer-host QEMU and base image; nested KVM API availability does not prove nested worker boot.",
+    "DAIA Python dependencies and native Codex installation in this fresh host remain untested.",
+    "No subscription, full hostile-worker acceptance or reboot recovery tested here."
+  ]
+}

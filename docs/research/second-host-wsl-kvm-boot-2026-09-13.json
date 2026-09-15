@@ -1,0 +1,45 @@
+{
+  "date": "2026-09-13",
+  "scope": "Second-host credential-free WSL2/KVM installation and guest boot",
+  "source_commit": "c26f4f4ad5d746f6e20724c6135456eb0a3d8b9f",
+  "environment": {"distribution": "Ubuntu 24.04.4 LTS", "wsl_kernel": "6.6.87.2-microsoft-standard-WSL2", "qemu": "8.2.2", "windows_administrator_runtime": false},
+  "installation": {
+    "ssh_key_authentication": true,
+    "distribution_install_via_ssh": "rejected: Wsl/0x800705b3; participant subsequently installed distribution interactively",
+    "linux_package_installation": "performed by trusted installer as distribution root",
+    "runtime_identity": "separate nonroot service identity",
+    "kvm_api": 12,
+    "diskless_qmp_start_and_clean_exit": true
+  },
+  "base_image": {
+    "source": "https://cloud-images.ubuntu.com/noble/20260911/",
+    "image": "noble-server-cloudimg-amd64.img",
+    "sha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "bytes": 625256960,
+    "ubuntu_signature_and_exact_digest_verified_on_second_host": true
+  },
+  "guest_run": {
+    "exit": 0,
+    "uid_nonroot": true,
+    "private_network": true,
+    "network_none": true,
+    "bundle_verified": true,
+    "overlay_removed": true,
+    "guest_report": {"booted": true, "interfaces": ["lo"], "shared_filesystem": false},
+    "guest_claims_verified": false,
+    "provider_credentials_used": false,
+    "native_codex_executed": false
+  },
+  "observations": [
+    "The guest waited for systemd-networkd-wait-online before eventually completing successfully.",
+    "A requested stop arrived after completion; the collected service was already absent. The original launcher returned success and confirmed overlay removal.",
+    "An explicit empty network configuration was prepared for a follow-up but was not tested in this run."
+  ],
+  "limits": [
+    "This is WSL2/KVM evidence, not native Windows Docker Sandboxes or WHPX evidence.",
+    "Distribution root was used for trusted installation; task execution was nonroot under systemd.",
+    "A successful boot and guest statements do not establish complete hostile-worker confinement.",
+    "Subscription authentication, account confinement, useful task execution and independent evaluation have not been exercised on this second host.",
+    "This does not open admission or establish production readiness."
+  ]
+}

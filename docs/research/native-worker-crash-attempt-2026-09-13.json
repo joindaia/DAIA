@@ -1,0 +1,62 @@
+{
+  "date": "2026-09-13",
+  "status": "incomplete",
+  "fault": "First KVM worker SIGKILL after one real response, before releasing it to the worker",
+  "restart": "New private worker directory and helper, same assignment and live gateway; no model budget reinitialization",
+  "model_counts": {
+    "forwarded": 6,
+    "denied": 47,
+    "attempts": 6,
+    "credential_rotated": true,
+    "last_provider_status": 200,
+    "upstream_failure": null
+  },
+  "helper_audit": [
+    {
+      "operation": "heartbeat",
+      "status": null
+    },
+    {
+      "operation": "submit_result",
+      "status": "in_review",
+      "receipt_hidden": true
+    },
+    {
+      "operation": "submit_result",
+      "status": "already_recorded"
+    }
+  ],
+  "first_attempt": {
+    "successful_forwards": 1,
+    "forward_attempts": 2,
+    "cause": "Not established; replacement worker model call refused"
+  },
+  "second_attempt": {
+    "successful_forwards": 6,
+    "native_submission_and_exact_retry_observed": true,
+    "valid_worker_report_received": false,
+    "cause": "Not established; launcher stderr was discarded",
+    "supervisor_cleanup": true
+  },
+  "diagnostic_fix": "Retain at most 4096 bytes of launcher stderr in private failure export, without relaxing report validation",
+  "tests": {
+    "budget_and_transport": 32,
+    "crash_rendezvous": 2,
+    "updated_wrapper_and_rendezvous": 4
+  },
+  "not_proven": [
+    "successful complete restart report",
+    "independent evaluation of this attempt artifact",
+    "recovery of partial workspace files",
+    "controller or host reboot recovery"
+  ],
+  "diagnostic_followup": {
+    "live_attempts": 2,
+    "crash_injection_reached": false,
+    "cause": "Diagnostic file violated empty-directory preflight.",
+    "fix": "Anonymous temporary diagnostic storage outside working directory; preserve early failure report.",
+    "regression": "Four wrapper/rendezvous checks passed, including empty-directory invariant.",
+    "live_after_fix": "Not yet run",
+    "supervisor_cleanup": true
+  }
+}

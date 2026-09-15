@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-13",
+  "credential_free": true,
+  "model_requests": 0,
+  "checks": [
+    {
+      "modified_bridge_pin_denied_before_disk_creation": true
+    },
+    {
+      "real_kvm_boot": true,
+      "all_five_inputs_hashed": true,
+      "fresh_work_directory": true,
+      "private_network": true,
+      "overlay_removed": true,
+      "guest_output_not_treated_as_verification": true
+    },
+    {
+      "host_network_refused_before_file_creation": true
+    }
+  ],
+  "limitations": [
+    "Startup component only; full service installer not packaged",
+    "Boot fixture does not exercise model, research or assignment relays",
+    "External immutable bundle ownership, resource limits and supervisor cleanup remain mandatory",
+    "Serial size checked after execution; an external disk quota is still required"
+  ]
+}
