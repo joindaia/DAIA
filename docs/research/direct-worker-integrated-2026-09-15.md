@@ -94,6 +94,21 @@ This proves the tested direct network path, not the full DNS, redirect, IPv6 or
 provider-account capability surface. The normal worker network configuration
 was unchanged; the listener was test instrumentation only.
 
+## Assignment discovery through the direct VM route
+
+A credential-free probe on staging manifest `6583afabcbf5151e` used the real
+assignment MCP server with a synthetic host that cannot perform work. Its
+non-root helper and bounded relay were reached through the unchanged prepared
+VM transport. The guest observed exactly `heartbeat` and `submit_result`, empty
+resources, resource templates and prompts, and rejection of an unknown method
+and unknown resource read. The server and relay exited successfully, READY was
+reached without START, the host canary remained unchanged and cleanup left no
+active services. No provider credentials or model requests were used.
+
+This validates discovery across the transport. Signed submission and exact
+receipt recovery are covered separately by the real task and existing helper
+tests; a synthetic discovery host is not evidence of those operations.
+
 ## Normal completion after the cleanup repair
 
 Staging manifest `5aa1322fd0d509a8` completed the same real subscription task in
@@ -134,8 +149,8 @@ Before closing the release goal:
 
 1. Reconcile remaining network cases with the direct-worker evidence above.
    Older standalone or Docker-based probes do not prove this route.
-2. Finish capability enumeration and compare each exposed operation with the
-   allowed assignment, model and research interfaces.
+2. Preserve the discovery and frozen-catalog checks above when packaging the
+   reviewed candidate; do not broaden their documented coverage.
 3. Execute controlled host-reboot recovery, proving that old nonempty, unexpired
    synthetic authority is refused rather than automatically resumed.
 4. Validate affected paths on the final source candidate, publish a reproducible
