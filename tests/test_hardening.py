@@ -72,7 +72,13 @@ def test_private_scanner_does_not_print_values(capsys):
 
 
 def test_privacy_placeholder_and_noreply_allowed():
-    assert not guard.scan_text('tester@example.com alias@users.noreply.github.com')
+    assert not guard.scan_text('tester@example.com tester@example.invalid alias@users.noreply.github.com')
+
+
+def test_reserved_example_does_not_allow_lookalikes_or_private_literals():
+    for domain in ('not-public.invalid', 'example.invalid.evil.com', 'notexample.invalid'):
+        assert guard.scan_text('tester@' + domain) == {'non-placeholder-email'}
+    assert guard.scan_text('tester@example.invalid', ('tester@example.invalid',)) == {'private-literal'}
 
 
 def test_private_literal_and_secret_scanning():

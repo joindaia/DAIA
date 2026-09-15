@@ -28,7 +28,7 @@ PRIVATE_SUFFIXES = {'.db', '.sqlite', '.sqlite3', '.pem', '.key', '.p12', '.pfx'
 def email_allowed(value: str) -> bool:
     domain = value.rsplit('@', 1)[1].lower()
     return (domain == 'users.noreply.github.com' or domain.endswith('.example')
-            or domain in {'example.com', 'example.org', 'example.net'}
+            or domain in {'example.com', 'example.org', 'example.net', 'example.invalid'}
             or value.lower() == 'noreply@github.com')
 
 
