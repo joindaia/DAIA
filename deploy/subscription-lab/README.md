@@ -427,3 +427,23 @@ and its supervised guest returned zero; account/directory checks, nested KVM API
 network was used. Use normal Python as the trusted lab administrator.
 This closes the public prerequisite-probe reproduction check, not installation
 of QEMU/client/runtime inside the fresh host or a nested subscription worker run.
+
+## Offline tool acquisition planning
+
+From a trusted Ubuntu installation with authenticated, current APT metadata:
+
+```sh
+python3 scripts/plan_fresh_host_packages.py --output "$DAIA_NEW_PACKAGE_PLAN"
+```
+
+The planner uses an empty package-status file and `--print-uris`, so installed
+host packages cannot silently satisfy the plan and nothing is downloaded or
+installed. It requires SHA-256 records, preserves exact sizes/URLs in a new private
+directory, and refuses duplicate filenames, unsafe names and credential-bearing
+URLs. This does not independently authenticate APT metadata or acquire the pinned
+Codex/client/DAIA Python artifacts. Do not publish the generated local plan.
+
+Eight regressions passed. The existing native APT plan validated 115 records
+(52,290,180 download bytes); APT estimated 215 MB of additional installed space
+for these tools. No packages have been downloaded or installed by this step.
+Recheck physical capacity before acquisition and installation.
