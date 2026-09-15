@@ -122,3 +122,18 @@ def test_discovery_checks_actual_response_catalog_without_work(monkeypatch, unex
         exec(builder.assignment_discovery(), {})
         assert len(sent) == 8
         assert all(message['method'] != 'tools/call' for message in sent)
+
+
+def test_process_scan_and_gateway_loss_are_explicit_test_only_inputs():
+    data = approved_data()
+    builder.inject(data, Path('/run/daia-boundary-canary-' + 'b'*32), True,
+                   process_canary_sha256='c'*64, gateway_loss=True)
+    code = data['write_files'][0]['content']
+    compile(code, 'boundary', 'exec')
+    assert code.index('research_gateway_removed=true') < code.index('boundary_direct_tcp_denied=true')
+    assert code.index('DAIA_PROCESS_BOUNDARY') < code.index('DAIA_PREBOOT native_ready')
+    assert 'except (ConnectionResetError, BrokenPipeError)' in code
+    assert "inspect('" + 'c'*64 + "')" in code
+    with pytest.raises(ValueError):
+        builder.inject(approved_data(), Path('/run/daia-boundary-canary-' + 'b'*32),
+                       process_canary_sha256='not-a-digest')
