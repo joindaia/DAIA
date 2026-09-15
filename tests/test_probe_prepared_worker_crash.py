@@ -4,6 +4,9 @@ import sys
 
 import pytest
 
+if sys.platform != 'linux':
+    pytest.skip('Linux/KVM host acceptance tests', allow_module_level=True)
+
 
 scripts = Path(__file__).parents[1] / 'scripts'
 sys.path.insert(0, str(scripts))

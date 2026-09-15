@@ -6,6 +6,9 @@ import sys
 
 import pytest
 
+if sys.platform != 'linux':
+    pytest.skip('Linux/KVM host acceptance tests', allow_module_level=True)
+
 from daia import request_ledger as ledger
 
 
