@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-13",
+  "scope": "Linux durable request reservation and fixed HTTPS adapter integration",
+  "credentials": "synthetic only",
+  "external_provider_calls": 0,
+  "tests": {
+    "command": "python -m pytest -q tests/test_request_ledger.py tests/test_codex_https.py tests/test_model_upstream.py tests/test_model_channel.py",
+    "passed": 123,
+    "failed": 0
+  },
+  "observations": [
+    "Abrupt process exit after reservation does not refill the remaining allowance.",
+    "Eight competing processes cannot exceed the original three-attempt allowance.",
+    "Recreated HTTPS adapters honor the same ledger; failed provider status consumes an attempt; exhausted ledger denies before connection.",
+    "Missing, corrupt, shared, linked, foreign binding, changed boot, expired and failed-fsync states deny."
+  ],
+  "not_established": [
+    "Full live controller recovery; supervisor does not yet supply this ledger.",
+    "Durable explicit revocation and retained credential reflection history across restart.",
+    "Successful work after host reboot; ledger deliberately denies a different boot.",
+    "Power-loss durability, anti-rollback storage, model-token accounting or provider-side revocation."
+  ]
+}

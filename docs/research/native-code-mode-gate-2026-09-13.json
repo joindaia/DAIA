@@ -1,0 +1,28 @@
+{
+  "native_requests_accepted": 2,
+  "mutations_rejected": [
+    "catalog-description",
+    "extra-catalog",
+    "missing-catalog",
+    "hosted-tool",
+    "custom-name",
+    "custom-namespace",
+    "remote-reference",
+    "provider-response-reference",
+    "store-enabled"
+  ],
+  "provider_requests": 0,
+  "source": "captured clean native Luna request pair, independently reviewed synthetic template",
+  "limits": "No production authorization, live provider response, or VM boundary tested",
+  "date": "2026-09-13",
+  "tests_passed": 121,
+  "prepared_guest": {
+    "model": "gpt-5.6-luna",
+    "companion_present": true,
+    "companion_digest_verified_from_iso": true,
+    "companion_sha256": "3e85d67471825f73d02ff5f7e047ca1f6ca8caa3f59e4c6e8d9ca6ca7302cb45",
+    "seed_sha256": "643488e4d817b5667b35f6a6881848163f31b5eca85481a647c16f405f6db7f5",
+    "guest_booted": false
+  },
+  "scope": "Frozen native code-mode catalog gate, custom-call history and real companion seed preparation; no live subscription run"
+}

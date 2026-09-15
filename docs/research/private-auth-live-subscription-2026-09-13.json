@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-13",
+  "tested_commit": "3e9ac9f",
+  "scope": "Existing bounded Codex subscription lab after identity and private-auth preflight changes",
+  "original_client": "0.153.4",
+  "model": "gpt-5.3-codex-spark",
+  "provider_requests": 6,
+  "denied_requests": 23,
+  "request_limit": 6,
+  "controller_exit": 0,
+  "native_refresh_completed": true,
+  "native_restart_completed": true,
+  "account_unchanged": true,
+  "deadline_preserved": true,
+  "results": 1,
+  "pending_cleared": true,
+  "supervised_cleanup_complete": true,
+  "independent_evaluator": {
+    "network_none": true,
+    "cases_passed": 10,
+    "original_failed": true,
+    "source_sha256": "eaf5fa11dd2d12f0028bb9f8a86a46e80e17a01f2b66fef2da402c536f0037ed",
+    "source_matches_stored_result": true,
+    "model_source_changed": false,
+    "private_storage_removed": true
+  },
+  "limitations": [
+    "Existing preconfigured lab, not fresh participant installation",
+    "Fixed public version-comparison fixture only",
+    "No comprehensive account/browser/network bypass proof",
+    "No controller or host reboot test"
+  ]
+}

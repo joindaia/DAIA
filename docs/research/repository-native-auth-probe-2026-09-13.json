@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-13",
+  "client_version": "0.153.4",
+  "live_observed": {
+    "access_and_refresh_rotated": true,
+    "account_unchanged": true,
+    "native_restart_succeeded": true,
+    "restart_tokens_unchanged": true,
+    "auth_file_private": true,
+    "client_exit_codes": [
+      0,
+      0
+    ],
+    "model_requests_requested": 0,
+    "worker_started": false
+  },
+  "preflight_tests": {
+    "passed": 2,
+    "unapproved_binary_not_executed": true,
+    "synthetic_auth_unchanged": true
+  },
+  "scope": "Extracted trusted-side lifecycle probe; not initial login or production credential broker"
+}
