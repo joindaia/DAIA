@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-13",
+  "native_binary_sha256": "56ef98ab4032d317ab26e9b5e5a175650717351edb16ed9cde0cb6d1734d62da",
+  "captured_requests": 1,
+  "provider_requests": 0,
+  "native_exit": 1,
+  "tools": [
+    {
+      "type": "function",
+      "name": "heartbeat",
+      "description": "Renew only the pinned assignment within its existing deadline.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "type": "function",
+      "name": "submit_result",
+      "description": "Submit this assignment only; retry the exact content after response loss.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "artifact": {
+            "type": "string"
+          },
+          "verdict": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact",
+          "verdict"
+        ]
+      }
+    }
+  ],
+  "synthetic_helper": true,
+  "provider_credentials_present": false,
+  "template_automatically_authorized": false,
+  "scope": "Original pinned native client, clean temporary profile, loopback rejecting model fixture; no VM, real inference or tool execution in this discovery probe."
+}
