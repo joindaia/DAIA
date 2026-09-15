@@ -28,7 +28,12 @@ PR20 is closed without merge and retained as historical context.
 | 5 | [#28](https://github.com/joindaia/DAIA/pull/28) | Diagnostic experiments; not new runtime authority |
 | 6 | [#29](https://github.com/joindaia/DAIA/pull/29) | VM preparation and independent networkless evaluation |
 | 7 | [#24](https://github.com/joindaia/DAIA/pull/24) | Controller authority, lifecycle and result processing |
-| 8 | [#25](https://github.com/joindaia/DAIA/pull/25) | Evidence, limitations and installation guidance |
+| 8 | [#30](https://github.com/joindaia/DAIA/pull/30) | Provider research and identity-binding limitations |
+| 9 | [#31](https://github.com/joindaia/DAIA/pull/31) | Provider authentication and request-boundary evidence |
+| 10 | [#32](https://github.com/joindaia/DAIA/pull/32) | Runtime isolation and recovery evidence |
+| 11 | [#33](https://github.com/joindaia/DAIA/pull/33) | Task delivery and independent evaluation evidence |
+| 12 | [#34](https://github.com/joindaia/DAIA/pull/34) | Technical runtime, request-gate and storage guides |
+| 13 | [#25](https://github.com/joindaia/DAIA/pull/25) | Installation guidance and current release criteria |
 
 ## Evidence and outstanding acceptance
 
@@ -44,6 +49,14 @@ PR20 is closed without merge and retained as historical context.
 | Idempotent DAIA delivery | Native MCP exact retry stores one result; [pending recovery](research/real-native-pending-recovery-2026-09-13.json); [worker replacement](research/native-worker-crash-recovery-2026-09-13.json) | Partial-work checkpoints and controller/host reboot recovery remain open |
 | Reproducible installation | [Repository controller](research/repository-subscription-controller-2026-09-13.json), public preparation scripts and [fresh dependency-cache preparation](research/clean-subscription-preparation-2026-09-13.json) | Fresh preparation reused trusted tools, image and request template; it did not provision a host or boot a guest. Demonstrate the entire route without pre-existing lab setup |
 | Durable evidence | Public code and dated scoped reports; exact source/hash for the successful cycle | Tie the final installable candidate to all acceptance evidence; green CI and publication do not prove release readiness |
+
+The fresh-host prerequisite probe now boots a networkless RAM-backed guest from
+its pinned base, creates the four service identities with the public manifests,
+checks directory modes and repeat provisioning, and verifies nested KVM API 12.
+This does **not** install QEMU, the Python environment or Codex inside that fresh
+host and does not boot a worker there. The offline APT plan identifies 115 packages
+(52,290,180 download bytes) with SHA-256 metadata; no package download or
+installation is implied. See the [installation record](../deploy/subscription-lab/README.md).
 
 ## Next acceptance sequence
 
