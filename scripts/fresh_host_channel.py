@@ -54,6 +54,8 @@ def serve(channel):
                     forward(client, channel)
                 except (OSError, ValueError):
                     pass  # Drop only this connection; never retry a submission.
+            if channel == 'assignment':
+                return  # One lease connection, never a fresh clock on reconnect.
 
 
 if __name__ == '__main__':
