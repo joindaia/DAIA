@@ -70,3 +70,25 @@ def test_public_or_group_writable_parent_refused(channel, tmp_path, monkeypatch,
     monkeypatch.setitem(channel.CHANNELS, 'model', (str(endpoint), '10.0.2.101', 30, 100))
     with pytest.raises(ValueError): channel.serve('model')
     assert not endpoint.exists()
+
+
+@pytest.mark.parametrize('failure', [False, True])
+def test_assignment_accepts_only_one_connection(channel, tmp_path, monkeypatch, failure):
+    parent = tmp_path / 'private'; parent.mkdir(mode=0o700)
+    monkeypatch.setitem(channel.CHANNELS, 'assignment', (str(parent / 'assignment.sock'), '10.0.2.100', 150, 100))
+    calls = []
+    class Listener:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def bind(self, path): pass
+        def listen(self, size): pass
+        def accept(self):
+            calls.append('accept')
+            if len(calls) > 1: raise AssertionError('Reconnection accepted')
+            return self, None
+    def forward(*args):
+        if failure: raise OSError('Synthetic upstream failure')
+    monkeypatch.setattr(channel.socket, 'socket', lambda *args: Listener())
+    monkeypatch.setattr(channel, 'forward', forward)
+    channel.serve('assignment')
+    assert calls == ['accept']
