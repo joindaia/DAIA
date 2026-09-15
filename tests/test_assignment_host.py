@@ -109,6 +109,7 @@ def test_assignment_stdio_uses_existing_identity_and_signed_job(tmp_path):
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from mcp.client.session import ClientSession
     from mcp.client.stdio import StdioServerParameters, stdio_client
+    from mcp.shared.exceptions import MCPError
     from daia.crypto import public_hex
     from daia.job_authorization import authorize_job
     from daia.mcp_server import build_mcp_app
@@ -139,6 +140,15 @@ def test_assignment_stdio_uses_existing_identity_and_signed_job(tmp_path):
             async with ClientSession(*streams) as session:
                 await session.initialize()
                 assert {t.name for t in (await session.list_tools()).tools} == {'heartbeat', 'submit_result'}
+                assert (await session.list_resources()).resources == []
+                assert (await session.list_resource_templates()).resource_templates == []
+                assert (await session.list_prompts()).prompts == []
+                with pytest.raises(MCPError, match='Unknown resource') as error:
+                    await session.read_resource('file:///state/helper.json')
+                assert error.value.code == -32602
+                with pytest.raises(MCPError, match='Method not found') as error:
+                    await session._dispatcher.send_raw_request('daia/unknown', {}, {'timeout': 5})
+                assert error.value.code == -32601
                 refused = await session.call_tool('request_work', {})
                 assert refused.is_error
                 await call(session, 'heartbeat')
