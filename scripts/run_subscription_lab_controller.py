@@ -30,9 +30,14 @@ import argparse
 parser=argparse.ArgumentParser(description=__doc__)
 for name in ('guest','request-template','auth-home','codex-binary','python-runtime'):
  parser.add_argument('--'+name,type=pathlib.Path,required=True)
+parser.add_argument('--prepared-host-image',type=pathlib.Path)
+parser.add_argument('--prepared-host-sha256')
 parser.add_argument('--native-delivery',action='store_true')
 parser.add_argument('--crash-before-first-response',action='store_true')
 options=parser.parse_args()
+if bool(options.prepared_host_image) != bool(options.prepared_host_sha256):parser.error('Prepared image and hash required together')
+if options.prepared_host_sha256 and not re.fullmatch('[0-9a-f]{64}',options.prepared_host_sha256):parser.error('Invalid prepared image hash')
+if options.prepared_host_image and options.crash_before_first_response:parser.error('Prepared-host crash injection not implemented')
 if options.crash_before_first_response and not options.native_delivery:parser.error('Crash probe requires native delivery')
 # Trusted inputs only. This controller creates no service identities or login.
 assert os.geteuid()==0
@@ -54,6 +59,12 @@ bundle=root/('subscription-bundle-'+uuid.uuid4().hex)
 bundle_hashes=prepare(p/'base.qcow2',source/'seed.iso',bundle,
  base_sha256=pinned['base_sha256'],seed_sha256=pinned['seed_sha256'],nonce=pinned['nonce'])
 wrapper=bundle/'report-wrapper.py'
+prepared_host=None
+if options.prepared_host_image:
+ from fresh_host_controller import PreparedHost
+ # No lease, model authority or provider credential has been opened yet.
+ prepared_host=PreparedHost(options.prepared_host_image,options.prepared_host_sha256,bundle,parent_unit)
+ atexit.register(prepared_host.close)
 for a,b in [(source/'seed.iso',p/'network-seed.iso'),(source/'config.json',p/'network-config.json'),(source/'probe.py',p/'network-probe.py'),(bundle/'bridge.py',p/'bridge.py')]:shutil.copyfile(a,b);b.chmod(0o444)
 rundir=pathlib.Path('/run/daia-lab');endpoint=rundir/'gateway.sock';assert not endpoint.exists()
 import ipaddress
@@ -255,7 +266,7 @@ with running_server(build_mcp_app(service)) as url:
   if options.crash_before_first_response:
    crash_thread=threading.Thread(target=crash_worker,daemon=True);crash_thread.start()
   try:
-   r=subprocess.run(dependent(args)+['/usr/bin/python3','-I',str(wrapper),'--bundle',str(bundle)],capture_output=True,timeout=220)
+   r=(prepared_host.run(transport_deadline) if prepared_host else subprocess.run(dependent(args)+['/usr/bin/python3','-I',str(wrapper),'--bundle',str(bundle)],capture_output=True,timeout=220))
    if options.crash_before_first_response:
     crash_stop.set();crash_thread.join(6)
     if r.returncode==0 or not crash_info.get('kill_succeeded'):
@@ -340,6 +351,7 @@ with running_server(build_mcp_app(service)) as url:
    report['model_channel_counts']=model_counts
    report['provider_credentials_used']=True
    report.update({'saved_identity_and_consent_unchanged':True,'results':1,'pending_cleared_after_exact_receipt':True,'synthetic_fixture':True,'real_model':True,'helper_nonroot':True,'helper_private_root':True,'other_service_state_read_denied':True})
+   write_outcome(run_state/'integrated-report-private.json',report)
    pathlib.Path('/tmp/daia-live-research-result.json').write_text(json.dumps(report));print(json.dumps(report))
   finally:
    crash_stop.set()
