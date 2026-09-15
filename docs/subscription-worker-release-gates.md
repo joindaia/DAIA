@@ -661,3 +661,19 @@ revoked. Expanded private diagnostics were truncated; compact metadata-only
 diagnostics have been prepared for the next useful investigation. Do not repeatedly
 run unchanged trials or infer that increasing budgets is authorized by this result.
 See [scoped evidence](research/assignment-helper-receipt-retry-2026-09-13.json).
+
+
+### Second host: confirmed native delivery and independent evaluation
+
+On 15 September the prepared second host completed a real Luna development
+contribution after two narrow native-protocol compatibility fixes. Four provider
+responses produced one stored result, with heartbeat, a deliberately lost receipt
+and an exact acknowledged retry. A separate networkless evaluator passed ten
+cases on unchanged stored source while the original failed. Model authority was
+persistently revoked and all lab services stopped.
+
+The client received 403 after delivery and exited nonzero, so normal whole-worker
+completion remains open. Existing login and prepared artifacts were reused; this
+is not the clean-participant installation or full hostile-worker acceptance gate.
+See the [follow-up](research/second-host-failure-retention-2026-09-13.md#follow-up-on-15-september-useful-result-incomplete-client-shutdown)
+and [sanitized evidence](research/second-host-subscription-compatibility-2026-09-15.json).
