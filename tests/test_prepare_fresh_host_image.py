@@ -6,7 +6,12 @@ import subprocess
 import tarfile
 from types import SimpleNamespace
 
+import sys
+
 import pytest
+
+if sys.platform != 'linux':
+    pytest.skip('Linux/KVM host acceptance tests', allow_module_level=True)
 
 ROOT = Path(__file__).parents[1]
 scope = runpy.run_path(str(ROOT / 'scripts/prepare_fresh_host_image.py'))
