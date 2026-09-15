@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-13",
+  "scope": "Read-only replay of actual previously budget-exhausted native run through new outcome exporter",
+  "delivery": "acknowledged",
+  "worker_completed": false,
+  "automatic_retry_authorized": false,
+  "saved_contributor_state_unchanged": true,
+  "coordinator_assignment_receipt_matched": true,
+  "private_atomic_export": true,
+  "new_provider_calls": 0,
+  "limitation": "Exporter checked against real saved state; newly integrated controller failure path not rerun live in this test"
+}

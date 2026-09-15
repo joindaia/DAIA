@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-13",
+  "base_commit": "bce21d6",
+  "preparation": {
+    "source_built_from_repository": true,
+    "native_mcp_variant_freshly_built": true,
+    "native_binary_pins_checked": true,
+    "byte_identical_rebuild_claimed": false
+  },
+  "live_subscription": {
+    "model": "gpt-5.3-codex-spark",
+    "requests": 5,
+    "denied": 23,
+    "results": 1,
+    "pending_cleared": true,
+    "native_refresh_completed": true,
+    "native_restart_completed": true,
+    "account_unchanged": true,
+    "deadline_preserved": true,
+    "controller_exit": 0,
+    "cleanup_complete": true
+  },
+  "separate_evaluator": {
+    "network_none": true,
+    "guest_reported_cases_passed": 10,
+    "guest_reported_original_failed": true,
+    "source_sha256": "8c76ed6c3d7c266eca19aa94f76e847da4ef3fa0c41b26845e79aba70b0199e9",
+    "matches_stored_source": true,
+    "source_modified": false,
+    "temporary_storage_removed": true,
+    "guest_claims_verified": false
+  },
+  "limitations": [
+    "Existing approved request template, native binaries, ISO builder, base image, host services and participant login reused",
+    "Not a full clean installation or comprehensive account and network probe",
+    "Evaluator runs separately without credentials; guest test reports are not proof against arbitrary adversarial candidate code"
+  ]
+}

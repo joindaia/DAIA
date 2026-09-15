@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-13",
+  "base_commit": "0eff6c7",
+  "change": "Guest parent compares individual boolean results; candidate imports run as nobody in separate processes; source/checker and serial endpoint are not writable by candidate uid",
+  "negative_live_kvm": {
+    "candidate": "import sys; sys.exit(0)",
+    "rejected": true,
+    "reason": "Candidate result mismatch",
+    "controller_exit": 1,
+    "cleanup_complete": true
+  },
+  "positive_live_kvm": {
+    "source_sha256": "8c76ed6c3d7c266eca19aa94f76e847da4ef3fa0c41b26845e79aba70b0199e9",
+    "cases_passed": 10,
+    "original_failed": true,
+    "network_none": true,
+    "source_modified": false,
+    "candidate_separate_uid": true,
+    "parent_compares_results": true,
+    "cleanup_complete": true,
+    "retry_same_bundle_and_limits": true
+  },
+  "offline_seed_bundle_tests": 7,
+  "limitations": [
+    "Separate guest uid is not a kernel isolation boundary",
+    "Finite known test cases do not prove arbitrary program correctness",
+    "Parent output still depends on trusted guest image and launcher",
+    "Previously recorded evaluator successes retain their original weaker scope"
+  ],
+  "positive_trial_first_attempt": {
+    "completed": false,
+    "qemu_error": "qemu_thread_create: Resource temporarily unavailable",
+    "cleanup_complete": true,
+    "root_cause_proven": false
+  }
+}

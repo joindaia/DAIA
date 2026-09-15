@@ -1,0 +1,82 @@
+{
+  "date": "2026-09-13",
+  "task": "operator-outcome-summary",
+  "native_subscription": true,
+  "attempts": [
+    {
+      "stage": "initial-task-binding",
+      "model_requests": 0,
+      "outcome": "source-path-rejected"
+    },
+    {
+      "stage": "full-module-request",
+      "model_requests": 6,
+      "results": 0,
+      "outcome": "budget-exhausted"
+    },
+    {
+      "stage": "append-only-request",
+      "model_requests": 6,
+      "results": 1,
+      "outcome": "stored-before-budget-exhaustion"
+    }
+  ],
+  "worker_turn_completed": false,
+  "native_receipt_retry_completed": false,
+  "maintainer_receipt_recovery": {
+    "real_prior_native_failure": true,
+    "same_coordinator_database_reopened": true,
+    "same_endpoint_reused": true,
+    "fresh_helper_process": true,
+    "recovery_source_verified": true,
+    "recovery_service_nonroot": true,
+    "recovery_service_private_root": true,
+    "recovery_cli_exit": 0,
+    "receipt_status": "already_recorded",
+    "same_receipt_hash": true,
+    "results": 1,
+    "identity_and_consent_unchanged": true,
+    "consent_already_expired": false,
+    "new_work_and_registration_refused": true,
+    "repeated_recovery_refused": true,
+    "model_requests": 0,
+    "new_worker_started": false
+  },
+  "independent_evaluation": {
+    "exit": 0,
+    "guest": {
+      "cases_passed": 7,
+      "original_failed": true,
+      "source_sha256": "b34c8fc27f4c2aa5b1abd7d4329323f83e9e0402dcf85e48b894dec01a012b86",
+      "proposal_sha256": "43e1f00d2486c0b1edcaae2cd6e57e36f8314279125510010656d6ab5e4fa574",
+      "format_normalized": false,
+      "model_source_changed": false,
+      "artifact_is_append_only": true,
+      "provider_credentials_present": false,
+      "candidate_separate_uid": true,
+      "parent_compares_results": true
+    },
+    "uid_nonroot": true,
+    "private_network": true,
+    "network_none": true,
+    "bundle_verified": true,
+    "overlay_removed": true,
+    "guest_claims_verified": false
+  },
+  "durable_model_authority_revoked": true,
+  "live_operator_summary": {
+    "total": 2,
+    "acknowledged": 1,
+    "stored_unacknowledged": 0,
+    "unconfirmed": 1,
+    "worker_completion": "not_established_by_this_inspection"
+  },
+  "targeted_regressions_passed": 33,
+  "maintainer_decision": "Accepted the exact appended function after isolated evaluation and source review under standing delegation. No consensus promotion, main merge or deployment.",
+  "limitations": [
+    "The native turn exhausted its six-request budget before recovering the deliberately lost receipt.",
+    "Receipt recovery used the existing trusted operator route, without new model requests or consent changes.",
+    "This is one small feature addition, not arbitrary multi-file development or a complete worker release.",
+    "Independent VM reports are bounded test evidence, not remote attestation."
+  ]
+}
