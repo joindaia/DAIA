@@ -412,3 +412,12 @@ attestation. It reuses the host QEMU and pinned base and does not install QEMU,
 Python dependencies or provider authentication in the fresh guest. Nor does KVM
 API availability alone prove a nested worker has booted. Those remain subsequent
 clean-installation steps. The experimental harness is not yet a public installer.
+
+The corrected precursor harness subsequently completed with return code zero,
+all five provisioning fields present, service stopped and RAM overlay removed.
+The repository now contains `scripts/probe_fresh_host_ram.py` and its trusted
+guest fixture, plus five parser replay regressions. The packaged script reads
+the repository manifests, bounds failure-log reads and exits nonzero on probe
+failure. Those packaging changes passed the replay tests; the public entrypoint
+has not yet been rerun live. Use normal Python as the trusted lab administrator.
+This remains a prerequisite probe, not installation of the full subscription worker.
