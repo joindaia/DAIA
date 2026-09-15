@@ -78,5 +78,53 @@ These were credential-free HTTP checks, not a successful guest trial.
 
 PR #24 changes only the fixed path in the research fixture and standalone
 research probe. It adds no redirect following and does not widen the allowed
-hosts, limits or TLS behavior. Ten local fixture/bundle tests passed. A fresh
-full subscription-worker trial of this correction remains to be performed.
+hosts, limits or TLS behavior. Ten local fixture/bundle tests passed. The fresh full subscription-worker trial of this correction is recorded below.
+
+## Completed second-host cycle after the URL correction
+
+The fresh trial of `096fa57244a723fa4564b49e2b856f8bc187a59c` completed
+the controlled numeric-version development task in 129.76 seconds. The original
+Codex client used the participant subscription; no simulated model responses
+were substituted. The prepared guest seed was
+`3cc301f07898c3aa524e10a02cfcfa9e4443846b9b7a822e4edd73ab6ffc4c38`.
+
+| Required observation | Result |
+|---|---|
+| Native client and supervised controller exit | Both zero |
+| Provider attempts / completed forwards | 6 / 6 |
+| Intentionally forbidden requests rejected | 23 |
+| Documentation downloaded | 773,941 bytes |
+| Downloaded dependency | packaging 25.0; digest checked, imported and exercised |
+| Supplied source tests | Unchanged |
+| Native assignment MCP calls | Three: heartbeat, submit, identical receipt retry |
+| Stored results / acknowledged delivery | One / yes |
+| Native credential refresh | Completed; original deadline preserved |
+| Worker storage and model authority | Overlay removed; persistent revocation verified |
+| Independent evaluator | Ten cases passed; original implementation failed |
+| Evaluator boundary | Fresh networkless VM; no provider credentials; separate candidate UID |
+| Post-evaluation cleanup | Overlay removed; no active lab services |
+
+The evaluator read the exact stored assignment artifact, checked its digest and
+assignment binding, and compared results in its trusted parent process. The model
+source was not changed. Its SHA-256 is
+`26ea50db31fe1435faf8d28ecbae6746d861993d37855a0de557362623aee62e`:
+
+```python
+def newer(a, b):
+    def normalize(value):
+        parts = [int(component) for component in value.split(".")]
+        while len(parts) > 1 and parts[-1] == 0:
+            parts.pop()
+        return parts
+
+    left, right = normalize(a), normalize(b)
+    length = max(len(left), len(right))
+    left += [0] * (length - len(left))
+    right += [0] * (length - len(right))
+    return left > right
+```
+
+This closes the bounded second-host development-cycle check. It does not prove
+arbitrary task correctness, a clean participant installation, exhaustive hostile
+worker/account confinement, or provider endorsement. Existing login and prepared
+lab infrastructure were reused. The earlier failed trials remain separate evidence.

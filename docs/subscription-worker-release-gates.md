@@ -677,3 +677,20 @@ completion remains open. Existing login and prepared artifacts were reused; this
 is not the clean-participant installation or full hostile-worker acceptance gate.
 See the [follow-up](research/second-host-failure-retention-2026-09-13.md#follow-up-on-15-september-useful-result-incomplete-client-shutdown)
 and [sanitized evidence](research/second-host-subscription-compatibility-2026-09-15.json).
+
+
+### Second host: complete bounded cycle after documentation correction
+
+The follow-up at `096fa57244a723fa4564b49e2b856f8bc187a59c` completed normal
+native and supervised-controller exit, public research, dependency use, unchanged
+source tests, native MCP delivery and exact receipt retry within six model
+requests. Native credential refresh preserved the deadline; persistent authority
+revocation and storage cleanup were verified. A fresh networkless evaluator
+passed ten cases on the exact stored source while the original failed.
+
+The cause of the preceding research failure was a documentation URL now returning
+301. The fix uses its direct 200 destination on the same allowed host; it adds no
+redirect following or broader network authority. See the
+[complete cycle and exact source](research/second-host-research-diagnostic-2026-09-15.md#completed-second-host-cycle-after-the-url-correction).
+Clean participant installation and comprehensive hostile-worker/account acceptance
+remain open. No general release or admission decision follows from this fixture.
