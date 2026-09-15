@@ -2,10 +2,14 @@
 import importlib.util
 from pathlib import Path
 import socket
+import sys
 import threading
 import time
 
 import pytest
+
+pytestmark = pytest.mark.skipif(sys.platform != "linux",
+    reason="Linux worker file-descriptor and PTY handshake")
 
 spec = importlib.util.spec_from_file_location('fresh_host_start',
     Path(__file__).parents[1] / 'scripts/fresh_host_start.py')
