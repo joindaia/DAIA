@@ -1,18 +1,19 @@
 # Subscription worker release gates
 
 Status: **experimental; not ready for general participant installation**.
-Current evidence assessment: 15 September 2026. The latest complete second-host
-cycle used runtime `096fa57244a723fa4564b49e2b856f8bc187a59c`. The review split
-preserves that runtime tree exactly. Historical observations below retain their
-original scope and dates; their outstanding-item lists are not the current backlog.
+Current evidence assessment: 15 September 2026. The reproducible installation
+completed a real subscription assignment using runtime
+`53e22c86a31e77fc0b15e1563e01ab3bd4fbdaa9`, staged manifest identifier
+`68ca08463081b926`. Later Windows collection guards change tests only.
 
-The original Codex 0.153.4 client completed a real Luna subscription development
-cycle on the second host: public research, dependency use, a patch, source tests,
-native MCP submission, exact retry, native credential refresh and normal supervised
-shutdown. A fresh networkless evaluator passed ten cases on the exact submitted
-source. This establishes the bounded lab route, not a general participant release.
-See [the complete cycle](research/second-host-research-diagnostic-2026-09-15.md#completed-second-host-cycle-after-the-url-correction).
-Claude, Gemini and local models are not prerequisites for the remaining work.
+The original Codex 0.153.4 client completed research, dependency use, patching,
+tests, native MCP delivery, exact receipt recovery, credential refresh and restart
+within the original six-request/150-second allowance. A fresh networkless evaluator
+passed ten cases on the exact submitted source. The physical-host reboot check
+also passed: old unexpired authority was denied without altering its ledger.
+See [the current candidate report](research/codex-clean-installation-pilot-2026-09-15.md).
+Earlier reports retain their original scope; their open-item lists are historical.
+Claude, Gemini and local models are not prerequisites for this pilot.
 
 ## Review order
 
@@ -37,43 +38,34 @@ PR20 is closed without merge and retained as historical context.
 
 ## Evidence and outstanding acceptance
 
-| Requirement | Current evidence | Remaining acceptance |
+| Requirement | Current-candidate evidence | Remaining acceptance / limitation |
 | --- | --- | --- |
-| Original client and own subscription | Pinned native client; complete real second-host cycle linked above | Same route from a clean participant setup; no synthetic-response or paid-API substitution |
-| Official login, refresh and restart | [Trusted profile preparation](research/native-profile-preparation-2026-09-13.json), [native lifecycle](research/second-host-native-auth-lifecycle-2026-09-13.json), refresh during the complete cycle | Integrate participant-operated initial login into clean installation; distinguish local unbinding from provider-side revocation |
-| Credentials outside task execution | External credential service and assignment helper; complete cycle uses no guest provider credential | Malicious guest inspection of synthetic host credentials through files, processes, inherited handles and tool subprocesses in the packaged deployment |
-| Inference-only account capability | Fixed upstream, discarded guest headers, bounded request fields and negative channel tests | Entire installed route: no alternate network path, unexpected gateway or inherited connector. Endpoint refusal is not exhaustive account confinement or provider approval |
-| Host files and private networks | KVM/service separation; [loopback canaries](research/kvm-egress-canaries-2026-09-13.json), [DNS rebinding](research/kvm-dns-rebinding-2026-09-13.json), [mixed/CNAME checks](research/wire-dns-mixed-cname-2026-09-13.json) | Whole-worker synthetic browser/SSH/socket/file canaries and controlled live LAN/VPN targets, including redirects and DNS changes through every available tool path |
-| Useful research, patching and tests | Complete second-host version task; [second outcome-summary task](research/outcome-summary-subscription-task-2026-09-13.json) independently evaluated, though its native turn needed bounded receipt recovery | General dependency installation/hooks and unattended completion across representative tasks remain unproven |
-| Deadline, revocation and cleanup | Complete normal shutdown; [controller crash](research/kvm-controller-crash-2026-09-13.json); persistent revocation and overlay removal | Interruption and recovery of the complete clean installation, including host/controller restart, without resetting consent or budgets |
-| Idempotent DAIA delivery | Native MCP exact retry stores one result; [pending recovery](research/real-native-pending-recovery-2026-09-13.json); [worker replacement](research/native-worker-crash-recovery-2026-09-13.json) | Partial-work checkpoints and controller/host reboot recovery remain open |
-| Reproducible installation | [Repository controller](research/repository-subscription-controller-2026-09-13.json), public preparation scripts and [fresh dependency-cache preparation](research/clean-subscription-preparation-2026-09-13.json) | Fresh preparation reused trusted tools, image and request template; it did not provision a host or boot a guest. Demonstrate the entire route without pre-existing lab setup |
-| Durable evidence | Public code and dated scoped reports; exact source/hash for the successful cycle | Tie the final installable candidate to all acceptance evidence; green CI and publication do not prove release readiness |
+| Reproducible installation | Networkless image build, package/Python/native checks, repeated installation, real assignment on the exported image | Administrator-operated Linux/KVM procedure; not a general Windows installer |
+| Original client and subscription | Pinned Codex 0.153.4, five forwarded requests, successful native/controller exit | Dedicated participant-authorized profile; initial interactive login was already available |
+| Research and useful work | Public documentation and hash-checked packaging 25.0 wheel downloaded/imported; patch and supplied tests; exact source passed ten independent cases | Final patch uses stdlib; no claim of general installation-hook or representative workload coverage |
+| Refresh and restart | Native refresh/restart after first request; same account and original deadline | Local revocation is not provider-wide OAuth revocation |
+| Delivery | One result, one hidden receipt, helper's exact retry, pending state cleared | No new assignment or renewed consent; arbitrary partial-work checkpointing is out of scope |
+| Host boundary | Current-image guest path/symlink/auth/socket/mount checks; external canary unchanged | Complete guest process/environment/handle inspection is not yet evidenced by these path checks |
+| Provider operations | 23 rejected request/protocol probes during the real run; fixed HTTPS destination and constrained request schema | Inspect individual cases; refusal counts are not an exhaustive provider account capability proof |
+| Private network | Six research-channel rejections; direct TCP denied with independently observed live listeners and positive controls | Earlier DNS/CNAME tests are supporting evidence; complete current-installation DNS/redirect and gateway-failure coverage still needs reconciliation |
+| Crash and revocation | READY-stage VM crash cleanup plus separate active synthetic authority SIGKILL/stop-handler revocation; normal real-run revocation | Distinguish pre-authority VM cleanup from active-authority service cleanup |
+| Host reboot | Physical restart, changed Linux boot, original unexpired nonempty ledger unchanged and denied, volatile marker removed | Managed recovery; SSH required an operator service start through remote management. No automatic job resume |
+| CI and review | Existing layered draft PRs; Linux and website CI passed at `4076f2ea2849fdee547b9f9312200b9081848a61` | Windows CI failed on Linux-only descriptor/host tests; a test-only correction passed 15 Linux checks, remote confirmation remains pending |
 
-The fresh-host prerequisite probe now boots a networkless RAM-backed guest from
-its pinned base, creates the four service identities with the public manifests,
-checks directory modes and repeat provisioning, and verifies nested KVM API 12.
-This does **not** install QEMU, the Python environment or Codex inside that fresh
-host and does not boot a worker there. The offline APT plan identifies 115 packages
-(52,290,180 download bytes) with SHA-256 metadata; no package download or
-installation is implied. See the [installation record](../deploy/subscription-lab/README.md).
+## Remaining bounded acceptance
 
-## Next acceptance sequence
+1. Close the concrete guest process/environment/handle credential-inspection gap
+   using synthetic canaries and external observations; never put real credentials
+   into the guest to test their exposure.
+2. Map the installed network and provider channels to the actual negative probes,
+   including DNS/redirect handling and loss of the gateway. Reuse unchanged
+   component evidence where justified, but do not call it live installed coverage.
+3. Confirm final CI, update the reviewable evidence and installation instructions,
+   and assess the fixed pilot criteria. Do not repeat the successful development
+   task unless a subsequent change affects its runtime behavior.
 
-1. Reproduce host provisioning and preparation using the public installation
-   guidance and pinned inputs. Record which steps require the participant or an
-   administrator. Existing lab accounts, templates or private setup scripts must
-   not silently satisfy a clean-installation check.
-2. Run the original native client with participant-authorized subscription access
-   in that installation, then independently evaluate its exact submitted output.
-3. Execute the whole-worker hostile host/account/network probes and lifecycle
-   interruption tests against the same package. Observe refusals and cleanup from
-   outside the worker; retain fixed consent, deadlines and request accounting.
-4. Assess participant readiness only against those results. Do not repeat an
-   unchanged positive lab fixture as a substitute for missing acceptance evidence.
-
-These steps do not authorize new spending, outside contact, account sharing,
-provider token pooling, increased consent or weakened security boundaries.
+No main merge, production deployment, public admission, new spending, outside
+contact, account pooling, increased consent or weakened boundary is authorized.
 
 ## Historical implementation and experiment log
 
