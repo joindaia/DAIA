@@ -158,3 +158,36 @@ Before closing the release goal:
 
 There is no implicit main merge, production deployment, public admission or
 claim that all provider-account functions have been exhaustively tested.
+
+## Reproducible image build and final-image trial
+
+The public offline builder completed on reviewed test snapshot
+`4259157044416ddb98af712de8232080a8c0183d`, producing image SHA-256
+`416cc0dc84fb6cc242f857f6c3295ca5696dbdc04fc7b7d13b49f409fc42dddf`
+(2,425,683,968 bytes). This is a test snapshot identifier, not a published release
+commit. Builder code is published separately in the runtime PR. The retained
+installation report confirms fresh accounts, idempotent installation, five checked
+directories, KVM API 12, offline DAIA/MCP installation, Python/pip availability,
+pinned native Codex version, and fresh QEMU/KVM execution. No provider credential
+was copied and no provider call was made during image construction.
+
+The same image passed the direct assignment discovery probe: exactly `heartbeat`
+and `submit_result`; empty resources, resource templates and prompts; unknown
+methods/resources refused; no START or provider request; host canary unchanged;
+all probe services cleaned up.
+
+A subsequent real subscription assignment on this image **failed** while awaiting
+upstream response headers. It made one provider attempt and received no successful
+model response. The original six-request/150-second allowance was not extended;
+remaining authority was revoked, no confirmed result was delivered, and no DAIA
+services remained active. This attempt is not evidence of completed development
+on the rebuilt image, and no evaluator was run for it. Earlier successful task
+and evaluator results above still apply only to their stated image.
+
+The offline export initially exceeded its 40-second image-conversion timeout.
+Increasing that export-only timeout to 120 seconds, within the unchanged overall
+installation bound, allowed the build to complete in 155.19 seconds. This change
+does not alter task consent, model budgets or assignment deadlines. The builder
+also restores the original 2 GiB guest allocation and caps QEMU's main-loop
+thread pool within the existing service task limit. Nineteen focused builder and
+report tests passed. Controlled host-reboot acceptance remains outstanding.
