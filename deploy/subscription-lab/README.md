@@ -418,6 +418,12 @@ all five provisioning fields present, service stopped and RAM overlay removed.
 The repository now contains `scripts/probe_fresh_host_ram.py` and its trusted
 guest fixture, plus five parser replay regressions. The packaged script reads
 the repository manifests, bounds failure-log reads and exits nonzero on probe
-failure. Those packaging changes passed the replay tests; the public entrypoint
-has not yet been rerun live. Use normal Python as the trusted lab administrator.
-This remains a prerequisite probe, not installation of the full subscription worker.
+failure. Those packaging changes passed the replay tests. A subsequent live run fetched
+all four required files from public commit
+`321a1e9e87232566ce171913d7cf72dba6dc57a6`, verified their SHA-256 hashes, and
+executed the public entrypoint from temporary RAM storage. Both the entrypoint
+and its supervised guest returned zero; account/directory checks, nested KVM API
+12, stopped service and removed overlay were reported. No provider or guest
+network was used. Use normal Python as the trusted lab administrator.
+This closes the public prerequisite-probe reproduction check, not installation
+of QEMU/client/runtime inside the fresh host or a nested subscription worker run.
