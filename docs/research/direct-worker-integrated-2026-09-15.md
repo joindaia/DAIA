@@ -72,18 +72,68 @@ persisted revocation, set remaining requests to zero and removed its endpoint;
 the supervisor's revocation check passed. This is service-level evidence, not a
 substitute for host-reboot or guest-network tests.
 
+## Direct guest boundary checks
+
+The host-file probe ran before START on staging manifest `462c9a4b18bc45b6`.
+A synthetic host file existed and was readable to the external observer. Guest
+root could not open that path directly or through a symlink, or open the fixed
+host credential path. No credential contents were read or exported. Selected
+host mounts, SSH-agent and Docker sockets were absent. The host canary hash was
+unchanged after the test, and no DAIA service remained active. These observations
+cover the tested paths, not every possible filesystem attack.
+
+The direct TCP probe on staging manifest `5aa1322fd0d509a8` placed a fixed test
+listener in the actual prepared QEMU service's private network namespace before
+QEMU started. Independent positive controls succeeded both before and after the
+guest probe. The guest could not connect through the QEMU host address; the
+listener observed zero unexpected connections. READY and cleanup succeeded.
+No START, provider credentials or model requests were used. A timeout alone was
+not accepted as evidence: both external positive controls were required.
+
+This proves the tested direct network path, not the full DNS, redirect, IPv6 or
+provider-account capability surface. The normal worker network configuration
+was unchanged; the listener was test instrumentation only.
+
+## Normal completion after the cleanup repair
+
+Staging manifest `5aa1322fd0d509a8` completed the same real subscription task in
+141.26 seconds including preparation, with five forwarded requests, 23 model
+request denials and six research denials. The allowance remained six requests
+and 150 seconds. Native exit, turn completion, unchanged tests, MCP delivery and
+exact lost-receipt recovery succeeded with exactly one stored result. Native
+refresh and client restart preserved the account and deadline. Revocation and
+supervised cleanup passed with no remaining DAIA services.
+
+A fresh networkless evaluator tested the exact stored artifact without changing
+its source: ten cases passed, the original failed, candidate execution used a
+separate user from the comparison process, and cleanup succeeded. It made no
+provider calls. Artifact source SHA-256:
+`e99bc34e516ce55e489d23b4612793cba34482c12e78075151e8d895a0b1322b`.
+
+The documentation fetch remained 773,941 bytes; its content hash in this run was
+`9ba7786ddb62e294f094b3c8e52b8cc40647c121cd1ffcc3c9eb8a3285b2648f`.
+The dependency wheel hash was unchanged. A preceding attempt on staging manifest
+`0cedf526b7e8268f` stopped on an upstream header timeout. It remains a failed run,
+with authority revoked; the subsequent task did not extend or resume its budget.
+
+Source inspection confirms the gateway compares the request's canonical
+`additional_tools` catalog with the frozen template before forwarding. Successful
+inference therefore passed that policy. This is distinct from claiming every
+provider account endpoint was individually tested.
+
 ## Limits and remaining acceptance
 
-The source changed after the successful development task to repair crash cleanup.
-The affected normal-completion path still needs validation on that final candidate.
+The cleanup repair now has a successful normal-completion run and an independent
+evaluation. Installation packaging and the remaining acceptance items below are
+still incomplete.
 The earlier failed task attempt that submitted a result but lacked a successful
 VM report remains a recorded failure; its original diagnostic was truncated, so
 its root cause is not claimed to be established.
 
 Before closing the release goal:
 
-1. Complete exact direct-worker host-file/credential-path and private-network
-   canary tests. Older standalone or Docker-based probes do not prove this route.
+1. Reconcile remaining network cases with the direct-worker evidence above.
+   Older standalone or Docker-based probes do not prove this route.
 2. Finish capability enumeration and compare each exposed operation with the
    allowed assignment, model and research interfaces.
 3. Execute controlled host-reboot recovery, proving that old nonempty, unexpired
