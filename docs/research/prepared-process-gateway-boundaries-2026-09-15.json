@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-15",
+  "scope": "Credential-free probes on the same prepared image as the successful native subscription task",
+  "execution_runtime_commit": "53e22c86a31e77fc0b15e1563e01ab3bd4fbdaa9",
+  "execution_manifest_identifier": "68ca08463081b926",
+  "probe_commit": "c674d51",
+  "image_sha256": "416cc0dc84fb6cc242f857f6c3295ca5696dbdc04fc7b7d13b49f409fc42dddf",
+  "process_probe": {
+    "seed_sha256": "44fc42540d7b2554e890898bfb032f8b101b3bc254584a6f27d24bfffa41bce8",
+    "host_canary_present_in_environment_arguments_and_open_file": true,
+    "host_canary_process_alive_throughout_probe": true,
+    "host_canary_unchanged": true,
+    "guest_processes": 131,
+    "readable_environments": 37,
+    "argument_reads": 131,
+    "small_regular_handle_reads": 33,
+    "denied_or_disappeared_reads": 95,
+    "canary_matches": 0,
+    "scanner_positive_control": "A subprocess with the canary in its environment, arguments and open file produced at least three matches; no captured values were printed",
+    "earlier_failed_attempt": "Stopped on EAGAIN from a nonblocking kernel read. VM cleanup passed. The scanner now counts that read as unavailable; only this probe was repeated."
+  },
+  "gateway_loss_probe": {
+    "seed_sha256": "fabf42d8617b2203d67d657530086db42873862dcf502e7fd754c2edeee80b5d",
+    "actual_research_handler_received_one_guest_connection": true,
+    "private_connect_rejected": true,
+    "listener_removed_before_first_response_completed": true,
+    "subsequent_guest_connection_closed_without_timeout": true,
+    "live_direct_listener_controls": 2,
+    "unexpected_direct_host_connections": 0
+  },
+  "installed_research_gateway_sha256": "24d0ca04dd93bb0ec75afd2d6830fe2a62e3f3aadc83533f743f3b0b49c8362f",
+  "gateway_source_and_installed_template_identical": true,
+  "probe_regressions_passed": 14,
+  "start_sent": false,
+  "provider_requests": 0,
+  "real_credentials_used": false,
+  "active_services_after_each_probe": false,
+  "limitations": [
+    "Synthetic host canary, not disclosure or collection of real provider tokens",
+    "Finite process snapshot and regular-file handles up to 64 KiB; no kernel-exploit or arbitrary memory proof",
+    "Gateway control is an actual 403 response, not a successful public download; public research success is covered by the separate real subscription task",
+    "Direct fallback observation targets the reachable host-namespace TCP canary; does not enumerate every possible destination",
+    "Earlier wire-DNS, mixed/CNAME and HTTPS redirect component results remain supporting evidence, not newly repeated whole-worker trials",
+    "Tests ran before START and changed no assignment consent or provider budget"
+  ]
+}

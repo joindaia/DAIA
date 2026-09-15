@@ -93,7 +93,7 @@ with socket.create_connection(('10.0.2.100', 3128), timeout=5) as _connection:
 print('DAIA_PREBOOT assignment_discovery_passed=true', flush=True)
 """
 
-def inject(data, canary, network_canary=False, discover_assignment=False):
+def inject(data, canary, network_canary=False, discover_assignment=False, process_canary_sha256=None, gateway_loss=False):
     entries = [entry for entry in data['write_files']
                if isinstance(entry, dict) and entry.get('path') == preboot.PROBE_PATH]
     if len(entries) != 1 or not isinstance(entries[0].get('content'), str):
@@ -115,7 +115,22 @@ else:
     raise RuntimeError('DAIA_PREBOOT direct host TCP accessible')
 print('DAIA_PREBOOT boundary_direct_tcp_denied=true', flush=True)
 """ if network_canary else ''
-    entries[0]['content'] = code.replace(READY, boundary_check(canary) + network +
+    gateway_probe = ''
+    if gateway_loss:
+        # Extract only guest code; importing the host runner here would require Linux.
+        import ast
+        tree = ast.parse(Path(__file__).with_name('probe_prepared_gateway_loss.py').read_text())
+        function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'guest_probe')
+        gateway_probe = ast.literal_eval(function.body[0].value)
+    process_probe = ''
+    if process_canary_sha256 is not None:
+        if not re.fullmatch('[0-9a-f]{64}', process_canary_sha256):
+            raise ValueError('Synthetic process canary digest required')
+        process_probe = (Path(__file__).with_name('probe_guest_process_canary.py').read_text()
+            + "\nimport json\n_process_report = inspect(" + repr(process_canary_sha256) + ")\n"
+            + "assert _process_report['matches'] == 0\n"
+            + "print('DAIA_PROCESS_BOUNDARY ' + json.dumps(_process_report), flush=True)\n")
+    entries[0]['content'] = code.replace(READY, boundary_check(canary) + gateway_probe + network + process_probe +
         (assignment_discovery() if discover_assignment else "") + READY)
     compile(entries[0]['content'], 'preboot-boundary-probe', 'exec')
 
@@ -125,11 +140,11 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def prepare(source, native, output, iso_builder, isoinfo, canary, network_canary=False, discover_assignment=False):
+def prepare(source, native, output, iso_builder, isoinfo, canary, network_canary=False, discover_assignment=False, process_canary_sha256=None, gateway_loss=False):
     canary = canary_path(canary)
     config, data, siblings = preboot.cloud_data(source, isoinfo)
     inputs = preboot.native_inputs(native, config)
-    inject(data, canary, network_canary, discover_assignment)
+    inject(data, canary, network_canary, discover_assignment, process_canary_sha256, gateway_loss)
     output = Path(output)
     if output.exists():
         raise ValueError('New output directory required')
@@ -162,9 +177,11 @@ def main():
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--network-canary', action='store_true')
     parser.add_argument('--assignment-discovery', action='store_true')
+    parser.add_argument('--process-canary-sha256')
+    parser.add_argument('--gateway-loss', action='store_true')
     args = parser.parse_args()
     print(json.dumps(prepare(args.source, args.native, args.output, args.iso_builder,
-                             args.isoinfo, args.canary, args.network_canary, args.assignment_discovery)))
+                             args.isoinfo, args.canary, args.network_canary, args.assignment_discovery, args.process_canary_sha256, args.gateway_loss)))
 
 
 if __name__ == '__main__':
