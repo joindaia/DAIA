@@ -116,3 +116,16 @@ def test_tunnel_byte_limit_and_idle_deadline():
             thread.join(2)
             assert not thread.is_alive() and not errors and bytes(received)==expected
         finally:client.close();server.close();thread.join(2)
+
+
+@pytest.mark.parametrize('script', ['probe_public_egress_canary.py', 'probe_wire_dns_egress.py'])
+def test_canary_refuses_host_network_before_binding(monkeypatch, script):
+    from pathlib import Path
+    import runpy
+    main = runpy.run_path(str(Path(__file__).parents[1] /
+        'scripts' / script))['main']
+    monkeypatch.setattr(socket, 'if_nameindex', lambda: [(1, 'lo'), (2, 'eth0')])
+    factory = Mock(); monkeypatch.setattr(socket, 'socket', factory)
+    with pytest.raises(RuntimeError, match='network namespace'):
+        main()
+    factory.assert_not_called()

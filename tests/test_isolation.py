@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import subprocess
+import socket
 import sys
 
 import pytest
@@ -27,7 +28,7 @@ def test_snapshot_rejects_checkout_and_symlink(tmp_path):
 
 @pytest.mark.skipif(os.environ.get('DAIA_RUN_ISOLATION_TESTS') != '1',
                     reason='Explicit real namespace integration test')
-def test_real_process_cannot_reach_host_data_or_network(tmp_path):
+def test_real_process_cannot_reach_host_data_or_network(tmp_path, live_host_listener):
     snapshot = tmp_path / 'input'
     snapshot.mkdir()
     (snapshot / 'source.txt').write_text('approved input')
@@ -48,13 +49,19 @@ s = socket.socket();s.settimeout(.2)
 try: s.connect(('192.0.2.1',443))
 except OSError: pass
 else: raise AssertionError('unexpected network route')
+try:
+ with socket.create_connection(('127.0.0.1', HOST_PORT), timeout=.2): pass
+except OSError: pass
+else: raise AssertionError('live host listener reached')
 print('boundary checks passed')
-'''.replace('CANARY', repr(str(canary)))
+'''.replace('CANARY', repr(str(canary))).replace('HOST_PORT', str(live_host_listener.getsockname()[1]))
     result = subprocess.run(sandbox_command(snapshot, ['/usr/bin/python3', '-c', program]),
                             env={'SYNTHETIC_SECRET': 'must not reach job'},
                             close_fds=True, capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == 'boundary checks passed'
+    with pytest.raises(socket.timeout):
+        live_host_listener.accept()
     assert (snapshot / 'source.txt').read_text() == 'approved input'
     assert not (tmp_path / 'result.txt').exists()
 
@@ -162,3 +169,12 @@ def test_assignment_socket_rejects_regular_files_and_public_permissions(tmp_path
         endpoint.chmod(0o600); private.chmod(0o755)
         with pytest.raises(ValueError):
             sandbox_command(snapshot, ['/bin/true'], assignment_socket=endpoint)
+
+
+@pytest.fixture
+def live_host_listener():
+    with socket.socket() as listener:
+        listener.bind(('127.0.0.1', 0)); listener.listen(2); listener.settimeout(.2)
+        with socket.create_connection(listener.getsockname(), timeout=1):
+            connection, _ = listener.accept(); connection.close()
+        yield listener

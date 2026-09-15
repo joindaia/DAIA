@@ -137,3 +137,22 @@ def test_entrypoint_refuses_setgid_before_using_descriptors(monkeypatch):
     def forbidden_access(_): pytest.fail('descriptor access before privilege rejection')
     monkeypatch.setattr('os.fstat', forbidden_access)
     assert main(['--listener-fd', '30', '--helper-input-fd', '31', '--helper-output-fd', '32']) == 1
+
+
+def test_absolute_deadline_includes_elapsed_setup_and_never_extends_cap():
+    for seconds, deadline in ((5, time.monotonic() + .12),
+                              (.12, time.monotonic() + 20)):
+        started = time.monotonic()
+        with exchange('import time; time.sleep(10)', seconds=seconds,
+                      deadline=deadline) as (_, _, thread, results, errors):
+            thread.join(1)
+            assert not thread.is_alive() and results == ['timeout'] and not errors
+            assert time.monotonic() - started < 1
+
+
+def test_expired_deadline_does_not_touch_endpoints():
+    # Even a ready request must not be forwarded after the fixed deadline.
+    assert relay(None, None, seconds=150, deadline=time.monotonic()-1) == 'timeout'
+    for invalid in (float('nan'), float('inf')):
+        with pytest.raises(ValueError, match='deadline'):
+            relay(None, None, deadline=invalid)
