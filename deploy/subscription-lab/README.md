@@ -35,6 +35,35 @@ is installed. Retention, backup and disk-capacity management remain outstanding.
 The runtime, authenticating client and approved task bundle must still be installed
 and verified separately before a complete participant installation can be claimed.
 
+## Fresh-host acceptance boundary
+
+The public preparation script does not provision a host. Before a clean-host
+trial, the trusted administrator must supply and validate:
+
+- Linux with systemd as PID 1, usable hardware KVM, QEMU and the ISO builder;
+- the four distinct service accounts and protected directories above, including
+  recreation of transient socket directories after reboot;
+- a verified base at `/var/lib/daia-lab/templates/base.qcow2`;
+- the pinned native client and companion binaries, the locked Python runtime,
+  and an independently approved request template;
+- a separate participant-owned authentication profile, populated only through
+  the participant's native provider login.
+
+Do not require a pre-existing `templates/network-seed.iso`: the controller copies
+it from the newly prepared guest seed after bundle verification. The base image,
+accounts and directory setup are genuine host prerequisites; a prior run's seed
+is not. Keep the source checkout, binaries and all trusted-input ancestors outside
+worker write access.
+
+For a nested clean-host trial, first verify nested KVM and physical backing-disk
+capacity. WSL's virtual filesystem free space alone is insufficient. Preserve the
+existing 20 GiB physical-disk reserve and budget additional guest storage before
+starting; do not remove retained results or private files to make room implicitly.
+A metadata-only second-host preflight on 15 September found KVM and nested KVM
+available, systemd active, no running lab units, and physical free space at roughly
+that reserve. No additional VM was started. This is capacity/prerequisite evidence,
+not a clean-host installation result.
+
 ## Separate locked Python runtime
 
 Use Python 3.12 and a trusted `uv` installation from the approved installation
